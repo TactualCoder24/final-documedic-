@@ -4,26 +4,33 @@ import Button from '../components/ui/Button';
 import { BrainCircuit, ThumbsUp, ThumbsDown } from '../components/icons/Icons';
 import { getHealthSummary } from '../services/gemini';
 import Skeleton from '../components/ui/Skeleton';
-
-const mockHealthData = `
-- Patient: Priya Sharma, 35 years old
-- Conditions: Type 2 Diabetes (controlled)
-- Recent Vitals (2023-11-01): Glucose 110 mg/dL
-- Medications: Metformin 500mg twice daily
-- Allergies: Penicillin
-- Recent Notes: Patient reports consistent diet and exercise. No new complaints.
-`;
+import { useAuth } from '../hooks/useAuth';
+import { getFullUserData } from '../services/data';
 
 const SmartSummary: React.FC = () => {
+  const { user } = useAuth();
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
   const handleGenerateSummary = async () => {
+    if (!user) return;
+
     setLoading(true);
     setSummary('');
-    setStatusMessage('Generating your AI health summary...');
-    const result = await getHealthSummary(mockHealthData);
+    setStatusMessage('Compiling your data and generating AI health summary...');
+
+    const userData = getFullUserData(user.uid);
+    
+    // Construct a detailed string of the user's health data for the AI.
+    let healthDataString = `
+- Patient Profile: Age ${userData.profile.age || 'N/A'}, Conditions: ${userData.profile.conditions || 'None specified'}, Goals: ${userData.profile.goals || 'None specified'}, Target Blood Sugar: ${userData.profile.targetBloodSugar || 'N/A'}
+- Vitals: ${userData.vitals.length > 0 ? userData.vitals.map(v => `On ${v.date}, Blood Sugar was ${v.sugar} mg/dL`).join('; ') : 'No vitals logged.'}
+- Medications: ${userData.medications.length > 0 ? userData.medications.map(m => `${m.name} (${m.dosage}, ${m.frequency})`).join(', ') : 'No medications listed.'}
+- Recent Records: ${userData.records.length > 0 ? userData.records.slice(0, 3).map(r => `${r.name} (${r.type} from ${r.date})`).join(', ') : 'No records available.'}
+    `;
+
+    const result = await getHealthSummary(healthDataString);
     setSummary(result);
     setLoading(false);
     setStatusMessage('Your health summary has been generated.');

@@ -12,8 +12,8 @@ export interface MedicalRecord {
   id: string;
   name: string;
   type: 'Lab Report' | 'Prescription' | 'Imaging' | 'Consultation Note';
-  date: string;
-  fileUrl: string;
+  date: string; // YYYY-MM-DD
+  fileUrl: string; // Data URL
 }
 
 // Defines the structure for a medication entry.
@@ -29,12 +29,23 @@ export interface Medication {
 export interface Reminder {
   id: string;
   title: string;
-  time: string;
+  time: string; // ISO string for datetime-local input
   description: string;
 }
 
 // Defines the structure for a vital sign entry.
 export interface Vital {
-  date: string;
+  date: string; // YYYY-MM-DD
   sugar: number;
+}
+
+// Defines the structure for a user's health profile.
+export interface Profile {
+  age?: string;
+  conditions?: string;
+  goals?: string;
+  bloodType?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  targetBloodSugar?: string;
 }

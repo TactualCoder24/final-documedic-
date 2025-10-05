@@ -1,4 +1,4 @@
-import { HeartPulse, FileText, Pill, BrainCircuit, Bell, Lightbulb } from './icons/Icons';
+import { HeartPulse, FileText, Pill, BrainCircuit, Bell, Lightbulb, Settings } from './icons/Icons';
 
 export const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: HeartPulse },
@@ -7,4 +7,5 @@ export const navItems = [
   { path: '/summary', label: 'Smart Summary', icon: BrainCircuit },
   { path: '/reminders', label: 'Reminders & Alerts', icon: Bell },
   { path: '/tips', label: 'Lifestyle Tips', icon: Lightbulb },
+  { path: '/settings', label: 'Settings', icon: Settings },
 ];

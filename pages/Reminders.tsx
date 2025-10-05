@@ -1,23 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Bell, Plus, Trash2 } from '../components/icons/Icons';
 import { Reminder } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
-
-const mockReminders: Reminder[] = [
-  { id: 'rem1', title: 'Cardiologist Appointment', time: 'Tomorrow at 10:00 AM', description: 'Follow-up with Dr. Smith.' },
-  { id: 'rem2', title: 'Refill Lisinopril', time: 'In 3 days', description: 'Pick up prescription from pharmacy.' },
-  { id: 'rem3', title: 'Annual Flu Shot', time: 'Next Monday', description: 'Scheduled at the local clinic.' },
-];
+import { useAuth } from '../hooks/useAuth';
+import { getReminders, addReminder, deleteReminder } from '../services/data';
 
 const Reminders: React.FC = () => {
-  const [reminders, setReminders] = useState<Reminder[]>(mockReminders);
+  const { user } = useAuth();
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const refreshReminders = React.useCallback(() => {
+    if (user) {
+      setReminders(getReminders(user.uid));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    refreshReminders();
+  }, [refreshReminders]);
+
   const handleDelete = (id: string) => {
-    setReminders(reminders.filter(rem => rem.id !== id));
+    if (user) {
+      deleteReminder(user.uid, id);
+      refreshReminders();
+    }
+  };
+
+  const handleAddReminder = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) return;
+    const formData = new FormData(e.currentTarget);
+    const newReminder = {
+        title: formData.get('reminder-title') as string,
+        time: formData.get('reminder-time') as string,
+        description: formData.get('reminder-desc') as string,
+    };
+    if (newReminder.title && newReminder.time) {
+        addReminder(user.uid, newReminder);
+        refreshReminders();
+        setIsModalOpen(false);
+    }
   };
 
   return (
@@ -47,7 +73,7 @@ const Reminders: React.FC = () => {
                   </div>
                   <div>
                     <p className="font-semibold">{reminder.title}</p>
-                    <p className="text-sm font-bold text-primary">{reminder.time}</p>
+                    <p className="text-sm font-bold text-primary">{new Date(reminder.time).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
                     <p className="text-sm text-muted-foreground mt-1">{reminder.description}</p>
                   </div>
                 </div>
@@ -72,18 +98,18 @@ const Reminders: React.FC = () => {
       </Card>
 
       <Modal title="Create New Reminder" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-         <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setIsModalOpen(false); }}>
+         <form className="space-y-4" onSubmit={handleAddReminder}>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Title</label>
-              <Input placeholder="e.g., Doctor's Appointment" required />
+              <label htmlFor="reminder-title" className="block text-sm font-medium text-foreground mb-1">Title</label>
+              <Input id="reminder-title" name="reminder-title" placeholder="e.g., Doctor's Appointment" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Date & Time</label>
-              <Input type="datetime-local" required />
+              <label htmlFor="reminder-time" className="block text-sm font-medium text-foreground mb-1">Date & Time</label>
+              <Input id="reminder-time" name="reminder-time" type="datetime-local" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Description (Optional)</label>
-              <Input placeholder="e.g., Annual check-up" />
+              <label htmlFor="reminder-desc" className="block text-sm font-medium text-foreground mb-1">Description (Optional)</label>
+              <Input id="reminder-desc" name="reminder-desc" placeholder="e.g., Annual check-up" />
             </div>
             <div className="flex justify-end gap-2 pt-2">
                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>

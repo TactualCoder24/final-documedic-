@@ -1,30 +1,20 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { HeartPulse, Pill, FileText, Share2 } from '../components/icons/Icons';
+import { getFullUserData } from '../services/data';
+import { Medication } from '../types';
 
-// Mock data fetching function. In a real app, this would be an API call.
-const getEmergencyData = (id: string) => {
-  // We'll return the same data regardless of ID for this mock.
-  if (id) {
-    return {
-      name: 'Priya Sharma',
-      dob: '1990-07-22',
-      bloodType: 'O+',
-      emergencyContacts: [
-        { name: 'Rohan Sharma', relationship: 'Spouse', phone: '555-123-4567' },
-        { name: 'Dr. Patel', relationship: 'Primary Care Physician', phone: '555-987-6543' },
-      ],
-      allergies: ['Penicillin'],
-      conditions: ['Type 2 Diabetes'],
-      medications: [
-        { name: 'Metformin', dosage: '500mg Twice Daily' },
-      ],
-    };
-  }
-  return null;
-};
+interface EmergencyData {
+  name: string;
+  dob: string;
+  bloodType: string;
+  emergencyContacts: { name: string; relationship: string; phone: string }[];
+  allergies: string[];
+  conditions: string[];
+  medications: { name: string; dosage: string }[];
+}
 
 const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div className="grid grid-cols-3 gap-4 py-3 border-b border-border/60">
@@ -35,30 +25,44 @@ const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, v
 
 const EmergencyInfo: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const data = getEmergencyData(id || '');
+  const [data, setData] = useState<any>(null); // Use any for simplicity as it combines multiple types
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (id) {
+      // In a real app, you'd fetch this from a backend. Here, we read from localStorage.
+      // This has security implications as it relies on the user's local state.
+      const userData = getFullUserData(id);
+      if (userData.profile.age) {
+        setData(userData);
+      }
+    }
+    setLoading(false);
+  }, [id]);
 
   const handleShare = () => {
     if (navigator.share) {
         navigator.share({
-            title: `Emergency Info for ${data?.name}`,
-            text: `View the emergency medical profile for ${data?.name}.`,
+            title: `Emergency Info`,
+            text: `View the emergency medical profile.`,
             url: window.location.href,
         })
-        .then(() => console.log('Successful share'))
         .catch((error) => console.log('Error sharing', error));
     } else {
-        // Fallback for browsers that do not support the Web Share API
         navigator.clipboard.writeText(window.location.href);
         alert('Profile link copied to clipboard!');
     }
   };
 
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
 
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center h-screen text-center bg-background p-4">
-        <h1 className="text-4xl font-bold text-destructive">Invalid Profile</h1>
-        <p className="mt-4 text-lg text-muted-foreground">The emergency profile link is invalid or has expired.</p>
+        <h1 className="text-4xl font-bold text-destructive">Invalid or Incomplete Profile</h1>
+        <p className="mt-4 text-lg text-muted-foreground">The emergency profile link is invalid or the user has not completed their profile.</p>
       </div>
     );
   }
@@ -81,18 +85,16 @@ const EmergencyInfo: React.FC = () => {
 
         <Card className="shadow-xl">
           <CardHeader>
-            <CardTitle className="text-2xl">{data.name}</CardTitle>
+            <CardTitle className="text-2xl">Patient Details</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="space-y-2">
-              <InfoRow label="Date of Birth" value={data.dob} />
-              <InfoRow label="Blood Type" value={data.bloodType} />
-              <InfoRow label="Emergency Contacts" value={
-                <ul className="space-y-1">
-                  {data.emergencyContacts.map(c => (
-                    <li key={c.name}>{c.name} ({c.relationship}) - {c.phone}</li>
-                  ))}
-                </ul>
+              <InfoRow label="Age" value={data.profile.age || 'N/A'} />
+              <InfoRow label="Blood Type" value={data.profile.bloodType || 'N/A'} />
+              <InfoRow label="Target Blood Sugar" value={data.profile.targetBloodSugar ? `${data.profile.targetBloodSugar} mg/dL` : 'N/A'} />
+              <InfoRow label="Emergency Contact" value={
+                data.profile.emergencyContactName ? 
+                `${data.profile.emergencyContactName} - ${data.profile.emergencyContactPhone}` : 'N/A'
               } />
             </dl>
           </CardContent>
@@ -104,13 +106,9 @@ const EmergencyInfo: React.FC = () => {
                     <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-primary"/> Key Information</CardTitle>
                 </CardHeader>
                  <CardContent>
-                    <h3 className="font-semibold text-lg mb-2">Allergies</h3>
-                    <ul className="list-disc list-inside text-muted-foreground mb-4 bg-destructive/5 border border-destructive/20 rounded-lg p-3">
-                        {data.allergies.map(a => <li key={a} className="font-medium">{a}</li>)}
-                    </ul>
-                     <h3 className="font-semibold text-lg mb-2">Chronic Conditions</h3>
+                    <h3 className="font-semibold text-lg mb-2">Chronic Conditions</h3>
                     <ul className="list-disc list-inside text-muted-foreground">
-                        {data.conditions.map(c => <li key={c}>{c}</li>)}
+                        {data.profile.conditions ? data.profile.conditions.split(',').map((c:string) => <li key={c}>{c.trim()}</li>) : <li>None specified</li>}
                     </ul>
                  </CardContent>
             </Card>
@@ -119,14 +117,18 @@ const EmergencyInfo: React.FC = () => {
                     <CardTitle className="flex items-center gap-2"><Pill className="h-5 w-5 text-primary"/> Current Medications</CardTitle>
                 </CardHeader>
                  <CardContent>
-                    <ul className="space-y-3">
-                       {data.medications.map(m => (
-                         <li key={m.name}>
-                           <p className="font-semibold">{m.name}</p>
-                           <p className="text-sm text-muted-foreground">{m.dosage}</p>
-                         </li>
-                       ))}
-                    </ul>
+                    {data.medications.length > 0 ? (
+                        <ul className="space-y-3">
+                        {data.medications.map((m: Medication) => (
+                            <li key={m.id}>
+                            <p className="font-semibold">{m.name}</p>
+                            <p className="text-sm text-muted-foreground">{m.dosage} - {m.frequency}</p>
+                            </li>
+                        ))}
+                        </ul>
+                    ) : (
+                        <p className="text-muted-foreground">No medications listed.</p>
+                    )}
                  </CardContent>
             </Card>
         </div>

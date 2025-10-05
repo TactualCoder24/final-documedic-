@@ -1,30 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Pill, Plus, Trash2, Download } from '../components/icons/Icons';
 import { Medication } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
-
-const mockMedications: Medication[] = [
-  { id: 'med2', name: 'Metformin', dosage: '500mg', frequency: 'Twice a day', takenToday: true },
-  { id: 'med3', name: 'Atorvastatin', dosage: '20mg', frequency: 'Once daily at bedtime', takenToday: false },
-];
+import { useAuth } from '../hooks/useAuth';
+import { getMedications, addMedication, updateMedication, deleteMedication } from '../services/data';
 
 const MedicationTracker: React.FC = () => {
-  const [medications, setMedications] = useState<Medication[]>(mockMedications);
+  const { user } = useAuth();
+  const [medications, setMedications] = useState<Medication[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const refreshMedications = React.useCallback(() => {
+    if (user) {
+      setMedications(getMedications(user.uid));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    refreshMedications();
+  }, [refreshMedications]);
+
   const toggleTaken = (id: string) => {
-    setMedications(
-      medications.map(med =>
-        med.id === id ? { ...med, takenToday: !med.takenToday } : med
-      )
-    );
+    if (user) {
+      const medToUpdate = medications.find(m => m.id === id);
+      if (medToUpdate) {
+        updateMedication(user.uid, { ...medToUpdate, takenToday: !medToUpdate.takenToday });
+        refreshMedications();
+      }
+    }
   };
 
   const handleDelete = (id: string) => {
-    setMedications(medications.filter(med => med.id !== id));
+    if (user) {
+      deleteMedication(user.uid, id);
+      refreshMedications();
+    }
+  };
+
+  const handleAddMedication = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) return;
+    const formData = new FormData(e.currentTarget);
+    const newMed = {
+      name: formData.get('med-name') as string,
+      dosage: formData.get('med-dosage') as string,
+      frequency: formData.get('med-frequency') as string,
+    };
+    if (newMed.name && newMed.dosage && newMed.frequency) {
+      addMedication(user.uid, newMed);
+      refreshMedications();
+      setIsModalOpen(false);
+    }
   };
   
   const handleExport = () => {
@@ -32,21 +61,15 @@ const MedicationTracker: React.FC = () => {
       alert("No medication history to export.");
       return;
     }
-    
     const headers = ["ID", "Name", "Dosage", "Frequency", "Taken Today"];
     const csvContent = [
       headers.join(","),
       ...medications.map(m => [m.id, `"${m.name}"`, `"${m.dosage}"`, `"${m.frequency}"`, m.takenToday].join(","))
     ].join("\n");
-
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    if (link.href) {
-        URL.revokeObjectURL(link.href);
-    }
     link.href = URL.createObjectURL(blob);
     link.download = "medication-history.csv";
-    link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -142,18 +165,18 @@ const MedicationTracker: React.FC = () => {
       </div>
 
       <Modal title="Add New Medication" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-         <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setIsModalOpen(false); }}>
+         <form className="space-y-4" onSubmit={handleAddMedication}>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Medication Name</label>
-              <Input placeholder="e.g., Ibuprofen" required />
+              <label htmlFor="med-name" className="block text-sm font-medium text-foreground mb-1">Medication Name</label>
+              <Input id="med-name" name="med-name" placeholder="e.g., Ibuprofen" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Dosage</label>
-              <Input placeholder="e.g., 200mg" required />
+              <label htmlFor="med-dosage" className="block text-sm font-medium text-foreground mb-1">Dosage</label>
+              <Input id="med-dosage" name="med-dosage" placeholder="e.g., 200mg" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Frequency</label>
-              <Input placeholder="e.g., Twice a day" required />
+              <label htmlFor="med-frequency" className="block text-sm font-medium text-foreground mb-1">Frequency</label>
+              <Input id="med-frequency" name="med-frequency" placeholder="e.g., Twice a day" required />
             </div>
             <div className="flex justify-end gap-2 pt-2">
                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>

@@ -1,40 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Pill, FileText, BrainCircuit, ClipboardList, Search, Bell } from '../components/icons/Icons';
+import { Pill, FileText, BrainCircuit, ClipboardList, Search, Bell, Share2 } from '../components/icons/Icons';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
-import { Vital, MedicalRecord, Medication, Reminder } from '../types';
+import { Vital, MedicalRecord, Medication, Reminder, Profile } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
-
-const mockVitals: Vital[] = [
-  { date: 'Jun 1', sugar: 95 }, { date: 'Jun 2', sugar: 105 }, { date: 'Jun 3', sugar: 98 },
-  { date: 'Jun 4', sugar: 110 }, { date: 'Jun 5', sugar: 102 }, { date: 'Jun 6', sugar: 108 },
-  { date: 'Jun 7', sugar: 104 },
-];
-
-const mockRecords: MedicalRecord[] = [
-  { id: 'rec1', name: 'Annual Blood Panel', type: 'Lab Report', date: '2023-10-15', fileUrl: '#' },
-  { id: 'rec2', name: 'MRI Scan - Left Knee', type: 'Imaging', date: '2023-09-22', fileUrl: '#' },
-];
-
-const mockMedications: Medication[] = [
-  { id: 'med2', name: 'Metformin', dosage: '500mg', frequency: 'Twice a day', takenToday: true },
-  { id: 'med3', name: 'Atorvastatin', dosage: '20mg', frequency: 'Once daily at bedtime', takenToday: false },
-];
-
-const mockReminders: Reminder[] = [
-  { id: 'rem1', title: 'Cardiologist Appointment', time: 'Tomorrow at 10:00 AM', description: 'Follow-up with Dr. Smith.' },
-  { id: 'rem2', title: 'Refill Lisinopril', time: 'In 3 days', description: 'Pick up prescription from pharmacy.' },
-];
-
-const searchableData = [
-  ...mockRecords.map(item => ({ ...item, type: 'record', name: item.name, path: '/records' })),
-  ...mockMedications.map(item => ({ ...item, type: 'medication', name: item.name, path: '/medications' })),
-  ...mockReminders.map(item => ({ ...item, type: 'reminder', name: item.title, path: '/reminders' })),
-];
+import { getVitals, getRecords, getMedications, getReminders, getProfile, saveProfile, addVital } from '../services/data';
 
 const categoryInfo = {
   record: { title: 'Medical Records', icon: FileText, color: 'text-blue-500' },
@@ -44,27 +18,82 @@ const categoryInfo = {
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const [vitals, setVitals] = useState<Vital[]>(mockVitals);
-  const [isVitalsModalOpen, setIsVitalsModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [vitals, setVitals] = React.useState<Vital[]>([]);
+  const [records, setRecords] = React.useState<MedicalRecord[]>([]);
+  const [medications, setMedications] = React.useState<Medication[]>([]);
+  const [reminders, setReminders] = React.useState<Reminder[]>([]);
+  const [profile, setProfile] = React.useState<Profile | null>(null);
+  
+  const [isVitalsModalOpen, setIsVitalsModalOpen] = React.useState(false);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
+
+  const refreshData = React.useCallback(() => {
+    if (user) {
+      setVitals(getVitals(user.uid));
+      setRecords(getRecords(user.uid));
+      setMedications(getMedications(user.uid));
+      setReminders(getReminders(user.uid));
+      const userProfile = getProfile(user.uid);
+      setProfile(userProfile);
+      
+      if (!userProfile.age && !userProfile.conditions && !userProfile.goals) {
+        setIsOnboardingModalOpen(true);
+      }
+    }
+  }, [user]);
+
+  React.useEffect(() => {
+    refreshData();
+  }, [refreshData]);
 
   const handleUpdateVitals = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!user) return;
     const formData = new FormData(e.currentTarget);
-    const newVital: Vital = {
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      sugar: Number(formData.get('sugar')),
-    };
+    const sugar = Number(formData.get('sugar'));
 
-    if (newVital.sugar > 0) {
-      if (vitals.some(v => v.date === newVital.date)) {
-        setVitals(vitals.map(v => v.date === newVital.date ? newVital : v));
-      } else {
-        setVitals([...vitals, newVital]);
-      }
+    if (sugar > 0) {
+      addVital(user.uid, { sugar });
+      setVitals(getVitals(user.uid));
       setIsVitalsModalOpen(false);
+      e.currentTarget.reset();
     }
   };
+
+  const handleSaveProfile = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) return;
+    const formData = new FormData(e.currentTarget);
+    const newProfile: Profile = {
+      age: formData.get('age') as string,
+      conditions: formData.get('conditions') as string,
+      goals: formData.get('goals') as string,
+      bloodType: formData.get('bloodType') as string,
+      emergencyContactName: formData.get('contactName') as string,
+      emergencyContactPhone: formData.get('contactPhone') as string,
+      targetBloodSugar: formData.get('targetBloodSugar') as string,
+    };
+    saveProfile(user.uid, newProfile);
+    setProfile(newProfile);
+    setIsOnboardingModalOpen(false);
+  };
+  
+  const handleShareProfile = () => {
+    if (!user) return;
+    const url = `${window.location.origin}${window.location.pathname}#/emergency/${user.uid}`;
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Emergency profile link copied to clipboard!');
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
+  };
+
+  const searchableData = [
+    ...records.map(item => ({ ...item, type: 'record', name: item.name, path: '/records' })),
+    ...medications.map(item => ({ ...item, type: 'medication', name: item.name, path: '/medications' })),
+    ...reminders.map(item => ({ ...item, type: 'reminder', name: item.title, path: '/reminders' })),
+  ];
   
   const filteredResults = searchQuery
     ? searchableData.filter(item =>
@@ -74,12 +103,13 @@ const Dashboard: React.FC = () => {
 
   const resultsByType = filteredResults.reduce((acc, item) => {
     const key = item.type as keyof typeof categoryInfo;
-    if (!acc[key]) {
-      acc[key] = [];
-    }
+    if (!acc[key]) acc[key] = [];
     acc[key].push(item);
     return acc;
   }, {} as Record<keyof typeof categoryInfo, any[]>);
+
+  const nextMedication = medications.find(m => !m.takenToday);
+  const recentRecord = records[0];
 
   const DashboardContent = () => (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -105,8 +135,17 @@ const Dashboard: React.FC = () => {
               <Pill className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Metformin</div>
-              <p className="text-xs text-muted-foreground">Due in 2 hours</p>
+              {nextMedication ? (
+                <>
+                  <div className="text-2xl font-bold">{nextMedication.name}</div>
+                  <p className="text-xs text-muted-foreground">{nextMedication.dosage}</p>
+                </>
+              ) : (
+                 <>
+                  <div className="text-2xl font-bold">All Taken!</div>
+                  <p className="text-xs text-muted-foreground">Great job staying on track.</p>
+                </>
+              )}
             </CardContent>
           </Link>
         </Card>
@@ -117,8 +156,17 @@ const Dashboard: React.FC = () => {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Blood Test Results</div>
-              <p className="text-xs text-muted-foreground">Uploaded yesterday</p>
+               {recentRecord ? (
+                <>
+                  <div className="text-2xl font-bold truncate">{recentRecord.name}</div>
+                  <p className="text-xs text-muted-foreground">Uploaded on {recentRecord.date}</p>
+                </>
+              ) : (
+                 <>
+                  <div className="text-2xl font-bold">No Records</div>
+                  <p className="text-xs text-muted-foreground">Upload your first document.</p>
+                </>
+              )}
             </CardContent>
           </Link>
         </Card>
@@ -129,7 +177,7 @@ const Dashboard: React.FC = () => {
               <BrainCircuit className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Ready to View</div>
+              <div className="text-2xl font-bold">Ready to Generate</div>
               <p className="text-xs text-muted-foreground">Get your personalized summary</p>
             </CardContent>
           </Link>
@@ -138,31 +186,37 @@ const Dashboard: React.FC = () => {
         <Card className="col-span-1 md:col-span-2 lg:col-span-3">
           <CardHeader>
             <CardTitle>Blood Sugar Trend</CardTitle>
-            <CardDescription>Your 7-day trend shows stable levels. Keep up the consistent monitoring!</CardDescription>
+            <CardDescription>
+                {vitals.length > 0 ? "Here is your recent blood sugar history." : "Log your vitals to see your trend."}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={vitals.slice(-30)}>
-                    <defs>
-                        <linearGradient id="colorSugar" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                        </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" domain={['dataMin - 10', 'dataMax + 10']} fontSize={12} unit=" mg/dL" />
-                    <Tooltip
-                        contentStyle={{
-                        backgroundColor: "hsl(var(--background))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "var(--radius)"
-                        }}
-                    />
-                    <Legend />
-                    <Area type="monotone" dataKey="sugar" name="Blood Sugar" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorSugar)" strokeWidth={2} activeDot={{ r: 8 }}/>
-                </AreaChart>
-            </ResponsiveContainer>
+            {vitals.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={vitals.slice(-30).map(v => ({...v, date: new Date(v.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }))}>
+                        <defs>
+                            <linearGradient id="colorSugar" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" domain={['dataMin - 10', 'dataMax + 10']} fontSize={12} unit=" mg/dL" />
+                        <Tooltip
+                            contentStyle={{
+                            backgroundColor: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "var(--radius)"
+                            }}
+                        />
+                        <Legend />
+                        <Area type="monotone" dataKey="sugar" name="Blood Sugar" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorSugar)" strokeWidth={2} activeDot={{ r: 8 }}/>
+                    </AreaChart>
+                </ResponsiveContainer>
+            ) : (
+                <div className="text-center py-10 text-muted-foreground">No vitals logged yet.</div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -171,11 +225,17 @@ const Dashboard: React.FC = () => {
   return (
     <>
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold font-heading">
-          Welcome back, {user?.displayName?.split(' ')[0] || 'User'}!
-        </h1>
-        <p className="text-muted-foreground text-lg mt-1">Here's a quick overview of your health profile.</p>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+            <h1 className="text-3xl font-bold font-heading">
+            Welcome back, {user?.displayName?.split(' ')[0] || 'User'}!
+            </h1>
+            <p className="text-muted-foreground text-lg mt-1">Here's a quick overview of your health profile.</p>
+        </div>
+        <Button onClick={handleShareProfile} variant="outline" className="w-full sm:w-auto">
+            <Share2 className="mr-2 h-4 w-4" />
+            Share Emergency Profile
+        </Button>
       </div>
       
       <div className="relative">
@@ -215,7 +275,7 @@ const Dashboard: React.FC = () => {
                                                 <p className="text-sm text-muted-foreground">
                                                     {type === 'record' && `${item.type} - ${item.date}`}
                                                     {type === 'medication' && `${item.dosage}, ${item.frequency}`}
-                                                    {type === 'reminder' && `${item.time}`}
+                                                    {type === 'reminder' && new Date(item.time).toLocaleString()}
                                                 </p>
                                             </Link>
                                         ))}
@@ -243,6 +303,44 @@ const Dashboard: React.FC = () => {
             <div className="flex justify-end gap-2 pt-2">
                <Button type="button" variant="ghost" onClick={() => setIsVitalsModalOpen(false)}>Cancel</Button>
                <Button type="submit">Save Vitals</Button>
+            </div>
+         </form>
+      </Modal>
+
+      <Modal title="Welcome to DocuMedic!" isOpen={isOnboardingModalOpen} onClose={() => setIsOnboardingModalOpen(false)}>
+         <form className="space-y-4" onSubmit={handleSaveProfile}>
+            <p className="text-sm text-muted-foreground">To help us personalize your experience, please provide some basic information. This will be used for features like your Emergency Profile and AI Tips.</p>
+             <div>
+              <label htmlFor="age" className="block text-sm font-medium text-foreground mb-1">Age</label>
+              <Input id="age" name="age" type="number" placeholder="e.g., 35" required />
+            </div>
+            <div>
+              <label htmlFor="bloodType" className="block text-sm font-medium text-foreground mb-1">Blood Type</label>
+              <Input id="bloodType" name="bloodType" type="text" placeholder="e.g., O+" />
+            </div>
+            <div>
+              <label htmlFor="targetBloodSugar" className="block text-sm font-medium text-foreground mb-1">Target Blood Sugar Range (mg/dL)</label>
+              <Input id="targetBloodSugar" name="targetBloodSugar" type="text" placeholder="e.g., 80-130" />
+            </div>
+             <div>
+              <label htmlFor="conditions" className="block text-sm font-medium text-foreground mb-1">Chronic Conditions (if any)</label>
+              <Input id="conditions" name="conditions" type="text" placeholder="e.g., Type 2 Diabetes, Asthma" />
+            </div>
+             <div>
+              <label htmlFor="goals" className="block text-sm font-medium text-foreground mb-1">Health Goals</label>
+              <Input id="goals" name="goals" type="text" placeholder="e.g., Lower blood pressure, manage blood sugar levels" />
+            </div>
+             <div>
+              <label htmlFor="contactName" className="block text-sm font-medium text-foreground mb-1">Emergency Contact Name</label>
+              <Input id="contactName" name="contactName" type="text" placeholder="e.g., Jane Doe" />
+            </div>
+             <div>
+              <label htmlFor="contactPhone" className="block text-sm font-medium text-foreground mb-1">Emergency Contact Phone</label>
+              <Input id="contactPhone" name="contactPhone" type="tel" placeholder="e.g., 555-123-4567" />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+               <Button type="button" variant="ghost" onClick={() => setIsOnboardingModalOpen(false)}>Skip for Now</Button>
+               <Button type="submit">Save Profile</Button>
             </div>
          </form>
       </Modal>

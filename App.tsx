@@ -16,6 +16,7 @@ import Landing from './pages/Landing';
 import { AnimatePresence } from 'framer-motion';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import Settings from './pages/Settings';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -102,6 +103,16 @@ const AppRoutes = () => {
             <ProtectedRoute>
               <Layout>
                 <LifestyleTips />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Settings />
               </Layout>
             </ProtectedRoute>
           }

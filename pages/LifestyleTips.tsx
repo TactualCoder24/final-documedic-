@@ -1,41 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Lightbulb } from '../components/icons/Icons';
 import { getLifestyleTips } from '../services/gemini';
 import Skeleton from '../components/ui/Skeleton';
+import { useAuth } from '../hooks/useAuth';
+import { getProfile } from '../services/data';
 
 interface Tip {
   title: string;
   description: string;
 }
 
-const mockUserInfo = `
-- Age: 35
-- Conditions: Type 2 Diabetes
-- Goals: Lose weight, improve cardiovascular health
-`;
-
 const LifestyleTips: React.FC = () => {
+  const { user } = useAuth();
   const [tips, setTips] = useState<Tip[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchTips = async () => {
+  const fetchTips = React.useCallback(async () => {
+    if (!user) return;
     setLoading(true);
+    setTips([]);
     try {
-        const result = await getLifestyleTips(mockUserInfo);
+        const profile = getProfile(user.uid);
+        const userInfo = `
+            - Age: ${profile.age || 'Not specified'}
+            - Conditions: ${profile.conditions || 'Not specified'}
+            - Goals: ${profile.goals || 'General wellness'}
+        `;
+        const result = await getLifestyleTips(userInfo);
         const parsedTips = JSON.parse(result);
         setTips(parsedTips);
     } catch (e) {
-        console.error("Failed to parse tips:", e);
-        setTips([]); // Set to empty array on parse error
+        console.error("Failed to fetch or parse tips:", e);
+        setTips([]); // Set to empty array on error
     }
     setLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchTips();
-  }, []);
+  }, [fetchTips]);
 
   return (
     <>
@@ -57,7 +62,7 @@ const LifestyleTips: React.FC = () => {
                     </CardContent>
                 </Card>
             ))
-        ) : tips.length > 0 ? (
+        ) : tips && tips.length > 0 ? (
           tips.map((tip, index) => (
             <Card key={index} className="flex flex-col">
               <CardHeader className="flex flex-row items-start gap-4">
@@ -78,7 +83,7 @@ const LifestyleTips: React.FC = () => {
         ) : (
              <Card className="md:col-span-2 lg:col-span-3">
                 <CardContent className="pt-6 text-center">
-                    <p className="text-muted-foreground">Could not load tips at this time. Please try again later.</p>
+                    <p className="text-muted-foreground">Could not load tips at this time. Please try again later, or ensure your profile is filled out on the Dashboard.</p>
                 </CardContent>
              </Card>
         )}
