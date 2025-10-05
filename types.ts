@@ -36,7 +36,5 @@ export interface Reminder {
 // Defines the structure for a vital sign entry.
 export interface Vital {
   date: string;
-  systolic: number;
-  diastolic: number;
   sugar: number;
 }

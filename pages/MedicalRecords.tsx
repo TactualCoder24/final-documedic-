@@ -83,7 +83,13 @@ const MedicalRecords: React.FC = () => {
                   <Button variant="outline" size="sm" asChild>
                     <a href={record.fileUrl} target="_blank" rel="noopener noreferrer">View</a>
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(record.id)}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 text-muted-foreground hover:text-destructive" 
+                    onClick={() => handleDelete(record.id)}
+                    aria-label={`Delete record for ${record.name}`}
+                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

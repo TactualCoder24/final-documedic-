@@ -7,7 +7,6 @@ import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 
 const mockMedications: Medication[] = [
-  { id: 'med1', name: 'Lisinopril', dosage: '10mg', frequency: 'Once a day', takenToday: false },
   { id: 'med2', name: 'Metformin', dosage: '500mg', frequency: 'Twice a day', takenToday: true },
   { id: 'med3', name: 'Atorvastatin', dosage: '20mg', frequency: 'Once daily at bedtime', takenToday: false },
 ];
@@ -55,6 +54,7 @@ const MedicationTracker: React.FC = () => {
   
   const takenCount = medications.filter(m => m.takenToday).length;
   const totalCount = medications.length;
+  const percentage = totalCount > 0 ? (takenCount / totalCount) * 100 : 0;
 
   return (
     <>
@@ -80,10 +80,17 @@ const MedicationTracker: React.FC = () => {
                  <CardDescription>You've taken {takenCount} of {totalCount} medications today.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="w-full bg-secondary rounded-full h-2.5">
+                <div 
+                    className="w-full bg-secondary rounded-full h-2.5"
+                    role="progressbar"
+                    aria-valuenow={percentage}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${takenCount} of ${totalCount} medications taken`}
+                >
                     <div 
                         className="bg-primary h-2.5 rounded-full transition-all duration-500" 
-                        style={{ width: `${totalCount > 0 ? (takenCount / totalCount) * 100 : 0}%` }}
+                        style={{ width: `${percentage}%` }}
                     ></div>
                 </div>
             </CardContent>
@@ -110,10 +117,15 @@ const MedicationTracker: React.FC = () => {
                       size="sm"
                       onClick={() => toggleTaken(med.id)}
                     >
-                      {/* FIX: Corrected button text to be dynamic based on taken state. */}
                       {med.takenToday ? 'Mark as Not Taken' : 'Mark as Taken'}
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(med.id)}>
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 text-muted-foreground hover:text-destructive" 
+                        onClick={() => handleDelete(med.id)}
+                        aria-label={`Delete medication for ${med.name}`}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

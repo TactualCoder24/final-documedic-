@@ -7,10 +7,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const Button: React.FC<ButtonProps> = ({ className, variant = 'default', size = 'default', asChild = false, ...props }) => {
-  const baseClasses = "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+  const baseClasses = "inline-flex items-center justify-center rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
 
   const variants = {
-    default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-shadow",
+    default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-shadow",
     destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
     outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
     secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
@@ -28,13 +28,10 @@ const Button: React.FC<ButtonProps> = ({ className, variant = 'default', size = 
   const buttonClasses = `${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`;
   
   if (asChild) {
-    // FIX: Add a generic type to `React.isValidElement` to help TypeScript correctly
-    // infer the type of `child.props`. This resolves errors where `child.props` was `unknown`,
-    // which prevents spreading props and accessing properties like `className`.
-    if (React.isValidElement<any>(props.children)) {
+    // FIX: Use `React.isValidElement` as a generic type guard to correctly type `props.children`.
+    // This resolves issues where `child.props` was inferred as `unknown`, causing spread and property access errors.
+    if (React.isValidElement<React.HTMLAttributes<HTMLElement>>(props.children)) {
       const child = props.children;
-      // The `props` from destructuring includes `children` and any other props passed to Button.
-      // We destructure `children` out to avoid passing it in `restProps` and causing a recursion issue.
       const { children: _children, ...restProps } = props;
 
       return React.cloneElement(child, {

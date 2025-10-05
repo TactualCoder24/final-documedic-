@@ -1,4 +1,4 @@
-import React, { FC, ReactNode } from 'react';
+import React, { FC, ReactNode, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from '../icons/Icons';
 import Button from './Button';
@@ -12,6 +12,22 @@ interface ModalProps {
 }
 
 const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -29,11 +45,14 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             transition={{ duration: 0.2 }}
             className="w-full max-w-lg"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
           >
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>{title}</CardTitle>
-                    <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+                    <CardTitle id="modal-title">{title}</CardTitle>
+                    <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8" aria-label="Close dialog">
                         <X className="h-4 w-4" />
                     </Button>
                 </CardHeader>

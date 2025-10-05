@@ -51,7 +51,13 @@ const Reminders: React.FC = () => {
                     <p className="text-sm text-muted-foreground mt-1">{reminder.description}</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive flex-shrink-0" onClick={() => handleDelete(reminder.id)}>
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 text-muted-foreground hover:text-destructive flex-shrink-0" 
+                    onClick={() => handleDelete(reminder.id)}
+                    aria-label={`Delete reminder for ${reminder.title}`}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

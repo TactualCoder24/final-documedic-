@@ -7,9 +7,9 @@ import Skeleton from '../components/ui/Skeleton';
 
 const mockHealthData = `
 - Patient: Priya Sharma, 35 years old
-- Conditions: Hypertension, Type 2 Diabetes (controlled)
-- Recent Vitals (2023-11-01): BP 130/85 mmHg, Glucose 110 mg/dL
-- Medications: Lisinopril 10mg daily, Metformin 500mg twice daily
+- Conditions: Type 2 Diabetes (controlled)
+- Recent Vitals (2023-11-01): Glucose 110 mg/dL
+- Medications: Metformin 500mg twice daily
 - Allergies: Penicillin
 - Recent Notes: Patient reports consistent diet and exercise. No new complaints.
 `;
@@ -17,17 +17,23 @@ const mockHealthData = `
 const SmartSummary: React.FC = () => {
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
 
   const handleGenerateSummary = async () => {
     setLoading(true);
     setSummary('');
+    setStatusMessage('Generating your AI health summary...');
     const result = await getHealthSummary(mockHealthData);
     setSummary(result);
     setLoading(false);
+    setStatusMessage('Your health summary has been generated.');
   };
 
   return (
     <>
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {statusMessage}
+      </div>
       <div className="mb-6">
         <h1 className="text-3xl font-bold font-heading">Smart Health Summary</h1>
         <p className="text-muted-foreground">Get an AI-powered summary of your health profile, easy to read and share.</p>
@@ -78,8 +84,8 @@ const SmartSummary: React.FC = () => {
           {summary && !loading && (
              <div className="flex items-center gap-2">
                 <p className="text-sm text-muted-foreground">Was this summary helpful?</p>
-                <Button variant="outline" size="icon" className="h-8 w-8"><ThumbsUp className="h-4 w-4" /></Button>
-                <Button variant="outline" size="icon" className="h-8 w-8"><ThumbsDown className="h-4 w-4" /></Button>
+                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Helpful"><ThumbsUp className="h-4 w-4" /></Button>
+                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Not helpful"><ThumbsDown className="h-4 w-4" /></Button>
              </div>
           )}
         </CardFooter>

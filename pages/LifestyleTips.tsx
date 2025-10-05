@@ -12,7 +12,7 @@ interface Tip {
 
 const mockUserInfo = `
 - Age: 35
-- Conditions: Hypertension, Type 2 Diabetes
+- Conditions: Type 2 Diabetes
 - Goals: Lose weight, improve cardiovascular health
 `;
 

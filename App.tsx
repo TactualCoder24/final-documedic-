@@ -14,6 +14,8 @@ import NotFound from './pages/NotFound';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import { AnimatePresence } from 'framer-motion';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -41,6 +43,8 @@ const AppRoutes = () => {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/emergency/:id" element={<EmergencyInfo />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
         
         <Route
           path="/dashboard"

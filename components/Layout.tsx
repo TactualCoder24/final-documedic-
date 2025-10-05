@@ -3,17 +3,11 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from './ui/ThemeToggle';
 import Button from './ui/Button';
-import { Menu, X, FileText, Pill, BrainCircuit, Bell, Lightbulb, HeartPulse, LogOut } from './icons/Icons';
+import { Menu, X, LogOut } from './icons/Icons';
+import Logo from './icons/Logo';
 import { motion } from 'framer-motion';
-
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: HeartPulse },
-  { path: '/records', label: 'Medical Records', icon: FileText },
-  { path: '/medications', label: 'Medication Tracker', icon: Pill },
-  { path: '/summary', label: 'Smart Summary', icon: BrainCircuit },
-  { path: '/reminders', label: 'Reminders & Alerts', icon: Bell },
-  { path: '/tips', label: 'Lifestyle Tips', icon: Lightbulb },
-];
+import { navItems } from './navConfig';
+import Breadcrumbs from './ui/Breadcrumbs';
 
 const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, toggle }) => {
   const { user, signOut } = useAuth();
@@ -24,7 +18,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
     navigate('/login');
   };
 
-  const activeLinkClass = "bg-primary/10 text-primary dark:bg-primary/20 dark:text-sky-300";
+  const activeLinkClass = "bg-primary/10 text-primary dark:bg-primary/20";
   const inactiveLinkClass = "text-muted-foreground hover:text-foreground hover:bg-muted/50";
 
   return (
@@ -32,10 +26,10 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
       <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-card border-r border-border/60 transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="flex items-center justify-between h-16 px-4 border-b border-border/60">
            <NavLink to="/dashboard" className="flex items-center gap-2">
-            <HeartPulse className="h-8 w-8 text-primary" />
+            <Logo className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold font-heading">DocuMedic</span>
           </NavLink>
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={toggle}>
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={toggle} aria-label="Close menu">
             <X className="h-6 w-6" />
           </Button>
         </div>
@@ -46,7 +40,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
                 key={path}
                 to={path}
                 end={path === '/dashboard'}
-                className={({ isActive }) => `flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all ${isActive ? activeLinkClass : inactiveLinkClass}`}
+                className={({ isActive }) => `flex items-center px-3 py-2 text-sm font-semibold rounded-md transition-all ${isActive ? activeLinkClass : inactiveLinkClass}`}
                 onClick={() => { if (isOpen) toggle() }}
               >
                 <Icon className="mr-3 h-5 w-5" />
@@ -77,7 +71,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
 const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 bg-background/80 backdrop-blur-sm border-b border-border/60 md:justify-end">
-      <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar}>
+      <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar} aria-label="Open menu">
         <Menu className="h-6 w-6" />
       </Button>
       <div className="flex items-center gap-4">
@@ -92,11 +86,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-secondary/30 dark:bg-background">
       <Sidebar isOpen={sidebarOpen} toggle={toggleSidebar} />
       <div className="md:pl-64">
         <Header toggleSidebar={toggleSidebar} />
         <main className="p-4 sm:p-6 lg:p-8">
+            <Breadcrumbs />
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

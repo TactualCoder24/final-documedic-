@@ -1,7 +1,7 @@
 import React from 'react';
 
 const Card: React.FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
-  <div className={`rounded-xl border bg-card text-card-foreground shadow-lg dark:shadow-black/20 ${className}`}>
+  <div className={`rounded-lg border bg-card text-card-foreground shadow-sm dark:shadow-black/20 transition-all duration-300 ${className}`}>
     {children}
   </div>
 );
@@ -12,8 +12,8 @@ const CardHeader: React.FC<{ className?: string, children: React.ReactNode }> = 
   </div>
 );
 
-const CardTitle: React.FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
-  <h3 className={`font-heading text-xl font-semibold leading-none tracking-tight ${className}`}>
+const CardTitle: React.FC<{ className?: string, children: React.ReactNode, id?: string }> = ({ className, children, id }) => (
+  <h3 id={id} className={`font-heading text-xl font-semibold leading-none tracking-tight ${className}`}>
     {children}
   </h3>
 );

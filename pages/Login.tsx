@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Button from '../components/ui/Button';
-import { HeartPulse } from '../components/icons/Icons';
+import Logo from '../components/icons/Logo';
 import { motion } from 'framer-motion';
 
 const Login: React.FC = () => {
@@ -35,7 +35,7 @@ const Login: React.FC = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
              >
-                <HeartPulse className="w-24 h-24 mb-4 text-primary" />
+                <Logo className="w-24 h-24 mb-4 text-primary" />
                 <h1 className="text-4xl font-bold font-heading text-foreground">DocuMedic</h1>
                 <p className="mt-2 text-lg text-muted-foreground">Your Health. Smarter. Safer.</p>
             </motion.div>
@@ -69,7 +69,15 @@ const Login: React.FC = () => {
                 </div>
 
                 <p className="mt-8 px-8 text-xs text-center text-muted-foreground">
-                By clicking continue, you agree to our Terms of Service and Privacy Policy.
+                  By clicking continue, you agree to our{' '}
+                  <Link to="/terms-of-service" className="underline hover:text-primary transition-colors">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy-policy" className="underline hover:text-primary transition-colors">
+                    Privacy Policy
+                  </Link>
+                  .
                 </p>
            </motion.div>
         </div>
