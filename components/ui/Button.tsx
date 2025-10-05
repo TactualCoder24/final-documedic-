@@ -28,9 +28,9 @@ const Button: React.FC<ButtonProps> = ({ className, variant = 'default', size = 
   const buttonClasses = `${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`;
   
   if (asChild) {
-    // FIX: Add a generic type to `React.isValidElement`. This helps TypeScript correctly
-    // infer the type of `child.props`, resolving errors related to spreading an `unknown`
-    // type and accessing the `className` property.
+    // FIX: Add a generic type to `React.isValidElement` to help TypeScript correctly
+    // infer the type of `child.props`. This resolves errors where `child.props` was `unknown`,
+    // which prevents spreading props and accessing properties like `className`.
     if (React.isValidElement<any>(props.children)) {
       const child = props.children;
       // The `props` from destructuring includes `children` and any other props passed to Button.
