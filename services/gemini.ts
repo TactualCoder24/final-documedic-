@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { DocumentAnalysis } from "../types";
 
 // Per security best practices and platform requirements, the API key is
 // sourced exclusively from the `process.env.API_KEY` environment variable.
@@ -77,4 +78,89 @@ export const getLifestyleTips = async (userInfo: string): Promise<string> => {
         console.error("Error generating lifestyle tips:", error);
         return "[]"; // Return empty array string on error
     }
+};
+
+export const analyzeMedicalDocument = async (base64Image: string, mimeType: string): Promise<DocumentAnalysis | null> => {
+  if (!ai) return null;
+
+  try {
+    const imagePart = {
+      inlineData: { data: base64Image, mimeType },
+    };
+    const textPart = {
+      text: "Extract all text from this medical document. Be as accurate as possible.",
+    };
+
+    // Step 1: Extract text from image
+    const visionResponse = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: { parts: [imagePart, textPart] },
+    });
+    
+    const extractedText = visionResponse.text;
+    if (!extractedText || extractedText.trim().length < 10) { // Basic check for meaningful text
+      throw new Error("Could not extract sufficient text from the document.");
+    }
+
+    // Step 2: Analyze extracted text
+    const analysisResponse = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Analyze the following medical text. Provide a simple summary for the patient, define any complex medical terms, and extract key vital signs. The text: """${extractedText}"""`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            summary: { type: Type.STRING, description: 'A simple, easy-to-understand summary of the document for a patient.' },
+            definitions: {
+              type: Type.ARRAY,
+              description: 'An array of objects, where each object defines a complex medical term found in the text.',
+              items: {
+                type: Type.OBJECT,
+                properties: { term: { type: Type.STRING }, definition: { type: Type.STRING } },
+                required: ['term', 'definition']
+              }
+            },
+            vitals: {
+              type: Type.ARRAY,
+              description: 'An array of objects, where each object represents a key vital sign or lab result found in the text.',
+              items: {
+                type: Type.OBJECT,
+                properties: { name: { type: Type.STRING }, value: { type: Type.STRING }, unit: { type: Type.STRING } },
+                required: ['name', 'value']
+              }
+            }
+          },
+          required: ['summary']
+        }
+      }
+    });
+
+    const analysisJson = JSON.parse(analysisResponse.text);
+    return analysisJson as DocumentAnalysis;
+
+  } catch (error) {
+    console.error("Error analyzing medical document:", error);
+    return null;
+  }
+};
+
+export const checkMedicationInteractions = async (medications: string[]): Promise<string> => {
+  if (!ai) return "AI features are currently unavailable.";
+  if (medications.length < 2) return "No significant interactions found.";
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Analyze the following list of medications for potentially significant drug-drug interactions. List any major interactions clearly and concisely. If no significant interactions are found, respond ONLY with the text "No significant interactions found.". Medications: ${medications.join(', ')}`,
+      config: {
+        systemInstruction: "You are a pharmacology assistant providing information for educational purposes. You are not giving medical advice. Be direct and to the point.",
+        temperature: 0.2,
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Error checking medication interactions:", error);
+    return "Could not check for interactions at this time.";
+  }
 };

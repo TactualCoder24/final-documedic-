@@ -17,6 +17,7 @@ import { AnimatePresence } from 'framer-motion';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Settings from './pages/Settings';
+import AppointmentManager from './pages/AppointmentManager';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -93,6 +94,16 @@ const AppRoutes = () => {
             <ProtectedRoute>
               <Layout>
                 <Reminders />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/appointments"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AppointmentManager />
               </Layout>
             </ProtectedRoute>
           }

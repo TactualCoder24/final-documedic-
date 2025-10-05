@@ -1,4 +1,4 @@
-import { MedicalRecord, Medication, Reminder, Vital, Profile } from '../types';
+import { MedicalRecord, Medication, Reminder, Vital, Profile, Appointment, DocumentAnalysis } from '../types';
 
 const STORAGE_KEY = 'documedic-data';
 
@@ -6,6 +6,7 @@ interface UserData {
   records: MedicalRecord[];
   medications: Medication[];
   reminders: Reminder[];
+  appointments: Appointment[];
   vitals: Vital[];
   profile: Profile;
 }
@@ -28,6 +29,7 @@ const getUserData = (userId: string): UserData => {
     records: [],
     medications: [],
     reminders: [],
+    appointments: [],
     vitals: [],
     profile: {},
   };
@@ -48,6 +50,14 @@ const fileToDataUrl = (file: File): Promise<string> => {
   });
 };
 
+const getTodayDateString = (): string => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = (today.getMonth() + 1).toString().padStart(2, '0');
+  const day = today.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // --- Public API ---
 
 // Profile
@@ -62,7 +72,7 @@ export const saveProfile = (userId: string, profile: Profile): void => {
 export const getVitals = (userId: string): Vital[] => getUserData(userId).vitals;
 export const addVital = (userId: string, newVital: { sugar: number }): void => {
   const data = getUserData(userId);
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDateString();
   const existingIndex = data.vitals.findIndex(v => v.date === today);
   
   if (existingIndex > -1) {
@@ -77,15 +87,26 @@ export const addVital = (userId: string, newVital: { sugar: number }): void => {
 
 // Records
 export const getRecords = (userId: string): MedicalRecord[] => getUserData(userId).records;
-export const addRecord = async (userId: string, recordInfo: { name: string; type: MedicalRecord['type']; file: File }): Promise<void> => {
+export const addRecord = async (
+  userId: string, 
+  recordInfo: { 
+    name: string; 
+    type: MedicalRecord['type']; 
+    file: File 
+  },
+  analysis?: DocumentAnalysis
+): Promise<void> => {
   const data = getUserData(userId);
+  const recordDate = getTodayDateString(); // Capture date before async operations
   const fileUrl = await fileToDataUrl(recordInfo.file);
+  
   const newRecord: MedicalRecord = {
     id: Date.now().toString(),
     name: recordInfo.name,
-    type: recordInfo.type,
-    date: new Date().toISOString().split('T')[0],
+    type: analysis ? 'Analyzed Document' : recordInfo.type,
+    date: recordDate,
     fileUrl: fileUrl,
+    analysis: analysis,
   };
   data.records.unshift(newRecord); // Add to the top
   saveUserData(userId, data);
@@ -118,8 +139,10 @@ export const deleteMedication = (userId: string, medId: string): void => {
 // Reminders
 export const getReminders = (userId: string): Reminder[] => {
     const data = getUserData(userId);
-    // Sort reminders by time, soonest first
-    return data.reminders.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+    // Filter for valid reminders to prevent crashes from malformed data and create a new array.
+    const validReminders = (data.reminders || []).filter(r => r && r.time);
+    // Sort the valid reminders by time.
+    return validReminders.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
 };
 export const addReminder = (userId: string, reminder: Omit<Reminder, 'id'>): void => {
   const data = getUserData(userId);
@@ -130,6 +153,26 @@ export const addReminder = (userId: string, reminder: Omit<Reminder, 'id'>): voi
 export const deleteReminder = (userId: string, reminderId: string): void => {
   const data = getUserData(userId);
   data.reminders = data.reminders.filter(r => r.id !== reminderId);
+  saveUserData(userId, data);
+};
+
+// Appointments
+export const getAppointments = (userId: string): Appointment[] => {
+    const data = getUserData(userId);
+    // Filter for valid appointments to prevent crashes from malformed data and create a new array.
+    const validAppointments = (data.appointments || []).filter(a => a && a.dateTime);
+    // Sort the valid appointments by time.
+    return validAppointments.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+};
+export const addAppointment = (userId: string, appointment: Omit<Appointment, 'id'>): void => {
+  const data = getUserData(userId);
+  const newAppointment: Appointment = { ...appointment, id: Date.now().toString() };
+  data.appointments.push(newAppointment);
+  saveUserData(userId, data);
+};
+export const deleteAppointment = (userId: string, appointmentId: string): void => {
+  const data = getUserData(userId);
+  data.appointments = data.appointments.filter(a => a.id !== appointmentId);
   saveUserData(userId, data);
 };
 

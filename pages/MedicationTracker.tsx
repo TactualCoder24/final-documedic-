@@ -7,11 +7,16 @@ import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
 import { getMedications, addMedication, updateMedication, deleteMedication } from '../services/data';
+import { checkMedicationInteractions } from '../services/gemini';
 
 const MedicationTracker: React.FC = () => {
   const { user } = useAuth();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [interactionResult, setInteractionResult] = useState<string | null>(null);
+  const [stagedMed, setStagedMed] = useState<Omit<Medication, 'id' | 'takenToday'> | null>(null);
+
 
   const refreshMedications = React.useCallback(() => {
     if (user) {
@@ -40,7 +45,7 @@ const MedicationTracker: React.FC = () => {
     }
   };
 
-  const handleAddMedication = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddMedication = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
     const formData = new FormData(e.currentTarget);
@@ -49,12 +54,33 @@ const MedicationTracker: React.FC = () => {
       dosage: formData.get('med-dosage') as string,
       frequency: formData.get('med-frequency') as string,
     };
+
     if (newMed.name && newMed.dosage && newMed.frequency) {
-      addMedication(user.uid, newMed);
-      refreshMedications();
-      setIsModalOpen(false);
+        setStagedMed(newMed);
+        setIsModalOpen(false);
+        setIsChecking(true);
+        const currentMedNames = medications.map(m => m.name);
+        const result = await checkMedicationInteractions([...currentMedNames, newMed.name]);
+        
+        if (result.includes("No significant interactions found.")) {
+            addMedication(user.uid, newMed);
+            refreshMedications();
+            setStagedMed(null);
+        } else {
+            setInteractionResult(result);
+        }
+        setIsChecking(false);
     }
   };
+
+  const confirmAddMedication = () => {
+    if (user && stagedMed) {
+        addMedication(user.uid, stagedMed);
+        refreshMedications();
+    }
+    setInteractionResult(null);
+    setStagedMed(null);
+  }
   
   const handleExport = () => {
     if (medications.length === 0) {
@@ -180,9 +206,32 @@ const MedicationTracker: React.FC = () => {
             </div>
             <div className="flex justify-end gap-2 pt-2">
                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-               <Button type="submit">Add Medication</Button>
+               <Button type="submit">Check & Add</Button>
             </div>
          </form>
+      </Modal>
+
+      <Modal title="AI Interaction Check" isOpen={isChecking || !!interactionResult} onClose={() => { setInteractionResult(null); setStagedMed(null); }}>
+          {isChecking ? (
+            <div className="text-center p-8">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Checking for potential interactions...</p>
+            </div>
+          ) : interactionResult ? (
+             <div className="space-y-4">
+                <h3 className="font-bold text-lg text-destructive">Potential Interaction Warning</h3>
+                <div className="p-3 bg-destructive/10 rounded-md">
+                    <p className="text-sm">{interactionResult}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    <strong>Disclaimer:</strong> This is an AI-generated analysis and not a substitute for professional medical advice. Please consult your doctor or pharmacist about potential drug interactions.
+                </p>
+                 <div className="flex justify-end gap-2 pt-2">
+                    <Button variant="ghost" onClick={() => { setInteractionResult(null); setStagedMed(null); }}>Cancel</Button>
+                    <Button variant="destructive" onClick={confirmAddMedication}>Add Anyway</Button>
+                </div>
+             </div>
+          ) : null}
       </Modal>
     </>
   );
