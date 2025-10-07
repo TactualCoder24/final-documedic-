@@ -250,3 +250,25 @@ export const Sparkles: React.FC<IconProps> = (props) => (
         <path d="M17 19h4"/>
     </svg>
 );
+
+export const GlassWater: React.FC<IconProps> = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 2H9s-1 1-1 3v12c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V5c0-2-1-3-1-3z"></path>
+        <path d="M15 12H9"></path>
+    </svg>
+);
+
+export const Utensils: React.FC<IconProps> = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+        <path d="M7 2v20"></path>
+        <path d="M21 15V2v0a5 5 0 0 0-5 5v0a5 5 0 0 0 5 5Z"></path>
+    </svg>
+);
+
+export const SendHorizonal: React.FC<IconProps> = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m3 3 3 9-3 9 19-9Z"></path>
+        <path d="M6 12h16"></path>
+    </svg>
+);

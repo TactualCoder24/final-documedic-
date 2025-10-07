@@ -8,6 +8,7 @@ import Logo from '../components/icons/Logo';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
+import ShaktiAssistant from '../components/ShaktiAssistant';
 
 const features = [
   {
@@ -79,14 +80,28 @@ const securityFeatures = [
 ];
 
 const InteractiveDashboardMockup = () => {
-  const [activeFeature, setActiveFeature] = useState<string | null>(null);
+  const featuresList = ['vitals', 'sugar', 'meds'];
+  const [activeFeature, setActiveFeature] = useState<string>(featuresList[0]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveFeature(prevFeature => {
+        const currentIndex = featuresList.indexOf(prevFeature);
+        const nextIndex = (currentIndex + 1) % featuresList.length;
+        return featuresList[nextIndex];
+      });
+    }, 4000); // Cycle every 4 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   const featuresInfo: { [key: string]: { title: string; description: string; position: string } } = {
-    vitals: { title: 'Live Vitals Chart', description: 'Track your key metrics like blood sugar over time with clear, intuitive charts.', position: 'top-1/2 left-full ml-4' },
-    sugar: { title: 'Daily Log', description: 'Quickly log your daily numbers to maintain a consistent health record.', position: 'bottom-0 left-full ml-4' },
+    vitals: { title: 'Live Vitals Chart', description: 'Track your key metrics like blood sugar over time with clear, intuitive charts.', position: 'top-1/2 -translate-y-1/2 right-full mr-4' },
+    sugar: { title: 'Daily Log', description: 'Quickly log your daily numbers to maintain a consistent health record.', position: 'bottom-0 right-full mr-4' },
     meds: { title: 'Medication Reminders', description: 'Stay on track with timely reminders for your next dose.', position: 'bottom-0 right-full mr-4' },
   };
 
-  const feature = activeFeature ? featuresInfo[activeFeature] : null;
+  const feature = featuresInfo[activeFeature];
 
   return (
     <motion.div 
@@ -95,10 +110,10 @@ const InteractiveDashboardMockup = () => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.4 }}
     >
-      <div className="absolute -top-8 -right-8 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
-      <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute -top-8 -right-8 w-40 h-40 bg-primary/10 rounded-full blur-3xl dark:opacity-50"></div>
+      <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl dark:opacity-50"></div>
       
-      <div className="relative" onMouseLeave={() => setActiveFeature(null)}>
+      <div className="relative">
         <Card className="relative p-2 sm:p-4 shadow-2xl dark:shadow-black/40 border-border/60">
           <div className="flex items-center gap-1.5 mb-2" aria-hidden="true">
             <div className="w-3 h-3 rounded-full bg-red-400"></div>
@@ -112,16 +127,20 @@ const InteractiveDashboardMockup = () => {
             </div>
 
             <div 
-              className="w-full h-24 sm:h-32 rounded-md bg-muted/50 flex items-end p-2 gap-1.5 overflow-hidden relative cursor-pointer group focus:outline-none focus:ring-2 focus:ring-primary"
-              onMouseEnter={() => setActiveFeature('vitals')}
-              onFocus={() => setActiveFeature('vitals')}
-              onBlur={() => setActiveFeature(null)}
-              tabIndex={0}
-              role="button"
-              aria-label="Interactive vitals chart"
-              aria-describedby={activeFeature === 'vitals' ? 'feature-tooltip' : undefined}
+              className="w-full h-24 sm:h-32 rounded-md bg-muted/50 flex items-end p-2 gap-1.5 overflow-hidden relative"
+              aria-label="Animated vitals chart"
             >
-              <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity rounded-md border-2 border-dashed border-primary/50"></div>
+              <AnimatePresence>
+                {activeFeature === 'vitals' && (
+                  <motion.div
+                    className="absolute inset-0 bg-primary/10 rounded-md border-2 border-dashed border-primary/50"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                )}
+              </AnimatePresence>
               <div className="w-full h-1/2 bg-primary/40 rounded-t-sm"></div>
               <div className="w-full h-3/4 bg-primary/40 rounded-t-sm"></div>
               <div className="w-full h-1/3 bg-primary/40 rounded-t-sm"></div>
@@ -132,30 +151,38 @@ const InteractiveDashboardMockup = () => {
 
             <div className="grid grid-cols-2 gap-4 mt-4">
                 <div 
-                  className="bg-muted/50 p-2 rounded-md relative cursor-pointer group focus:outline-none focus:ring-2 focus:ring-primary"
-                  onMouseEnter={() => setActiveFeature('sugar')}
-                  onFocus={() => setActiveFeature('sugar')}
-                  onBlur={() => setActiveFeature(null)}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Interactive blood sugar log"
-                  aria-describedby={activeFeature === 'sugar' ? 'feature-tooltip' : undefined}
+                  className="bg-muted/50 p-2 rounded-md relative"
+                  aria-label="Animated blood sugar log"
                 >
-                    <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity rounded-md border-2 border-dashed border-primary/50"></div>
+                  <AnimatePresence>
+                    {activeFeature === 'sugar' && (
+                      <motion.div
+                        className="absolute inset-0 bg-primary/10 rounded-md border-2 border-dashed border-primary/50"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    )}
+                  </AnimatePresence>
                     <p className="text-xs text-muted-foreground">Blood Sugar</p>
                     <p className="font-bold text-sm sm:text-lg">108 <span className="text-xs font-normal">mg/dL</span></p>
                 </div>
                 <div 
-                  className="bg-muted/50 p-2 rounded-md relative cursor-pointer group focus:outline-none focus:ring-2 focus:ring-primary"
-                  onMouseEnter={() => setActiveFeature('meds')}
-                  onFocus={() => setActiveFeature('meds')}
-                  onBlur={() => setActiveFeature(null)}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Interactive medication reminder"
-                  aria-describedby={activeFeature === 'meds' ? 'feature-tooltip' : undefined}
+                  className="bg-muted/50 p-2 rounded-md relative"
+                  aria-label="Animated medication reminder"
                 >
-                    <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity rounded-md border-2 border-dashed border-primary/50"></div>
+                  <AnimatePresence>
+                    {activeFeature === 'meds' && (
+                      <motion.div
+                        className="absolute inset-0 bg-primary/10 rounded-md border-2 border-dashed border-primary/50"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    )}
+                  </AnimatePresence>
                     <p className="text-xs text-muted-foreground">Next Meds</p>
                     <p className="font-bold text-sm sm:text-lg">Metformin</p>
                 </div>
@@ -168,9 +195,10 @@ const InteractiveDashboardMockup = () => {
             <motion.div
               id="feature-tooltip"
               role="tooltip"
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              key={activeFeature}
+              initial={{ opacity: 0, scale: 0.9, x: 10 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.9, x: 10 }}
               transition={{ duration: 0.2 }}
               className={`absolute w-64 p-4 bg-card border border-border rounded-lg shadow-xl ${feature.position} z-20`}
             >
@@ -234,8 +262,26 @@ const Landing: React.FC = () => {
     }
   
   const GradientBackground: React.FC = () => (
-    <div className="absolute inset-0 -z-10 bg-gradient-to-br from-purple-50/50 via-white to-white dark:from-purple-900/10 dark:via-background dark:to-background animate-background-pan bg-[length:200%_200%]"></div>
+    <div className="absolute inset-0 -z-10 bg-gradient-to-br from-purple-50/50 via-white to-white dark:from-primary/10 dark:via-background dark:to-background animate-background-pan bg-[length:200%_200%]"></div>
   );
+
+  const howItWorksSteps = [
+    {
+      step: 1,
+      title: 'Sign Up Securely',
+      description: 'Create your account in seconds using secure Google authentication.',
+    },
+    {
+      step: 2,
+      title: 'Log Your Data',
+      description: 'Easily upload records, track medications, and update your vitals.',
+    },
+    {
+      step: 3,
+      title: 'Gain Insights',
+      description: 'Receive smart summaries, reminders, and tips to improve your health.',
+    },
+  ];
 
   return (
     <div className="bg-background text-foreground">
@@ -257,8 +303,8 @@ const Landing: React.FC = () => {
       <main>
         {/* Hero Section */}
         <section className="relative py-24 sm:py-32 overflow-hidden">
-         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob" style={{ animationDelay: '2s' }}></div>
-         <div className="absolute top-1/2 right-1/4 w-72 h-72 bg-pink-500/10 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob" style={{ animationDelay: '4s' }}></div>
+         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-50 dark:opacity-25 animate-blob" style={{ animationDelay: '2s' }}></div>
+         <div className="absolute top-1/2 right-1/4 w-72 h-72 bg-pink-500/10 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-50 dark:opacity-25 animate-blob" style={{ animationDelay: '4s' }}></div>
          <GradientBackground />
           <div className="container mx-auto px-4 relative z-10 grid md:grid-cols-2 gap-12 items-center">
              <div className="text-center md:text-left">
@@ -292,12 +338,7 @@ const Landing: React.FC = () => {
                 </motion.div>
              </div>
              <div className="hidden md:block">
-                <motion.div
-                  animate={{ y: ["0rem", "-1rem", "0rem"] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <InteractiveDashboardMockup />
-                </motion.div>
+                <InteractiveDashboardMockup />
              </div>
           </div>
         </section>
@@ -335,27 +376,24 @@ const Landing: React.FC = () => {
                 <h2 className="text-3xl font-bold font-heading">A Simpler Path to Health Management</h2>
                 <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">In three simple steps, take full control of your health journey.</p>
                 <div className="mt-16 grid gap-8 md:grid-cols-3">
-                    <div className="flex flex-col items-center">
-                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4">
-                           <span className="font-bold text-2xl font-heading">1</span>
-                        </div>
-                        <h3 className="text-lg font-semibold">Sign Up Securely</h3>
-                        <p className="mt-2 text-muted-foreground">Create your account in seconds using secure Google authentication.</p>
-                    </div>
-                     <div className="flex flex-col items-center">
-                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4">
-                           <span className="font-bold text-2xl font-heading">2</span>
-                        </div>
-                        <h3 className="text-lg font-semibold">Log Your Data</h3>
-                        <p className="mt-2 text-muted-foreground">Easily upload records, track medications, and update your vitals.</p>
-                    </div>
-                     <div className="flex flex-col items-center">
-                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4">
-                           <span className="font-bold text-2xl font-heading">3</span>
-                        </div>
-                        <h3 className="text-lg font-semibold">Gain Insights</h3>
-                        <p className="mt-2 text-muted-foreground">Receive smart summaries, reminders, and tips to improve your health.</p>
-                    </div>
+                    {howItWorksSteps.map((item, i) => (
+                        <motion.div
+                            key={item.step}
+                            className="h-full"
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.5 }}
+                            transition={{ duration: 0.5, delay: i * 0.1 }}
+                        >
+                            <Card className="p-8 text-center h-full bg-card/80 backdrop-blur-sm">
+                                <div className="flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4 mx-auto">
+                                    <span className="font-bold text-2xl font-heading">{item.step}</span>
+                                </div>
+                                <h3 className="text-lg font-semibold">{item.title}</h3>
+                                <p className="mt-2 text-muted-foreground">{item.description}</p>
+                            </Card>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
         </section>
@@ -505,6 +543,42 @@ const Landing: React.FC = () => {
                             </div>
                         </CardContent>
                     </Card>
+                    <Card className="bg-gradient-to-br from-card to-primary/5 h-full">
+                        <CardContent className="pt-6">
+                            <p className="text-muted-foreground">"Managing my diabetes used to be a chore, but DocuMedic's vitals tracking and reminders have made it so much easier. The AI tips are surprisingly helpful too."</p>
+                            <div className="mt-4 flex items-center gap-3">
+                                <img src="https://i.pravatar.cc/150?u=rajesh" alt="user" className="w-10 h-10 rounded-full"/>
+                                <div>
+                                    <p className="font-semibold">Rajesh P.</p>
+                                    <p className="text-sm text-muted-foreground">Retiree</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-card to-primary/5 h-full">
+                        <CardContent className="pt-6">
+                            <p className="text-muted-foreground">"I'm proactive about my health, and this app is perfect. Having a centralized place for all my check-ups and lab results helps me see the bigger picture of my wellness journey."</p>
+                            <div className="mt-4 flex items-center gap-3">
+                                <img src="https://i.pravatar.cc/150?u=priya" alt="user" className="w-10 h-10 rounded-full"/>
+                                <div>
+                                    <p className="font-semibold">Priya S.</p>
+                                    <p className="text-sm text-muted-foreground">Software Developer</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-card to-primary/5 h-full">
+                        <CardContent className="pt-6">
+                            <p className="text-muted-foreground">"The Smart Summary feature is incredible. It puts complex lab reports into simple terms I can actually understand. It's like having a doctor explain things to you anytime."</p>
+                            <div className="mt-4 flex items-center gap-3">
+                                <img src="https://i.pravatar.cc/150?u=sunita" alt="user" className="w-10 h-10 rounded-full"/>
+                                <div>
+                                    <p className="font-semibold">Sunita D.</p>
+                                    <p className="text-sm text-muted-foreground">Teacher</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </section>
@@ -520,13 +594,20 @@ const Landing: React.FC = () => {
                 </div>
                 <div className="mt-16 max-w-4xl mx-auto grid gap-8 md:grid-cols-3">
                     {securityFeatures.map((feature, i) => (
-                        <div key={feature.title} className="flex flex-col items-center text-center">
-                            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4">
+                        <motion.div
+                            key={feature.title}
+                            className="p-6 text-center bg-card border border-border/60 rounded-xl shadow-md h-full"
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.5 }}
+                            transition={{ duration: 0.5, delay: i * 0.1 }}
+                        >
+                            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4 mx-auto">
                                 <feature.icon className="h-8 w-8" />
                             </div>
                             <h3 className="text-lg font-semibold">{feature.title}</h3>
                             <p className="mt-2 text-muted-foreground">{feature.description}</p>
-                        </div>
+                        </motion.div>
                     ))}
                 </div>
             </div>
@@ -535,7 +616,7 @@ const Landing: React.FC = () => {
         {/* CTA Section */}
         <section className="py-20 sm:py-24">
             <div className="container mx-auto px-4">
-                <div className="relative rounded-2xl p-12 text-center overflow-hidden bg-gradient-to-r from-primary via-violet-600 to-purple-600">
+                <div className="relative rounded-2xl p-12 text-center overflow-hidden bg-gradient-to-r from-primary via-violet-600 to-purple-600 dark:from-primary/80 dark:via-violet-800 dark:to-purple-900">
                     <motion.div 
                         className="relative z-10"
                         initial={{ opacity: 0, y: 20 }}
@@ -543,12 +624,12 @@ const Landing: React.FC = () => {
                         viewport={{ once: true, amount: 0.5 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <h2 className="text-3xl font-bold font-heading text-primary-foreground">Ready to Take Control of Your Health?</h2>
-                        <p className="mt-4 max-w-2xl mx-auto text-primary-foreground/80">
+                        <h2 className="text-3xl font-bold font-heading text-white">Ready to Take Control of Your Health?</h2>
+                        <p className="mt-4 max-w-2xl mx-auto text-white/80">
                             Join thousands of others who are managing their health smarter and safer with DocuMedic. It's free to get started.
                         </p>
                         <div className="mt-8">
-                            <Button asChild size="lg" className="bg-gradient-to-r from-violet-500 to-purple-500 text-primary-foreground font-bold shadow-lg hover:from-violet-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-300">
+                            <Button asChild size="lg" variant="ghost" className="bg-white text-primary hover:bg-gray-200 dark:bg-white dark:text-violet-700 dark:hover:bg-gray-200 font-bold shadow-lg transform hover:scale-105 transition-all duration-300">
                                 <Link to="/login">Get Started for Free</Link>
                             </Button>
                         </div>
@@ -560,19 +641,19 @@ const Landing: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-primary-foreground/20 bg-gradient-to-r from-primary via-violet-600 to-purple-600 text-primary-foreground">
+      <footer className="py-12 bg-secondary border-t border-border">
         <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
             {/* Column 1: About */}
             <div className="space-y-4">
                 <div className="flex items-center gap-2 justify-center md:justify-start">
-                <Logo className="h-8 w-8" />
+                <Logo className="h-8 w-8 text-primary" />
                 <span className="text-xl font-bold font-heading">DocuMedic</span>
                 </div>
-                <p className="text-sm text-primary-foreground/80">
+                <p className="text-sm text-muted-foreground">
                 Empowering you to take control of your health journey with smart, secure, and simple tools.
                 </p>
-                <p className="text-sm font-semibold text-primary-foreground/90">
+                <p className="text-sm font-semibold text-foreground/90">
                 Made with ❤️ in Delhi for Bharat
                 </p>
             </div>
@@ -581,9 +662,9 @@ const Landing: React.FC = () => {
             <div>
                 <h3 className="font-bold font-heading mb-4">Quick Links</h3>
                 <ul className="space-y-2 text-sm">
-                    <li><Link to="/#features" onClick={(e) => handleSmoothScroll(e, 'features')} className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Features</Link></li>
-                    <li><Link to="/#personas" onClick={(e) => handleSmoothScroll(e, 'personas')} className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Who It's For</Link></li>
-                    <li><Link to="/#security" onClick={(e) => handleSmoothScroll(e, 'security')} className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Security</Link></li>
+                    <li><Link to="/#features" onClick={(e) => handleSmoothScroll(e, 'features')} className="text-muted-foreground hover:text-foreground transition-colors">Features</Link></li>
+                    <li><Link to="/#personas" onClick={(e) => handleSmoothScroll(e, 'personas')} className="text-muted-foreground hover:text-foreground transition-colors">Who It's For</Link></li>
+                    <li><Link to="/#security" onClick={(e) => handleSmoothScroll(e, 'security')} className="text-muted-foreground hover:text-foreground transition-colors">Security</Link></li>
                 </ul>
             </div>
 
@@ -591,16 +672,18 @@ const Landing: React.FC = () => {
             <div>
                 <h3 className="font-bold font-heading mb-4">Legal</h3>
                 <ul className="space-y-2 text-sm">
-                <li><Link to="/privacy-policy" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms-of-service" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Terms of Service</Link></li>
+                <li><Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-service" className="text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link></li>
                 </ul>
             </div>
             </div>
-            <div className="mt-8 pt-8 border-t border-primary-foreground/20 text-center text-sm text-primary-foreground/80">
+            <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
             <p>&copy; {new Date().getFullYear()} DocuMedic. All rights reserved.</p>
             </div>
         </div>
       </footer>
+
+      <ShaktiAssistant />
     </div>
   );
 };

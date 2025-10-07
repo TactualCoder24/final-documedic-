@@ -5,7 +5,7 @@ import { Lightbulb } from '../components/icons/Icons';
 import { getLifestyleTips } from '../services/gemini';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../hooks/useAuth';
-import { getProfile } from '../services/data';
+import { getProfile, getSymptoms, getFoodLogs } from '../services/data';
 
 interface Tip {
   title: string;
@@ -23,10 +23,17 @@ const LifestyleTips: React.FC = () => {
     setTips([]);
     try {
         const profile = getProfile(user.uid);
+        const symptoms = getSymptoms(user.uid);
+        const foodLogs = getFoodLogs(user.uid);
+        const recentSymptoms = symptoms.slice(0, 3).map(s => `${s.name} (severity ${s.severity}/10)`).join(', ') || 'None recently';
+        const recentMeals = foodLogs.slice(0, 3).map(f => `${f.mealType}: ${f.description}`).join('; ') || 'None recently';
+
         const userInfo = `
             - Age: ${profile.age || 'Not specified'}
             - Conditions: ${profile.conditions || 'Not specified'}
             - Goals: ${profile.goals || 'General wellness'}
+            - Recent Symptoms: ${recentSymptoms}
+            - Recent Meals: ${recentMeals}
         `;
         const result = await getLifestyleTips(userInfo);
         const parsedTips = JSON.parse(result);

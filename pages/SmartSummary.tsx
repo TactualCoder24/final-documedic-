@@ -5,7 +5,7 @@ import { BrainCircuit, ThumbsUp, ThumbsDown } from '../components/icons/Icons';
 import { getHealthSummary } from '../services/gemini';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../hooks/useAuth';
-import { getFullUserData } from '../services/data';
+import { getFullUserData, getWaterIntake } from '../services/data';
 
 const SmartSummary: React.FC = () => {
   const { user } = useAuth();
@@ -21,12 +21,18 @@ const SmartSummary: React.FC = () => {
     setStatusMessage('Compiling your data and generating AI health summary...');
 
     const userData = getFullUserData(user.uid);
+    const today = new Date().toISOString().split('T')[0];
+    const waterIntake = getWaterIntake(user.uid, today);
+    const waterGoal = userData.profile.waterGoal || 8;
     
     // Construct a detailed string of the user's health data for the AI.
     let healthDataString = `
 - Patient Profile: Age ${userData.profile.age || 'N/A'}, Conditions: ${userData.profile.conditions || 'None specified'}, Goals: ${userData.profile.goals || 'None specified'}, Target Blood Sugar: ${userData.profile.targetBloodSugar || 'N/A'}
-- Vitals: ${userData.vitals.length > 0 ? userData.vitals.map(v => `On ${v.date}, Blood Sugar was ${v.sugar} mg/dL`).join('; ') : 'No vitals logged.'}
+- Today's Water Intake: ${waterIntake} out of ${waterGoal} glasses.
+- Vitals: ${userData.vitals.length > 0 ? userData.vitals.slice(-7).map(v => `On ${v.date}, Blood Sugar was ${v.sugar} mg/dL`).join('; ') : 'No vitals logged.'}
 - Medications: ${userData.medications.length > 0 ? userData.medications.map(m => `${m.name} (${m.dosage}, ${m.frequency})`).join(', ') : 'No medications listed.'}
+- Recent Symptoms: ${userData.symptoms.length > 0 ? userData.symptoms.slice(0, 5).map(s => `${s.name} (Severity: ${s.severity}/10) on ${new Date(s.date).toLocaleDateString()}`).join('; ') : 'No symptoms logged.'}
+- Recent Meals: ${userData.foodLogs.length > 0 ? userData.foodLogs.slice(0, 3).map(f => `${f.mealType}: ${f.description}`).join('; ') : 'No meals logged recently.'}
 - Recent Records: ${userData.records.length > 0 ? userData.records.slice(0, 3).map(r => `${r.name} (${r.type} from ${r.date})`).join(', ') : 'No records available.'}
     `;
 

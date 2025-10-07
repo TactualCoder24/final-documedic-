@@ -36,6 +36,7 @@ export interface Medication {
   name: string;
   dosage: string;
   frequency: string;
+  times?: string[]; // e.g., ["08:00", "20:00"]
   takenToday: boolean;
 }
 
@@ -57,6 +58,23 @@ export interface Appointment {
   notes?: string;
 }
 
+// Defines the structure for a symptom log entry.
+export interface Symptom {
+  id: string;
+  date: string; // ISO string for datetime-local input
+  name: string;
+  severity: number; // 1-10
+  notes?: string;
+}
+
+// Defines the structure for a food log entry.
+export interface FoodLog {
+  id: string;
+  date: string; // ISO string for datetime
+  mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+  description: string;
+}
+
 
 // Defines the structure for a vital sign entry.
 export interface Vital {
@@ -73,4 +91,12 @@ export interface Profile {
   emergencyContactName?: string;
   emergencyContactPhone?: string;
   targetBloodSugar?: string;
+  waterGoal?: number; // in glasses
+}
+
+// Defines the structure for a chat message with the AI assistant.
+export interface ChatMessage {
+  id: string;
+  sender: 'user' | 'ai';
+  text: string;
 }

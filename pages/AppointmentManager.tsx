@@ -152,7 +152,7 @@ const AppointmentManager: React.FC = () => {
          <form className="space-y-4" onSubmit={handleAddAppointment}>
             <div>
               <label htmlFor="doctor-name" className="block text-sm font-medium text-foreground mb-1">Doctor's Name</label>
-              <Input id="doctor-name" name="doctor-name" placeholder="e.g., Dr. Smith" required />
+              <Input id="doctor-name" name="doctor-name" placeholder="e.g., Dr. Sharma" required />
             </div>
             <div>
               <label htmlFor="specialty" className="block text-sm font-medium text-foreground mb-1">Specialty</label>

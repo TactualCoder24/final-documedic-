@@ -1,4 +1,4 @@
-import { MedicalRecord, Medication, Reminder, Vital, Profile, Appointment, DocumentAnalysis } from '../types';
+import { MedicalRecord, Medication, Reminder, Vital, Profile, Appointment, DocumentAnalysis, Symptom, FoodLog } from '../types';
 
 const STORAGE_KEY = 'documedic-data';
 
@@ -7,8 +7,11 @@ interface UserData {
   medications: Medication[];
   reminders: Reminder[];
   appointments: Appointment[];
+  symptoms: Symptom[];
   vitals: Vital[];
   profile: Profile;
+  foodLogs: FoodLog[];
+  waterIntake: { [date: string]: number }; // Key is 'YYYY-MM-DD'
 }
 
 // --- Internal Helper Functions ---
@@ -30,8 +33,11 @@ const getUserData = (userId: string): UserData => {
     medications: [],
     reminders: [],
     appointments: [],
+    symptoms: [],
     vitals: [],
     profile: {},
+    foodLogs: [],
+    waterIntake: {},
   };
 };
 
@@ -174,6 +180,57 @@ export const deleteAppointment = (userId: string, appointmentId: string): void =
   const data = getUserData(userId);
   data.appointments = data.appointments.filter(a => a.id !== appointmentId);
   saveUserData(userId, data);
+};
+
+// Symptoms
+export const getSymptoms = (userId: string): Symptom[] => {
+    const data = getUserData(userId);
+    const validSymptoms = (data.symptoms || []).filter(s => s && s.date);
+    return validSymptoms.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
+export const addSymptom = (userId: string, symptom: Omit<Symptom, 'id'>): void => {
+  const data = getUserData(userId);
+  const newSymptom: Symptom = { ...symptom, id: Date.now().toString() };
+  data.symptoms.push(newSymptom);
+  saveUserData(userId, data);
+};
+export const deleteSymptom = (userId: string, symptomId: string): void => {
+  const data = getUserData(userId);
+  data.symptoms = data.symptoms.filter(s => s.id !== symptomId);
+  saveUserData(userId, data);
+};
+
+// Water Intake
+export const getWaterIntake = (userId: string, date: string): number => {
+    const data = getUserData(userId);
+    return data.waterIntake?.[date] || 0;
+};
+export const updateWaterIntake = (userId: string, date: string, change: number): void => {
+    const data = getUserData(userId);
+    if (!data.waterIntake) {
+        data.waterIntake = {};
+    }
+    const currentIntake = data.waterIntake[date] || 0;
+    data.waterIntake[date] = Math.max(0, currentIntake + change); // Ensure it doesn't go below 0
+    saveUserData(userId, data);
+};
+
+// Food Logs
+export const getFoodLogs = (userId: string): FoodLog[] => {
+    const data = getUserData(userId);
+    const validLogs = (data.foodLogs || []).filter(l => l && l.date);
+    return validLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
+export const addFoodLog = (userId: string, log: Omit<FoodLog, 'id'>): void => {
+    const data = getUserData(userId);
+    const newLog: FoodLog = { ...log, id: Date.now().toString() };
+    data.foodLogs.push(newLog);
+    saveUserData(userId, data);
+};
+export const deleteFoodLog = (userId: string, logId: string): void => {
+    const data = getUserData(userId);
+    data.foodLogs = data.foodLogs.filter(l => l.id !== logId);
+    saveUserData(userId, data);
 };
 
 // Full Data & Data Management

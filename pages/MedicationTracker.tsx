@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Pill, Plus, Trash2, Download } from '../components/icons/Icons';
+import { Pill, Plus, Trash2, Download, Bell } from '../components/icons/Icons';
 import { Medication } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
@@ -16,7 +16,70 @@ const MedicationTracker: React.FC = () => {
   const [isChecking, setIsChecking] = useState(false);
   const [interactionResult, setInteractionResult] = useState<string | null>(null);
   const [stagedMed, setStagedMed] = useState<Omit<Medication, 'id' | 'takenToday'> | null>(null);
+  
+  // State for modal's time inputs
+  const [times, setTimes] = useState<string[]>(['08:00']);
 
+  // State for notification permission
+  const [notificationPermission, setNotificationPermission] = useState('default');
+  // FIX: `setTimeout` in the browser returns a `number`, not a `NodeJS.Timeout` object.
+  const notificationTimeouts = useRef<number[]>([]);
+
+  useEffect(() => {
+    // Check for Notification API support and set initial permission status
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    } else {
+      setNotificationPermission('denied'); // Browser doesn't support notifications
+    }
+  }, []);
+  
+  // Effect for scheduling notifications
+  useEffect(() => {
+    // Clear any existing timeouts to prevent duplicates on re-render
+    notificationTimeouts.current.forEach(clearTimeout);
+    notificationTimeouts.current = [];
+
+    if (notificationPermission === 'granted') {
+      const now = new Date();
+      
+      medications.forEach(med => {
+        if (med.times && med.times.length > 0) {
+          med.times.forEach(time => {
+            const [hours, minutes] = time.split(':').map(Number);
+            const notificationTime = new Date();
+            notificationTime.setHours(hours, minutes, 0, 0);
+
+            // Schedule notification only if it's in the future for today
+            if (notificationTime > now) {
+              const timeout = notificationTime.getTime() - now.getTime();
+              const timeoutId = setTimeout(() => {
+                new Notification('Medication Reminder', {
+                  body: `It's time to take your ${med.name} (${med.dosage}).`,
+                  icon: '/vite.svg', // Using a default icon
+                  badge: '/vite.svg'
+                });
+              }, timeout);
+              notificationTimeouts.current.push(timeoutId);
+            }
+          });
+        }
+      });
+    }
+
+    // Cleanup function to clear timeouts when component unmounts
+    return () => {
+      notificationTimeouts.current.forEach(clearTimeout);
+    };
+  }, [medications, notificationPermission]);
+
+  const handleEnableNotifications = () => {
+    if ('Notification' in window) {
+      Notification.requestPermission().then(permission => {
+        setNotificationPermission(permission);
+      });
+    }
+  };
 
   const refreshMedications = React.useCallback(() => {
     if (user) {
@@ -53,6 +116,7 @@ const MedicationTracker: React.FC = () => {
       name: formData.get('med-name') as string,
       dosage: formData.get('med-dosage') as string,
       frequency: formData.get('med-frequency') as string,
+      times: times.filter(t => t), // Get times from state, remove empty
     };
 
     if (newMed.name && newMed.dosage && newMed.frequency) {
@@ -101,6 +165,25 @@ const MedicationTracker: React.FC = () => {
     document.body.removeChild(link);
   };
   
+  const handleTimeChange = (index: number, value: string) => {
+    const newTimes = [...times];
+    newTimes[index] = value;
+    setTimes(newTimes);
+  };
+
+  const addTime = () => {
+    setTimes([...times, '']);
+  };
+
+  const removeTime = (index: number) => {
+    setTimes(times.filter((_, i) => i !== index));
+  };
+  
+  const openAddModal = () => {
+    setTimes(['08:00']); // Reset to default when opening modal
+    setIsModalOpen(true);
+  };
+
   const takenCount = medications.filter(m => m.takenToday).length;
   const totalCount = medications.length;
   const percentage = totalCount > 0 ? (takenCount / totalCount) * 100 : 0;
@@ -116,13 +199,31 @@ const MedicationTracker: React.FC = () => {
             <Button onClick={handleExport} variant="outline" disabled={medications.length === 0}>
                 <Download className="mr-2 h-4 w-4" /> Export Data
             </Button>
-            <Button onClick={() => setIsModalOpen(true)}>
+            <Button onClick={openAddModal}>
               <Plus className="mr-2 h-4 w-4" /> Add Medication
             </Button>
         </div>
       </div>
       
       <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5"/>Notification Settings</CardTitle>
+            <CardDescription>Get browser alerts when it's time to take your medication. This requires the app to be open in a browser tab.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {notificationPermission === 'granted' && (
+              <p className="text-sm font-medium text-green-600 dark:text-green-400">Notifications are enabled.</p>
+            )}
+            {notificationPermission === 'default' && (
+              <Button onClick={handleEnableNotifications}>Enable Notifications</Button>
+            )}
+            {notificationPermission === 'denied' && (
+              <p className="text-sm font-medium text-destructive">Notifications are blocked. Please enable them in your browser settings to use this feature.</p>
+            )}
+          </CardContent>
+        </Card>
+
         <Card>
             <CardHeader>
                 <CardTitle>Today's Progress</CardTitle>
@@ -158,6 +259,14 @@ const MedicationTracker: React.FC = () => {
                     <div>
                       <p className="font-semibold">{med.name} <span className="text-sm font-normal text-muted-foreground">{med.dosage}</span></p>
                       <p className="text-sm text-muted-foreground">{med.frequency}</p>
+                      {med.times && med.times.length > 0 && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Bell className="h-3 w-3 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">
+                            {med.times.join(', ')}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -204,6 +313,33 @@ const MedicationTracker: React.FC = () => {
               <label htmlFor="med-frequency" className="block text-sm font-medium text-foreground mb-1">Frequency</label>
               <Input id="med-frequency" name="med-frequency" placeholder="e.g., Twice a day" required />
             </div>
+            
+            <div className="p-3 bg-secondary/50 rounded-md">
+              <label className="block text-sm font-medium text-foreground mb-2">Notification Times (Optional)</label>
+              {notificationPermission !== 'granted' ? (
+                <p className="text-xs text-muted-foreground">Enable notifications from the main page to receive alerts.</p>
+              ) : (
+                <>
+                  {times.map((time, index) => (
+                    <div key={index} className="flex items-center gap-2 mb-2">
+                      <Input
+                        type="time"
+                        value={time}
+                        onChange={(e) => handleTimeChange(index, e.target.value)}
+                        required
+                      />
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeTime(index)} aria-label="Remove time" className="h-9 w-9">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={addTime}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Time
+                  </Button>
+                </>
+              )}
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
                <Button type="submit">Check & Add</Button>

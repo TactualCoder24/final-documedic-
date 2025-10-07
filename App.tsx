@@ -18,6 +18,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Settings from './pages/Settings';
 import AppointmentManager from './pages/AppointmentManager';
+import SymptomLog from './pages/SymptomLog';
+import FoodJournal from './pages/FoodJournal';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -74,6 +76,26 @@ const AppRoutes = () => {
             <ProtectedRoute>
               <Layout>
                 <MedicationTracker />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/symptoms"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <SymptomLog />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/food-journal"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <FoodJournal />
               </Layout>
             </ProtectedRoute>
           }
