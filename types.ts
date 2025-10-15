@@ -100,3 +100,14 @@ export interface ChatMessage {
   sender: 'user' | 'ai';
   text: string;
 }
+
+// Defines the structure for a community post.
+export interface CommunityPost {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorPhotoURL: string | null;
+  timestamp: string; // ISO string
+}

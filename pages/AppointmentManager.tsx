@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { CalendarDays, Plus, Trash2 } from '../components/icons/Icons';
@@ -11,11 +11,15 @@ import { getAppointments, addAppointment, deleteAppointment } from '../services/
 const AppointmentManager: React.FC = () => {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const refreshAppointments = React.useCallback(() => {
+  const refreshAppointments = useCallback(async () => {
     if (user) {
-      setAppointments(getAppointments(user.uid));
+      setIsLoading(true);
+      const data = await getAppointments(user.uid);
+      setAppointments(data);
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -23,14 +27,14 @@ const AppointmentManager: React.FC = () => {
     refreshAppointments();
   }, [refreshAppointments]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (user) {
-      deleteAppointment(user.uid, id);
-      refreshAppointments();
+      await deleteAppointment(user.uid, id);
+      await refreshAppointments();
     }
   };
 
-  const handleAddAppointment = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddAppointment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
     const formData = new FormData(e.currentTarget);
@@ -42,15 +46,14 @@ const AppointmentManager: React.FC = () => {
         notes: formData.get('notes') as string,
     };
     if (newAppointment.doctorName && newAppointment.dateTime) {
-        addAppointment(user.uid, newAppointment);
-        refreshAppointments();
+        await addAppointment(user.uid, newAppointment);
+        await refreshAppointments();
         setIsModalOpen(false);
     }
   };
 
   const now = new Date();
   const upcomingAppointments = appointments.filter(a => new Date(a.dateTime) >= now);
-  // Sort past appointments with the most recent first for better UX.
   const pastAppointments = appointments
     .filter(a => new Date(a.dateTime) < now)
     .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
@@ -72,35 +75,38 @@ const AppointmentManager: React.FC = () => {
         <Card>
             <CardHeader>
             <CardTitle>Upcoming Appointments</CardTitle>
-            <CardDescription>You have {upcomingAppointments.length} upcoming appointments.</CardDescription>
+            {!isLoading && <CardDescription>You have {upcomingAppointments.length} upcoming appointments.</CardDescription>}
             </CardHeader>
             <CardContent>
             <div className="space-y-4">
-                {upcomingAppointments.map(app => (
-                <div key={app.id} className="flex items-start justify-between p-3 rounded-lg bg-secondary/50">
-                    <div className="flex items-start gap-4">
-                    <div className="mt-1">
-                        <CalendarDays className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                        <p className="font-semibold">{app.specialty} with {app.doctorName}</p>
-                        <p className="text-sm font-bold text-primary">{new Date(app.dateTime).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' })}</p>
-                        <p className="text-sm text-muted-foreground mt-1">Location: {app.location}</p>
-                        {app.notes && <p className="text-sm text-muted-foreground mt-1">Notes: {app.notes}</p>}
-                    </div>
-                    </div>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 text-muted-foreground hover:text-destructive flex-shrink-0" 
-                        onClick={() => handleDelete(app.id)}
-                        aria-label={`Delete appointment with ${app.doctorName}`}
-                    >
-                    <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-                ))}
-                {upcomingAppointments.length === 0 && (
+                {isLoading ? (
+                    <p className="text-muted-foreground text-center py-10">Loading appointments...</p>
+                ) : upcomingAppointments.length > 0 ? (
+                    upcomingAppointments.map(app => (
+                        <div key={app.id} className="flex items-start justify-between p-3 rounded-lg bg-secondary/50">
+                            <div className="flex items-start gap-4">
+                            <div className="mt-1">
+                                <CalendarDays className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <p className="font-semibold">{app.specialty} with {app.doctorName}</p>
+                                <p className="text-sm font-bold text-primary">{new Date(app.dateTime).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' })}</p>
+                                <p className="text-sm text-muted-foreground mt-1">Location: {app.location}</p>
+                                {app.notes && <p className="text-sm text-muted-foreground mt-1">Notes: {app.notes}</p>}
+                            </div>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-9 w-9 text-muted-foreground hover:text-destructive flex-shrink-0" 
+                                onClick={() => handleDelete(app.id)}
+                                aria-label={`Delete appointment with ${app.doctorName}`}
+                            >
+                            <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))
+                ) : (
                     <div className="text-center py-10">
                         <p className="text-muted-foreground">No upcoming appointments. Schedule one to get started.</p>
                     </div>
@@ -112,33 +118,36 @@ const AppointmentManager: React.FC = () => {
         <Card>
             <CardHeader>
             <CardTitle>Past Appointments</CardTitle>
-            <CardDescription>You have {pastAppointments.length} past appointments in your history.</CardDescription>
+            {!isLoading && <CardDescription>You have {pastAppointments.length} past appointments in your history.</CardDescription>}
             </CardHeader>
             <CardContent>
             <div className="space-y-4">
-                {pastAppointments.map(app => (
-                <div key={app.id} className="flex items-start justify-between p-3 rounded-lg bg-secondary/50 opacity-70">
-                    <div className="flex items-start gap-4">
-                    <div className="mt-1">
-                        <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                        <p className="font-semibold">{app.specialty} with {app.doctorName}</p>
-                        <p className="text-sm text-muted-foreground">{new Date(app.dateTime).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' })}</p>
-                    </div>
-                    </div>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 text-muted-foreground hover:text-destructive flex-shrink-0" 
-                        onClick={() => handleDelete(app.id)}
-                        aria-label={`Delete appointment with ${app.doctorName}`}
-                    >
-                    <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-                ))}
-                {pastAppointments.length === 0 && (
+                {isLoading ? (
+                    <p className="text-muted-foreground text-center py-10">Loading history...</p>
+                ) : pastAppointments.length > 0 ? (
+                    pastAppointments.map(app => (
+                        <div key={app.id} className="flex items-start justify-between p-3 rounded-lg bg-secondary/50 opacity-70">
+                            <div className="flex items-start gap-4">
+                            <div className="mt-1">
+                                <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <div>
+                                <p className="font-semibold">{app.specialty} with {app.doctorName}</p>
+                                <p className="text-sm text-muted-foreground">{new Date(app.dateTime).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' })}</p>
+                            </div>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-9 w-9 text-muted-foreground hover:text-destructive flex-shrink-0" 
+                                onClick={() => handleDelete(app.id)}
+                                aria-label={`Delete appointment with ${app.doctorName}`}
+                            >
+                            <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))
+                ) : (
                     <div className="text-center py-10">
                         <p className="text-muted-foreground">No appointment history yet.</p>
                     </div>

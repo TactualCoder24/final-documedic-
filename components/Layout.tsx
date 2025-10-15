@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from './ui/ThemeToggle';
 import Button from './ui/Button';
@@ -15,7 +15,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate('/');
   };
 
   const activeLinkClass = "bg-primary/10 text-primary dark:bg-primary/20";
@@ -81,7 +81,7 @@ const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
   );
 };
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -98,7 +98,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
             >
-             {children}
+             <Outlet />
             </motion.div>
         </main>
       </div>

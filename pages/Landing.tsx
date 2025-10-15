@@ -292,6 +292,9 @@ const Landing: React.FC = () => {
             <span className="text-xl font-bold font-heading">DocuMedic</span>
           </Link>
           <div className="flex items-center gap-2">
+             <Button variant="ghost" asChild>
+                <Link to="/community">Community</Link>
+            </Button>
             <ThemeToggle />
             <Button asChild>
                 <Link to="/login">Get Started</Link>

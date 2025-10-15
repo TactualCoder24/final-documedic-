@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Activity, Plus, Trash2 } from '../components/icons/Icons';
@@ -27,12 +27,16 @@ const SeverityIndicator: React.FC<{ level: number }> = ({ level }) => {
 const SymptomLog: React.FC = () => {
   const { user } = useAuth();
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [severity, setSeverity] = useState(5);
 
-  const refreshSymptoms = React.useCallback(() => {
+  const refreshSymptoms = useCallback(async () => {
     if (user) {
-      setSymptoms(getSymptoms(user.uid));
+      setIsLoading(true);
+      const data = await getSymptoms(user.uid);
+      setSymptoms(data);
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -40,14 +44,14 @@ const SymptomLog: React.FC = () => {
     refreshSymptoms();
   }, [refreshSymptoms]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (user) {
-      deleteSymptom(user.uid, id);
-      refreshSymptoms();
+      await deleteSymptom(user.uid, id);
+      await refreshSymptoms();
     }
   };
 
-  const handleAddSymptom = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddSymptom = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
     const formData = new FormData(e.currentTarget);
@@ -58,8 +62,8 @@ const SymptomLog: React.FC = () => {
         date: new Date().toISOString(),
     };
     if (newSymptom.name) {
-        addSymptom(user.uid, newSymptom);
-        refreshSymptoms();
+        await addSymptom(user.uid, newSymptom);
+        await refreshSymptoms();
         setIsModalOpen(false);
     }
   };
@@ -84,37 +88,40 @@ const SymptomLog: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>Your Logged Symptoms</CardTitle>
-          <CardDescription>You have logged {symptoms.length} symptoms.</CardDescription>
+          {!isLoading && <CardDescription>You have logged {symptoms.length} symptoms.</CardDescription>}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {symptoms.map(symptom => (
-              <div key={symptom.id} className="flex items-start justify-between p-3 rounded-lg bg-secondary/50">
-                <div className="flex items-start gap-4">
-                  <div className="mt-1">
-                    <Activity className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3">
-                        <p className="font-semibold">{symptom.name}</p>
-                        <SeverityIndicator level={symptom.severity} />
+            {isLoading ? (
+                <p className="text-muted-foreground text-center py-10">Loading symptoms...</p>
+            ) : symptoms.length > 0 ? (
+                symptoms.map(symptom => (
+                <div key={symptom.id} className="flex items-start justify-between p-3 rounded-lg bg-secondary/50">
+                    <div className="flex items-start gap-4">
+                    <div className="mt-1">
+                        <Activity className="h-5 w-5 text-primary" />
                     </div>
-                    <p className="text-sm text-muted-foreground">{new Date(symptom.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
-                    {symptom.notes && <p className="text-sm text-foreground mt-1 italic">"{symptom.notes}"</p>}
-                  </div>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <p className="font-semibold">{symptom.name}</p>
+                            <SeverityIndicator level={symptom.severity} />
+                        </div>
+                        <p className="text-sm text-muted-foreground">{new Date(symptom.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                        {symptom.notes && <p className="text-sm text-foreground mt-1 italic">"{symptom.notes}"</p>}
+                    </div>
+                    </div>
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 text-muted-foreground hover:text-destructive flex-shrink-0" 
+                        onClick={() => handleDelete(symptom.id)}
+                        aria-label={`Delete symptom log for ${symptom.name}`}
+                    >
+                    <Trash2 className="h-4 w-4" />
+                    </Button>
                 </div>
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-9 w-9 text-muted-foreground hover:text-destructive flex-shrink-0" 
-                    onClick={() => handleDelete(symptom.id)}
-                    aria-label={`Delete symptom log for ${symptom.name}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            {symptoms.length === 0 && (
+                ))
+            ) : (
                 <div className="text-center py-10">
                     <p className="text-muted-foreground">No symptoms logged yet. Track how you feel to get started.</p>
                 </div>

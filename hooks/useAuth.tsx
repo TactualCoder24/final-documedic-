@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User } from '../types';
 import { auth } from '../services/firebase';
@@ -7,6 +6,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signUpWithEmailPassword: (email: string, password: string) => Promise<void>;
+  signInWithEmailPassword: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -21,8 +22,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(firebaseUser);
       setLoading(false);
     });
-
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
@@ -30,24 +29,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await auth.signInWithGoogle();
-      // onAuthStateChanged will set the user and set loading to false on success.
     } catch (error) {
       console.error("Error signing in with Google", error);
-      // If sign-in fails, we need to ensure loading is set to false.
       setLoading(false);
+      throw error; // Re-throw to be caught in UI
+    }
+  }, []);
+  
+  const signUpWithEmailPassword = useCallback(async (email: string, password: string) => {
+    setLoading(true);
+    try {
+        await auth.signUpWithEmailPassword(email, password);
+    } catch (error) {
+        console.error("Error signing up with email", error);
+        setLoading(false);
+        throw error;
+    }
+  }, []);
+  
+  const signInWithEmailPassword = useCallback(async (email: string, password: string) => {
+    setLoading(true);
+    try {
+        await auth.signInWithEmailPassword(email, password);
+    } catch (error) {
+        console.error("Error signing in with email", error);
+        setLoading(false);
+        throw error;
     }
   }, []);
 
   const signOut = useCallback(async () => {
     try {
       await auth.signOut();
-      // onAuthStateChanged will set user to null.
     } catch (error) {
       console.error("Error signing out", error);
     }
   }, []);
 
-  const value = { user, loading, signInWithGoogle, signOut };
+  const value = { user, loading, signInWithGoogle, signUpWithEmailPassword, signInWithEmailPassword, signOut };
 
   return (
     <AuthContext.Provider value={value}>

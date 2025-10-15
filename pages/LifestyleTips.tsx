@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Lightbulb } from '../components/icons/Icons';
@@ -17,14 +17,14 @@ const LifestyleTips: React.FC = () => {
   const [tips, setTips] = useState<Tip[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchTips = React.useCallback(async () => {
+  const fetchTips = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setTips([]);
     try {
-        const profile = getProfile(user.uid);
-        const symptoms = getSymptoms(user.uid);
-        const foodLogs = getFoodLogs(user.uid);
+        const profile = await getProfile(user.uid);
+        const symptoms = await getSymptoms(user.uid);
+        const foodLogs = await getFoodLogs(user.uid);
         const recentSymptoms = symptoms.slice(0, 3).map(s => `${s.name} (severity ${s.severity}/10)`).join(', ') || 'None recently';
         const recentMeals = foodLogs.slice(0, 3).map(f => `${f.mealType}: ${f.description}`).join('; ') || 'None recently';
 

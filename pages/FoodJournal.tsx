@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Utensils, Plus, Trash2 } from '../components/icons/Icons';
 import { FoodLog } from '../types';
@@ -11,11 +11,15 @@ import { getFoodLogs, addFoodLog, deleteFoodLog } from '../services/data';
 const FoodJournal: React.FC = () => {
   const { user } = useAuth();
   const [logs, setLogs] = useState<FoodLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const refreshLogs = React.useCallback(() => {
+  const refreshLogs = useCallback(async () => {
     if (user) {
-      setLogs(getFoodLogs(user.uid));
+      setIsLoading(true);
+      const data = await getFoodLogs(user.uid);
+      setLogs(data);
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -23,14 +27,14 @@ const FoodJournal: React.FC = () => {
     refreshLogs();
   }, [refreshLogs]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (user) {
-      deleteFoodLog(user.uid, id);
-      refreshLogs();
+      await deleteFoodLog(user.uid, id);
+      await refreshLogs();
     }
   };
 
-  const handleAddLog = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddLog = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
     const formData = new FormData(e.currentTarget);
@@ -40,8 +44,8 @@ const FoodJournal: React.FC = () => {
         date: new Date().toISOString(),
     };
     if (newLog.mealType && newLog.description) {
-        addFoodLog(user.uid, newLog);
-        refreshLogs();
+        await addFoodLog(user.uid, newLog);
+        await refreshLogs();
         setIsModalOpen(false);
     }
   };
@@ -70,7 +74,13 @@ const FoodJournal: React.FC = () => {
       </div>
 
       <div className="space-y-8">
-        {Object.keys(groupedLogs).length > 0 ? (
+        {isLoading ? (
+            <Card>
+                <CardContent className="pt-6 text-center py-20">
+                    <p className="text-muted-foreground">Loading your food journal...</p>
+                </CardContent>
+            </Card>
+        ) : Object.keys(groupedLogs).length > 0 ? (
           Object.entries(groupedLogs).map(([date, dateLogs]) => (
             <Card key={date}>
               <CardHeader>
@@ -78,7 +88,6 @@ const FoodJournal: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* FIX: Cast `dateLogs` to `FoodLog[]` to resolve a TypeScript error where its type was inferred as `unknown` after using `Object.entries`. */}
                   {(dateLogs as FoodLog[]).map(log => (
                     <div key={log.id} className="flex items-start justify-between p-3 rounded-lg bg-secondary/50">
                       <div className="flex items-start gap-4">

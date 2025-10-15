@@ -13,9 +13,9 @@ const Settings: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!user) return;
-    const userData = getFullUserData(user.uid);
+    const userData = await getFullUserData(user.uid);
     const jsonString = JSON.stringify(userData, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -37,10 +37,10 @@ const Settings: React.FC = () => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const result = e.target?.result;
         if (typeof result === 'string') {
-          const success = importUserData(user.uid, result);
+          const success = await importUserData(user.uid, result);
           if (success) {
             alert('Data imported successfully! The page will now reload.');
             window.location.reload();
@@ -53,9 +53,9 @@ const Settings: React.FC = () => {
     }
   };
   
-  const handleDeleteData = () => {
+  const handleDeleteData = async () => {
     if (!user) return;
-    deleteUserData(user.uid);
+    await deleteUserData(user.uid);
     alert('All your data has been deleted.');
     // Sign out and navigate to login as the user's state is now gone.
     signOut().then(() => {
@@ -75,7 +75,7 @@ const Settings: React.FC = () => {
           <CardHeader>
             <CardTitle>Data Management</CardTitle>
             <CardDescription>
-              Your data is stored locally in this browser. You can export it for backup or import it to another device.
+              Your data is stored in the cloud. You can export it for backup or import it to overwrite your current data.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid sm:grid-cols-2 gap-4">

@@ -20,9 +20,9 @@ const SmartSummary: React.FC = () => {
     setSummary('');
     setStatusMessage('Compiling your data and generating AI health summary...');
 
-    const userData = getFullUserData(user.uid);
+    const userData = await getFullUserData(user.uid);
     const today = new Date().toISOString().split('T')[0];
-    const waterIntake = getWaterIntake(user.uid, today);
+    const waterIntake = await getWaterIntake(user.uid, today);
     const waterGoal = userData.profile.waterGoal || 8;
     
     // Construct a detailed string of the user's health data for the AI.

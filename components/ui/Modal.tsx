@@ -35,7 +35,7 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           onClick={onClose}
         >
           <motion.div
@@ -49,14 +49,14 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             aria-modal="true"
             aria-labelledby="modal-title"
           >
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="max-h-[90vh] flex flex-col">
+                <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
                     <CardTitle id="modal-title">{title}</CardTitle>
                     <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8" aria-label="Close dialog">
                         <X className="h-4 w-4" />
                     </Button>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="overflow-y-auto">
                     {children}
                 </CardContent>
             </Card>

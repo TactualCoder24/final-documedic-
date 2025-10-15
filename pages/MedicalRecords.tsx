@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { UploadCloud, FileText, Trash2, Download, Sparkles } from '../components/icons/Icons';
@@ -21,6 +21,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 const MedicalRecords: React.FC = () => {
   const { user } = useAuth();
   const [records, setRecords] = useState<MedicalRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<DocumentAnalysis | null>(null);
@@ -28,9 +29,12 @@ const MedicalRecords: React.FC = () => {
   const [selectedDocType, setSelectedDocType] = useState<MedicalRecord['type']>('Lab Report');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const refreshRecords = React.useCallback(() => {
+  const refreshRecords = useCallback(async () => {
     if (user) {
-      setRecords(getRecords(user.uid));
+      setIsLoading(true);
+      const data = await getRecords(user.uid);
+      setRecords(data);
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -57,10 +61,10 @@ const MedicalRecords: React.FC = () => {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (user) {
-      deleteRecord(user.uid, id);
-      refreshRecords();
+      await deleteRecord(user.uid, id);
+      await refreshRecords();
     }
   };
 
@@ -97,11 +101,11 @@ const MedicalRecords: React.FC = () => {
            setAnalysisError('An error occurred during analysis. The document has been saved without a summary.');
         } finally {
           setIsAnalyzing(false);
-          refreshRecords();
+          await refreshRecords();
         }
       } else {
         await addRecord(user.uid, { name, type, file });
-        refreshRecords();
+        await refreshRecords();
         handleModalClose();
       }
     }
@@ -152,41 +156,44 @@ const MedicalRecords: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>Your Documents</CardTitle>
-          <CardDescription>You have {records.length} documents stored securely.</CardDescription>
+          {!isLoading && <CardDescription>You have {records.length} documents stored securely.</CardDescription>}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {records.map(record => (
-              <div key={record.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
-                <div className="flex items-center gap-4">
-                  <FileText className="h-6 w-6 text-primary" />
-                  <div>
-                    <p className="font-semibold">{record.name}</p>
-                    <p className="text-sm text-muted-foreground">{record.type} - {new Date(record.date).toLocaleDateString()}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {record.analysis && (
-                    <Button variant="outline" size="sm" onClick={() => setAnalysisResult(record.analysis!)}>
-                        <Sparkles className="mr-2 h-4 w-4" /> Analyze
+            {isLoading ? (
+                <p className="text-muted-foreground text-center py-10">Loading records...</p>
+            ) : records.length > 0 ? (
+                records.map(record => (
+                <div key={record.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
+                    <div className="flex items-center gap-4">
+                    <FileText className="h-6 w-6 text-primary" />
+                    <div>
+                        <p className="font-semibold">{record.name}</p>
+                        <p className="text-sm text-muted-foreground">{record.type} - {new Date(record.date).toLocaleDateString()}</p>
+                    </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                    {record.analysis && (
+                        <Button variant="outline" size="sm" onClick={() => setAnalysisResult(record.analysis!)}>
+                            <Sparkles className="mr-2 h-4 w-4" /> Analyze
+                        </Button>
+                    )}
+                    <Button variant="outline" size="sm" asChild>
+                        <a href={record.fileUrl} target="_blank" rel="noopener noreferrer" download={record.name}>View</a>
                     </Button>
-                  )}
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={record.fileUrl} target="_blank" rel="noopener noreferrer" download={record.name}>View</a>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-9 w-9 text-muted-foreground hover:text-destructive" 
-                    onClick={() => handleDelete(record.id)}
-                    aria-label={`Delete record for ${record.name}`}
-                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 text-muted-foreground hover:text-destructive" 
+                        onClick={() => handleDelete(record.id)}
+                        aria-label={`Delete record for ${record.name}`}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                    </div>
                 </div>
-              </div>
-            ))}
-             {records.length === 0 && (
+                ))
+            ) : (
                 <div className="text-center py-10">
                     <p className="text-muted-foreground">No records found. Upload your first document to get started.</p>
                 </div>

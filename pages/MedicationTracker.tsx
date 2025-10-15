@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Pill, Plus, Trash2, Download, Bell } from '../components/icons/Icons';
@@ -12,31 +12,25 @@ import { checkMedicationInteractions } from '../services/gemini';
 const MedicationTracker: React.FC = () => {
   const { user } = useAuth();
   const [medications, setMedications] = useState<Medication[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [interactionResult, setInteractionResult] = useState<string | null>(null);
   const [stagedMed, setStagedMed] = useState<Omit<Medication, 'id' | 'takenToday'> | null>(null);
   
-  // State for modal's time inputs
   const [times, setTimes] = useState<string[]>(['08:00']);
-
-  // State for notification permission
   const [notificationPermission, setNotificationPermission] = useState('default');
-  // FIX: `setTimeout` in the browser returns a `number`, not a `NodeJS.Timeout` object.
   const notificationTimeouts = useRef<number[]>([]);
 
   useEffect(() => {
-    // Check for Notification API support and set initial permission status
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
     } else {
-      setNotificationPermission('denied'); // Browser doesn't support notifications
+      setNotificationPermission('denied');
     }
   }, []);
   
-  // Effect for scheduling notifications
   useEffect(() => {
-    // Clear any existing timeouts to prevent duplicates on re-render
     notificationTimeouts.current.forEach(clearTimeout);
     notificationTimeouts.current = [];
 
@@ -50,13 +44,12 @@ const MedicationTracker: React.FC = () => {
             const notificationTime = new Date();
             notificationTime.setHours(hours, minutes, 0, 0);
 
-            // Schedule notification only if it's in the future for today
             if (notificationTime > now) {
               const timeout = notificationTime.getTime() - now.getTime();
               const timeoutId = setTimeout(() => {
                 new Notification('Medication Reminder', {
                   body: `It's time to take your ${med.name} (${med.dosage}).`,
-                  icon: '/vite.svg', // Using a default icon
+                  icon: '/vite.svg',
                   badge: '/vite.svg'
                 });
               }, timeout);
@@ -67,7 +60,6 @@ const MedicationTracker: React.FC = () => {
       });
     }
 
-    // Cleanup function to clear timeouts when component unmounts
     return () => {
       notificationTimeouts.current.forEach(clearTimeout);
     };
@@ -81,9 +73,12 @@ const MedicationTracker: React.FC = () => {
     }
   };
 
-  const refreshMedications = React.useCallback(() => {
+  const refreshMedications = useCallback(async () => {
     if (user) {
-      setMedications(getMedications(user.uid));
+      setIsLoading(true);
+      const data = await getMedications(user.uid);
+      setMedications(data);
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -91,20 +86,20 @@ const MedicationTracker: React.FC = () => {
     refreshMedications();
   }, [refreshMedications]);
 
-  const toggleTaken = (id: string) => {
+  const toggleTaken = async (id: string) => {
     if (user) {
       const medToUpdate = medications.find(m => m.id === id);
       if (medToUpdate) {
-        updateMedication(user.uid, { ...medToUpdate, takenToday: !medToUpdate.takenToday });
-        refreshMedications();
+        await updateMedication(user.uid, { ...medToUpdate, takenToday: !medToUpdate.takenToday });
+        await refreshMedications();
       }
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (user) {
-      deleteMedication(user.uid, id);
-      refreshMedications();
+      await deleteMedication(user.uid, id);
+      await refreshMedications();
     }
   };
 
@@ -116,7 +111,7 @@ const MedicationTracker: React.FC = () => {
       name: formData.get('med-name') as string,
       dosage: formData.get('med-dosage') as string,
       frequency: formData.get('med-frequency') as string,
-      times: times.filter(t => t), // Get times from state, remove empty
+      times: times.filter(t => t),
     };
 
     if (newMed.name && newMed.dosage && newMed.frequency) {
@@ -127,8 +122,8 @@ const MedicationTracker: React.FC = () => {
         const result = await checkMedicationInteractions([...currentMedNames, newMed.name]);
         
         if (result.includes("No significant interactions found.")) {
-            addMedication(user.uid, newMed);
-            refreshMedications();
+            await addMedication(user.uid, newMed);
+            await refreshMedications();
             setStagedMed(null);
         } else {
             setInteractionResult(result);
@@ -137,10 +132,10 @@ const MedicationTracker: React.FC = () => {
     }
   };
 
-  const confirmAddMedication = () => {
+  const confirmAddMedication = async () => {
     if (user && stagedMed) {
-        addMedication(user.uid, stagedMed);
-        refreshMedications();
+        await addMedication(user.uid, stagedMed);
+        await refreshMedications();
     }
     setInteractionResult(null);
     setStagedMed(null);
@@ -180,7 +175,7 @@ const MedicationTracker: React.FC = () => {
   };
   
   const openAddModal = () => {
-    setTimes(['08:00']); // Reset to default when opening modal
+    setTimes(['08:00']);
     setIsModalOpen(true);
   };
 
@@ -252,48 +247,51 @@ const MedicationTracker: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {medications.map(med => (
-                <div key={med.id} className={`flex items-center justify-between p-3 rounded-lg transition-colors ${med.takenToday ? 'bg-green-500/10' : 'bg-secondary/50'}`}>
-                  <div className="flex items-center gap-4">
-                    <Pill className={`h-6 w-6 ${med.takenToday ? 'text-green-500' : 'text-primary'}`} />
-                    <div>
-                      <p className="font-semibold">{med.name} <span className="text-sm font-normal text-muted-foreground">{med.dosage}</span></p>
-                      <p className="text-sm text-muted-foreground">{med.frequency}</p>
-                      {med.times && med.times.length > 0 && (
-                        <div className="flex items-center gap-2 mt-1">
-                          <Bell className="h-3 w-3 text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground">
-                            {med.times.join(', ')}
-                          </p>
-                        </div>
-                      )}
+              {isLoading ? (
+                  <p className="text-muted-foreground text-center py-10">Loading medications...</p>
+              ) : medications.length > 0 ? (
+                medications.map(med => (
+                  <div key={med.id} className={`flex items-center justify-between p-3 rounded-lg transition-colors ${med.takenToday ? 'bg-green-500/10' : 'bg-secondary/50'}`}>
+                    <div className="flex items-center gap-4">
+                      <Pill className={`h-6 w-6 ${med.takenToday ? 'text-green-500' : 'text-primary'}`} />
+                      <div>
+                        <p className="font-semibold">{med.name} <span className="text-sm font-normal text-muted-foreground">{med.dosage}</span></p>
+                        <p className="text-sm text-muted-foreground">{med.frequency}</p>
+                        {med.times && med.times.length > 0 && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <Bell className="h-3 w-3 text-muted-foreground" />
+                            <p className="text-xs text-muted-foreground">
+                              {med.times.join(', ')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant={med.takenToday ? 'outline' : 'default'}
+                        size="sm"
+                        onClick={() => toggleTaken(med.id)}
+                      >
+                        {med.takenToday ? 'Mark as Not Taken' : 'Mark as Taken'}
+                      </Button>
+                      <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-9 w-9 text-muted-foreground hover:text-destructive" 
+                          onClick={() => handleDelete(med.id)}
+                          aria-label={`Delete medication for ${med.name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant={med.takenToday ? 'outline' : 'default'}
-                      size="sm"
-                      onClick={() => toggleTaken(med.id)}
-                    >
-                      {med.takenToday ? 'Mark as Not Taken' : 'Mark as Taken'}
-                    </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 text-muted-foreground hover:text-destructive" 
-                        onClick={() => handleDelete(med.id)}
-                        aria-label={`Delete medication for ${med.name}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {medications.length === 0 && (
+                ))
+              ) : (
                 <div className="text-center py-10">
                     <p className="text-muted-foreground">No medications added yet. Click 'Add Medication' to start.</p>
                 </div>
-            )}
+              )}
             </div>
           </CardContent>
         </Card>

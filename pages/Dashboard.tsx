@@ -31,6 +31,7 @@ const Dashboard: React.FC = () => {
   const [foodLogs, setFoodLogs] = React.useState<FoodLog[]>([]);
   const [waterIntake, setWaterIntake] = React.useState(0);
   const [profile, setProfile] = React.useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
   
   const [isVitalsModalOpen, setIsVitalsModalOpen] = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
@@ -38,21 +39,34 @@ const Dashboard: React.FC = () => {
 
   const todayStr = getTodayDateString();
 
-  const refreshData = React.useCallback(() => {
+  const refreshData = React.useCallback(async () => {
     if (user) {
-      setVitals(getVitals(user.uid));
-      setRecords(getRecords(user.uid));
-      setMedications(getMedications(user.uid));
-      setReminders(getReminders(user.uid));
-      setSymptoms(getSymptoms(user.uid));
-      setFoodLogs(getFoodLogs(user.uid));
-      setWaterIntake(getWaterIntake(user.uid, todayStr));
-      const userProfile = getProfile(user.uid);
-      setProfile(userProfile);
+      setIsLoading(true);
+      const [vitalsData, recordsData, medsData, remindersData, symptomsData, foodLogsData, waterIntakeData, profileData] = await Promise.all([
+        getVitals(user.uid),
+        getRecords(user.uid),
+        getMedications(user.uid),
+        getReminders(user.uid),
+        getSymptoms(user.uid),
+        getFoodLogs(user.uid),
+        getWaterIntake(user.uid, todayStr),
+        getProfile(user.uid)
+      ]);
       
-      if (!userProfile.age && !userProfile.conditions && !userProfile.goals) {
+      setVitals(vitalsData);
+      setRecords(recordsData);
+      setMedications(medsData);
+      setReminders(remindersData);
+      setSymptoms(symptomsData);
+      setFoodLogs(foodLogsData);
+      setWaterIntake(waterIntakeData);
+      setProfile(profileData);
+
+      const profileUpdateSkipped = sessionStorage.getItem('profileUpdateSkipped');
+      if (!profileUpdateSkipped && profileData && !profileData.age && !profileData.conditions && !profileData.goals) {
         setIsProfileModalOpen(true);
       }
+      setIsLoading(false);
     }
   }, [user, todayStr]);
 
@@ -60,21 +74,21 @@ const Dashboard: React.FC = () => {
     refreshData();
   }, [refreshData]);
 
-  const handleUpdateVitals = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdateVitals = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
     const formData = new FormData(e.currentTarget);
     const sugar = Number(formData.get('sugar'));
 
     if (sugar > 0) {
-      addVital(user.uid, { sugar });
-      setVitals(getVitals(user.uid));
+      await addVital(user.uid, { sugar });
+      setVitals(await getVitals(user.uid));
       setIsVitalsModalOpen(false);
       e.currentTarget.reset();
     }
   };
 
-  const handleSaveProfile = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
     const formData = new FormData(e.currentTarget);
@@ -88,8 +102,13 @@ const Dashboard: React.FC = () => {
       targetBloodSugar: formData.get('targetBloodSugar') as string,
       waterGoal: Number(formData.get('waterGoal')) || 8,
     };
-    saveProfile(user.uid, newProfile);
+    await saveProfile(user.uid, newProfile);
     setProfile(newProfile);
+    setIsProfileModalOpen(false);
+  };
+
+  const handleCloseProfileModal = () => {
+    sessionStorage.setItem('profileUpdateSkipped', 'true');
     setIsProfileModalOpen(false);
   };
   
@@ -103,10 +122,10 @@ const Dashboard: React.FC = () => {
     });
   };
   
-  const handleWaterChange = (amount: number) => {
+  const handleWaterChange = async (amount: number) => {
     if (!user) return;
-    updateWaterIntake(user.uid, todayStr, amount);
-    setWaterIntake(getWaterIntake(user.uid, todayStr));
+    await updateWaterIntake(user.uid, todayStr, amount);
+    setWaterIntake(await getWaterIntake(user.uid, todayStr));
   };
 
   const searchableData = [
@@ -374,7 +393,6 @@ const Dashboard: React.FC = () => {
                                         {info.title}
                                     </h3>
                                     <div className="space-y-2">
-                                        {/* FIX: Cast `items` to `any[]` to resolve TypeScript error `Property 'map' does not exist on type 'unknown'`. This is necessary because `Object.entries` does not preserve strong value types. */}
                                         {(items as any[]).map(item => (
                                             <Link to={item.path} key={item.id} className="block p-3 rounded-md hover:bg-secondary">
                                                 <p className="font-medium">{item.name}</p>
@@ -395,6 +413,10 @@ const Dashboard: React.FC = () => {
                   )}
               </CardContent>
           </Card>
+      ) : isLoading ? (
+        <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
       ) : (
           <DashboardContent />
       )}
@@ -413,7 +435,7 @@ const Dashboard: React.FC = () => {
          </form>
       </Modal>
 
-      <Modal title="Update Your Profile" isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)}>
+      <Modal title="Update Your Profile" isOpen={isProfileModalOpen} onClose={handleCloseProfileModal}>
          <form className="space-y-4" onSubmit={handleSaveProfile}>
             <p className="text-sm text-muted-foreground">To help us personalize your experience, please provide some basic information. This will be used for features like your Emergency Profile and AI Tips.</p>
              <div>
@@ -449,7 +471,7 @@ const Dashboard: React.FC = () => {
               <Input id="contactPhone" name="contactPhone" type="tel" placeholder="e.g., 555-123-4567" defaultValue={profile?.emergencyContactPhone || ''} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
-               <Button type="button" variant="ghost" onClick={() => setIsProfileModalOpen(false)}>Cancel</Button>
+               <Button type="button" variant="ghost" onClick={handleCloseProfileModal}>Skip for Now</Button>
                <Button type="submit">Save Profile</Button>
             </div>
          </form>

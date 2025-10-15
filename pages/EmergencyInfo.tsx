@@ -29,15 +29,17 @@ const EmergencyInfo: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      // In a real app, you'd fetch this from a backend. Here, we read from localStorage.
-      // This has security implications as it relies on the user's local state.
-      const userData = getFullUserData(id);
-      if (userData.profile.age) {
-        setData(userData);
-      }
-    }
-    setLoading(false);
+    const fetchUserData = async () => {
+        if (id) {
+            const userData = await getFullUserData(id);
+            if (userData && userData.profile && userData.profile.age) {
+                setData(userData);
+            }
+        }
+        setLoading(false);
+    };
+
+    fetchUserData();
   }, [id]);
 
   const handleShare = () => {
@@ -55,7 +57,9 @@ const EmergencyInfo: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center h-screen bg-background">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+    </div>;
   }
 
   if (!data) {
