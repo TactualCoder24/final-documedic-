@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Button from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
-import { FileText, Pill, BrainCircuit, Bell, Lightbulb, QrCode, HeartPulse, Users, Activity, ShieldCheck, KeyRound, Lock } from '../components/icons/Icons';
+import { FileText, Pill, BrainCircuit, Bell, Lightbulb, QrCode, HeartPulse, Users, Activity, ShieldCheck, KeyRound, Lock, Menu, X } from '../components/icons/Icons';
 import Logo from '../components/icons/Logo';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -217,6 +217,7 @@ const Landing: React.FC = () => {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     useEffect(() => {
         // This effect handles scrolling when a user navigates to this page
@@ -291,7 +292,8 @@ const Landing: React.FC = () => {
             <Logo className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold font-heading">DocuMedic</span>
           </Link>
-          <div className="flex items-center gap-2">
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-2">
              <Button variant="ghost" asChild>
                 <Link to="/community">Community</Link>
             </Button>
@@ -300,8 +302,36 @@ const Landing: React.FC = () => {
                 <Link to="/login">Get Started</Link>
             </Button>
           </div>
+          {/* Mobile Nav Button */}
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Toggle menu">
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
         </div>
       </header>
+      
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMenuOpen && (
+            <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="md:hidden bg-background border-b border-border overflow-hidden"
+            >
+                <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+                    <Button variant="ghost" asChild>
+                        <Link to="/community" onClick={() => setIsMenuOpen(false)}>Community</Link>
+                    </Button>
+                    <Button asChild size="lg" className="w-full">
+                        <Link to="/login" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
+                    </Button>
+                </nav>
+            </motion.div>
+        )}
+      </AnimatePresence>
 
       <main>
         {/* Hero Section */}

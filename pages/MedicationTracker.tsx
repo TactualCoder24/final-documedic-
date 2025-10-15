@@ -31,7 +31,8 @@ const MedicationTracker: React.FC = () => {
   }, []);
   
   useEffect(() => {
-    notificationTimeouts.current.forEach(clearTimeout);
+    // FIX: Explicitly use `window.clearTimeout` to avoid type conflicts with Node.js `clearTimeout`.
+    notificationTimeouts.current.forEach(window.clearTimeout);
     notificationTimeouts.current = [];
 
     if (notificationPermission === 'granted') {
@@ -46,7 +47,9 @@ const MedicationTracker: React.FC = () => {
 
             if (notificationTime > now) {
               const timeout = notificationTime.getTime() - now.getTime();
-              const timeoutId = setTimeout(() => {
+              // FIX: Explicitly use `window.setTimeout` to ensure it returns a `number` (timeout ID)
+              // as expected in browser environments, resolving a TypeScript type conflict with Node.js's `setTimeout`.
+              const timeoutId = window.setTimeout(() => {
                 new Notification('Medication Reminder', {
                   body: `It's time to take your ${med.name} (${med.dosage}).`,
                   icon: '/vite.svg',
@@ -61,7 +64,8 @@ const MedicationTracker: React.FC = () => {
     }
 
     return () => {
-      notificationTimeouts.current.forEach(clearTimeout);
+      // FIX: Explicitly use `window.clearTimeout` to match the `number` type returned by `window.setTimeout`.
+      notificationTimeouts.current.forEach(window.clearTimeout);
     };
   }, [medications, notificationPermission]);
 
