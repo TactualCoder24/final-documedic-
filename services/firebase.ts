@@ -1,7 +1,7 @@
 import { User } from '../types';
 import { findUserByEmail, createUser } from './data';
 
-const GOOGLE_CLIENT_ID = '558634672593-u8f92f1fp92s4fbtakkit0opbsfsv9k2.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '354302826671-b75pmk7i5i3qplj93hbkmb6jt7jqssdl.apps.googleusercontent.com';
 
 let currentUser: User | null = null;
 try {

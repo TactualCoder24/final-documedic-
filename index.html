@@ -102,7 +102,7 @@
         --card-foreground: 240 10% 3.9%;
         --popover: 0 0% 100%;
         --popover-foreground: 240 10% 3.9%;
-        --primary: 252 88% 50%;
+        --primary: 265 85% 60%;
         --primary-foreground: 0 0% 100%;
         --secondary: 240 5.9% 95%;
         --secondary-foreground: 240 5.9% 10%;
@@ -114,8 +114,10 @@
         --destructive-foreground: 0 0% 98%;
         --border: 240 5.9% 90%;
         --input: 240 5.9% 90%;
-        --ring: 252 88% 50%;
+        --ring: 265 85% 60%;
         --radius: 1rem;
+        --primary-gradient-start: 265 85% 60%;
+        --primary-gradient-end: 290 85% 60%;
       }
       .dark {
         --background: 240 6% 10%;
@@ -125,7 +127,7 @@
         --popover: 240 6% 10%;
         --popover-foreground: 0 0% 98%;
         --primary: 252 90% 75%;
-        --primary-foreground: 240 10% 3.9%;
+        --primary-foreground: 0 0% 98%;
         --secondary: 240 5% 15%;
         --secondary-foreground: 0 0% 98%;
         --muted: 240 5% 15%;
@@ -162,6 +164,27 @@
         clip: rect(0, 0, 0, 0);
         white-space: nowrap;
         border-width: 0;
+      }
+      .bg-primary-gradient {
+        background-image: linear-gradient(to right, hsl(var(--primary-gradient-start)), hsl(var(--primary-gradient-end)));
+      }
+      .dark .bg-primary-gradient {
+        background-image: none;
+        background-color: hsl(var(--primary));
+      }
+      .text-primary-gradient {
+        background: linear-gradient(to right, hsl(var(--primary-gradient-start)), hsl(var(--primary-gradient-end)));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-fill-color: transparent;
+      }
+      .dark .text-primary-gradient {
+        background-image: none;
+        background-clip: unset;
+        -webkit-background-clip: unset;
+        -webkit-text-fill-color: currentColor;
+        color: hsl(var(--primary));
       }
     </style>
   <script type="importmap">

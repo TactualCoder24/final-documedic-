@@ -349,7 +349,7 @@ const Landing: React.FC = () => {
                 >
                 Your Health.
                 <br />
-                <span className="text-primary">Smarter. Safer.</span>
+                <span className="text-primary-gradient">Smarter. Safer.</span>
                 </motion.h1>
                 <motion.p 
                     className="mt-6 max-w-xl mx-auto md:mx-0 text-xl text-muted-foreground"
@@ -376,28 +376,55 @@ const Landing: React.FC = () => {
           </div>
         </section>
         
-        {/* Animated Statistics Bar */}
-        <section className="py-12 sm:py-16">
+        {/* Principles Section */}
+        <section className="py-20 sm:py-24 bg-secondary/30 dark:bg-background">
           <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold font-heading">Your Health, Your Data.</h2>
+              <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
+                We believe your sensitive health information deserves the highest level of privacy and control. Our platform is built on these core principles.
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-              <div className="p-6 bg-card border border-border/60 rounded-xl">
-                <h3 className="text-4xl font-bold font-heading text-primary">
-                  <AnimatedCounter value={10000} />+
-                </h3>
-                <p className="mt-2 text-muted-foreground">Trusted Users</p>
-              </div>
-              <div className="p-6 bg-card border border-border/60 rounded-xl">
-                <h3 className="text-4xl font-bold font-heading text-primary">
-                  <AnimatedCounter value={500000} />+
-                </h3>
-                <p className="mt-2 text-muted-foreground">Records Secured</p>
-              </div>
-              <div className="p-6 bg-card border border-border/60 rounded-xl">
-                <h3 className="text-4xl font-bold font-heading text-primary">
-                  <AnimatedCounter value={98} />%
-                </h3>
-                <p className="mt-2 text-muted-foreground">User Satisfaction</p>
-              </div>
+              <motion.div
+                className="p-8 bg-card border border-border/60 rounded-xl"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <div className="flex items-center justify-center h-16 w-16 mx-auto rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4">
+                    <Lock className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-semibold font-heading">Complete Privacy</h3>
+                <p className="mt-2 text-muted-foreground">Your health data is yours alone. We use state-of-the-art encryption and will never share your information without your explicit consent.</p>
+              </motion.div>
+              <motion.div
+                className="p-8 bg-card border border-border/60 rounded-xl"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <div className="flex items-center justify-center h-16 w-16 mx-auto rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4">
+                    <KeyRound className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-semibold font-heading">You're In Control</h3>
+                <p className="mt-2 text-muted-foreground">Manage what you share and with whom. Your emergency profile is only accessible via your unique, secure link that you control.</p>
+              </motion.div>
+              <motion.div
+                className="p-8 bg-card border border-border/60 rounded-xl"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <div className="flex items-center justify-center h-16 w-16 mx-auto rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4">
+                    <ShieldCheck className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-semibold font-heading">AI with Integrity</h3>
+                <p className="mt-2 text-muted-foreground">Our AI provides insights based on *your* data, for *your* benefit. It's designed for personalization, not for monetization.</p>
+              </motion.div>
             </div>
           </div>
         </section>
