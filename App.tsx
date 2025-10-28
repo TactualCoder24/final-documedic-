@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
@@ -23,6 +22,20 @@ import AppointmentManager from './pages/AppointmentManager';
 import SymptomLog from './pages/SymptomLog';
 import FoodJournal from './pages/FoodJournal';
 import Community from './pages/Community';
+import FamilyAccess from './pages/FamilyAccess';
+import FindCare from './pages/FindCare';
+import AfterVisitSummary from './pages/AfterVisitSummary';
+
+// New page imports
+import TestResults from './pages/TestResults';
+import HealthSummary from './pages/HealthSummary';
+import PreventiveCare from './pages/PreventiveCare';
+import PlanOfCare from './pages/PlanOfCare';
+import HealthTrends from './pages/HealthTrends';
+import GrowthCharts from './pages/GrowthCharts';
+import Questionnaires from './pages/Questionnaires';
+import SymptomChecker from './pages/SymptomChecker';
+
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -61,21 +74,33 @@ const AppRoutes = () => {
         <Route
           element={
             <ProtectedRoute>
-              {/* FIX: The Layout component already renders an <Outlet /> for its children routes and does not accept children props. */}
               <Layout />
             </ProtectedRoute>
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/records" element={<MedicalRecords />} />
+          <Route path="/documents" element={<MedicalRecords />} />
           <Route path="/medications" element={<MedicationTracker />} />
           <Route path="/symptoms" element={<SymptomLog />} />
           <Route path="/food-journal" element={<FoodJournal />} />
           <Route path="/summary" element={<SmartSummary />} />
           <Route path="/reminders" element={<Reminders />} />
           <Route path="/appointments" element={<AppointmentManager />} />
+          <Route path="/appointments/:id/summary" element={<AfterVisitSummary />} />
           <Route path="/tips" element={<LifestyleTips />} />
+          <Route path="/family-access" element={<FamilyAccess />} />
+          <Route path="/find-care" element={<FindCare />} />
           <Route path="/settings" element={<Settings />} />
+
+          {/* New Routes */}
+          <Route path="/test-results" element={<TestResults />} />
+          <Route path="/health-summary" element={<HealthSummary />} />
+          <Route path="/preventive-care" element={<PreventiveCare />} />
+          <Route path="/plan-of-care" element={<PlanOfCare />} />
+          <Route path="/health-trends" element={<HealthTrends />} />
+          <Route path="/growth-charts" element={<GrowthCharts />} />
+          <Route path="/questionnaires" element={<Questionnaires />} />
+          <Route path="/symptom-checker" element={<SymptomChecker />} />
         </Route>
         
         {/* Community Protected Route */}

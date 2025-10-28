@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -40,6 +41,35 @@ const SmartSummary: React.FC = () => {
     setSummary(result);
     setLoading(false);
     setStatusMessage('Your health summary has been generated.');
+  };
+
+  const handleDownloadSummary = () => {
+    if (!summary) return;
+    const plainTextSummary = summary.replace(/##/g, '').replace(/#/g, '');
+    const blob = new Blob([plainTextSummary], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `documedic_summary_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  
+  const handleDownloadRecord = async () => {
+    if (!user) return;
+    const userData = await getFullUserData(user.uid);
+    const jsonString = JSON.stringify(userData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `documedic_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -86,20 +116,28 @@ const SmartSummary: React.FC = () => {
           )}
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Button onClick={handleGenerateSummary} disabled={loading}>
-            {loading ? (
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+            <Button onClick={handleGenerateSummary} disabled={loading}>
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Generating...
+                </>
+              ) : summary ? 'Regenerate Summary' : 'Generate Summary'}
+            </Button>
+            {summary && !loading && (
               <>
-                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
-                Generating...
+                <Button onClick={handleDownloadSummary} variant="outline">Download Summary</Button>
+                <Button onClick={handleDownloadRecord} variant="outline">Download Full Record</Button>
               </>
-            ) : summary ? 'Regenerate Summary' : 'Generate Summary'}
-          </Button>
+            )}
+          </div>
           {summary && !loading && (
-             <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
                 <p className="text-sm text-muted-foreground">Was this summary helpful?</p>
                 <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Helpful"><ThumbsUp className="h-4 w-4" /></Button>
                 <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Not helpful"><ThumbsDown className="h-4 w-4" /></Button>
-             </div>
+            </div>
           )}
         </CardFooter>
       </Card>

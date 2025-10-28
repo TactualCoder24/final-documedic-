@@ -1,14 +1,15 @@
+
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Pill, FileText, BrainCircuit, ClipboardList, Search, Bell, Share2, Lightbulb, Activity, GlassWater, Utensils, Plus } from '../components/icons/Icons';
+import { Pill, FileText, BrainCircuit, ClipboardList, Search, Bell, Share2, Lightbulb, Activity, GlassWater, Utensils, Plus, HeartPulse, Stethoscope, MapPin, CalendarDays, Settings } from '../components/icons/Icons';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Link } from 'react-router-dom';
-import { Vital, MedicalRecord, Medication, Reminder, Profile, Symptom, FoodLog } from '../types';
+import { Link, useNavigate } from 'react-router-dom';
+import { Vital, MedicalRecord, Medication, Reminder, Profile, Symptom, FoodLog, TestOrProcedure } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
-import { getVitals, getRecords, getMedications, getReminders, getProfile, saveProfile, addVital, getSymptoms, getFoodLogs, getWaterIntake, updateWaterIntake } from '../services/data';
+import { getVitals, getRecords, getMedications, getReminders, getProfile, saveProfile, addVital, getSymptoms, getFoodLogs, getWaterIntake, updateWaterIntake, getTestsAndProcedures } from '../services/data';
 
 const categoryInfo = {
   record: { title: 'Medical Records', icon: FileText, color: 'text-blue-500' },
@@ -23,12 +24,14 @@ const getTodayDateString = (): string => {
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [vitals, setVitals] = React.useState<Vital[]>([]);
   const [records, setRecords] = React.useState<MedicalRecord[]>([]);
   const [medications, setMedications] = React.useState<Medication[]>([]);
   const [reminders, setReminders] = React.useState<Reminder[]>([]);
   const [symptoms, setSymptoms] = React.useState<Symptom[]>([]);
   const [foodLogs, setFoodLogs] = React.useState<FoodLog[]>([]);
+  const [tests, setTests] = React.useState<TestOrProcedure[]>([]);
   const [waterIntake, setWaterIntake] = React.useState(0);
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -42,7 +45,7 @@ const Dashboard: React.FC = () => {
   const refreshData = React.useCallback(async () => {
     if (user) {
       setIsLoading(true);
-      const [vitalsData, recordsData, medsData, remindersData, symptomsData, foodLogsData, waterIntakeData, profileData] = await Promise.all([
+      const [vitalsData, recordsData, medsData, remindersData, symptomsData, foodLogsData, waterIntakeData, profileData, testsData] = await Promise.all([
         getVitals(user.uid),
         getRecords(user.uid),
         getMedications(user.uid),
@@ -50,7 +53,8 @@ const Dashboard: React.FC = () => {
         getSymptoms(user.uid),
         getFoodLogs(user.uid),
         getWaterIntake(user.uid, todayStr),
-        getProfile(user.uid)
+        getProfile(user.uid),
+        getTestsAndProcedures(user.uid)
       ]);
       
       setVitals(vitalsData);
@@ -59,6 +63,7 @@ const Dashboard: React.FC = () => {
       setReminders(remindersData);
       setSymptoms(symptomsData);
       setFoodLogs(foodLogsData);
+      setTests(testsData);
       setWaterIntake(waterIntakeData);
       setProfile(profileData);
 
@@ -79,12 +84,27 @@ const Dashboard: React.FC = () => {
     if (!user) return;
     const formData = new FormData(e.currentTarget);
     const sugar = Number(formData.get('sugar'));
+    const systolic = Number(formData.get('systolic'));
+    const diastolic = Number(formData.get('diastolic'));
 
-    if (sugar > 0) {
-      await addVital(user.uid, { sugar });
+    const newVitals: { sugar?: number; systolic?: number; diastolic?: number } = {};
+    if (sugar > 0) newVitals.sugar = sugar;
+    
+    if (systolic > 0 && diastolic > 0) {
+        newVitals.systolic = systolic;
+        newVitals.diastolic = diastolic;
+    } else if (systolic > 0 || diastolic > 0) {
+        alert("Please enter both systolic and diastolic values for blood pressure.");
+        return;
+    }
+
+    if (Object.keys(newVitals).length > 0) {
+      await addVital(user.uid, newVitals);
       setVitals(await getVitals(user.uid));
       setIsVitalsModalOpen(false);
       e.currentTarget.reset();
+    } else {
+        alert("Please enter at least one valid vital measurement.");
     }
   };
 
@@ -107,7 +127,7 @@ const Dashboard: React.FC = () => {
     setIsProfileModalOpen(false);
   };
 
-  const handleCloseProfileModal = () => {
+  const handleSkipProfileUpdate = () => {
     sessionStorage.setItem('profileUpdateSkipped', 'true');
     setIsProfileModalOpen(false);
   };
@@ -149,27 +169,24 @@ const Dashboard: React.FC = () => {
 
   const nextMedication = medications.find(m => !m.takenToday);
   const recentRecord = records[0];
-  const recentSymptom = symptoms[0];
   const recentMeal = foodLogs[0];
   const waterGoal = profile?.waterGoal || 8;
+  const latestBPressure = [...vitals].reverse().find(v => v.systolic && v.diastolic);
+  const bpData = vitals.filter(v => v.systolic && v.diastolic);
 
   const DashboardContent = () => (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="col-span-1 md:col-span-2 lg:col-span-4 bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/20">
-            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="bg-primary/10 text-primary p-3 rounded-lg">
-                        <ClipboardList className="h-6 w-6"/>
-                    </div>
-                    <div>
-                        <CardTitle>Log Today's Vitals</CardTitle>
-                        <CardDescription className="mt-1">Keep your health record up to date for the best insights.</CardDescription>
-                    </div>
-                </div>
-                <Button onClick={() => setIsVitalsModalOpen(true)} className="w-full sm:w-auto shadow-lg shadow-primary/20">Update Vitals</Button>
-            </CardHeader>
+        <Card className="col-span-1 md:col-span-2 lg:col-span-4">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Button variant="outline" className="flex-col h-24" onClick={() => navigate('/appointments')}><CalendarDays className="h-6 w-6 mb-1"/>Schedule</Button>
+            <Button variant="outline" className="flex-col h-24" onClick={() => navigate('/find-care')}><MapPin className="h-6 w-6 mb-1"/>Find Care</Button>
+            <Button variant="outline" className="flex-col h-24" onClick={() => setIsVitalsModalOpen(true)}><ClipboardList className="h-6 w-6 mb-1"/>Log Vitals</Button>
+          </CardContent>
         </Card>
-
+        
         <Card className="hover:border-primary/80 transition-colors hover:shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Water Intake</CardTitle>
@@ -182,6 +199,26 @@ const Dashboard: React.FC = () => {
                 <Button size="sm" variant="outline" onClick={() => handleWaterChange(-1)} disabled={waterIntake <= 0}>-1</Button>
                 <Button size="sm" onClick={() => handleWaterChange(1)}>+1</Button>
              </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:border-primary/80 transition-colors hover:shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Blood Pressure</CardTitle>
+            <HeartPulse className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {latestBPressure ? (
+              <>
+                <div className="text-2xl font-bold">{latestBPressure.systolic}/{latestBPressure.diastolic}</div>
+                <p className="text-xs text-muted-foreground">mmHg</p>
+              </>
+            ) : (
+               <>
+                <div className="text-2xl font-bold">N/A</div>
+                <p className="text-xs text-muted-foreground">Log your BP to see it here.</p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -229,37 +266,35 @@ const Dashboard: React.FC = () => {
           </Link>
         </Card>
 
-        <Card className="hover:border-primary/80 transition-colors hover:shadow-lg">
-         <Link to="/symptoms">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Recent Symptom</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+        {tests.length > 0 && (
+          <Card className="col-span-1 md:col-span-2 lg:col-span-4">
+            <CardHeader>
+              <CardTitle>Upcoming Tests & Procedures</CardTitle>
             </CardHeader>
-            <CardContent>
-              {recentSymptom ? (
-                <>
-                  <div className="text-2xl font-bold truncate">{recentSymptom.name}</div>
-                  <p className="text-xs text-muted-foreground">Severity: {recentSymptom.severity}/10</p>
-                </>
-              ) : (
-                 <>
-                  <div className="text-2xl font-bold">No Symptoms</div>
-                  <p className="text-xs text-muted-foreground">Log a symptom to start.</p>
-                </>
-              )}
+            <CardContent className="space-y-3">
+              {tests.map(test => (
+                <div key={test.id} className="flex items-start gap-4 p-3 bg-secondary/50 rounded-lg">
+                  <Stethoscope className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">{test.name}</p>
+                    <p className="text-sm text-muted-foreground">{new Date(test.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {test.location}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Instructions: {test.instructions}</p>
+                  </div>
+                </div>
+              ))}
             </CardContent>
-          </Link>
-        </Card>
+          </Card>
+        )}
 
         <Card className="col-span-1 md:col-span-2 lg:col-span-4">
           <CardHeader>
             <CardTitle>Blood Sugar Trend</CardTitle>
             <CardDescription>
-                {vitals.length > 0 ? "Here is your recent blood sugar history." : "Log your vitals to see your trend."}
+                {vitals.some(v => v.sugar) ? "Here is your recent blood sugar history." : "Log your vitals to see your trend."}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {vitals.length > 0 ? (
+            {vitals.some(v => v.sugar) ? (
                 <ResponsiveContainer width="100%" height={300}>
                     <AreaChart data={vitals.slice(-30).map(v => ({...v, date: new Date(v.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }))}>
                         <defs>
@@ -283,62 +318,49 @@ const Dashboard: React.FC = () => {
                     </AreaChart>
                 </ResponsiveContainer>
             ) : (
-                <div className="text-center py-10 text-muted-foreground">No vitals logged yet.</div>
+                <div className="text-center py-10 text-muted-foreground">No blood sugar data logged yet.</div>
             )}
           </CardContent>
         </Card>
         
-        <Card className="hover:border-primary/80 transition-colors hover:shadow-lg lg:col-span-2">
-          <Link to="/records">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Recent Record</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-               {recentRecord ? (
-                <>
-                  <div className="text-2xl font-bold truncate">{recentRecord.name}</div>
-                  <p className="text-xs text-muted-foreground">Uploaded on {recentRecord.date}</p>
-                </>
-              ) : (
-                 <>
-                  <div className="text-2xl font-bold">No Records</div>
-                  <p className="text-xs text-muted-foreground">Upload your first document.</p>
-                </>
-              )}
-            </CardContent>
-          </Link>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <Link to="/summary">
-            <CardHeader>
-              <CardTitle>AI Health Summary</CardTitle>
-               <BrainCircuit className="h-8 w-8 text-primary absolute top-6 right-6 opacity-20" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Get a personalized, easy-to-read summary of your health status based on your latest data.</p>
-               <Button variant="link" className="px-0">Generate Summary &rarr;</Button>
-            </CardContent>
-          </Link>
-        </Card>
-
-        <Card className="hover:border-primary/80 transition-colors hover:shadow-lg lg:col-span-4">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="flex items-center gap-2">
-              <Lightbulb className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium">My Health Goals</CardTitle>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => setIsProfileModalOpen(true)}>Edit Goals</Button>
+        <Card className="col-span-1 md:col-span-2 lg:col-span-4">
+          <CardHeader>
+            <CardTitle>Blood Pressure Trend</CardTitle>
+            <CardDescription>
+                {bpData.length > 0 ? "Your recent blood pressure history." : "Log your blood pressure to see your trend."}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {profile?.goals ? (
-              <p className="text-foreground whitespace-pre-wrap">{profile.goals}</p>
+            {bpData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={bpData.slice(-30).map(v => ({...v, date: new Date(v.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }))}>
+                        <defs>
+                            <linearGradient id="colorSys" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorDia" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" domain={['dataMin - 10', 'dataMax + 10']} fontSize={12} unit=" mmHg" />
+                        <Tooltip
+                            contentStyle={{
+                            backgroundColor: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "var(--radius)"
+                            }}
+                        />
+                        <Legend />
+                        <Area type="monotone" dataKey="systolic" name="Systolic" stroke="#ef4444" fillOpacity={1} fill="url(#colorSys)" strokeWidth={2} activeDot={{ r: 6 }}/>
+                        <Area type="monotone" dataKey="diastolic" name="Diastolic" stroke="#3b82f6" fillOpacity={1} fill="url(#colorDia)" strokeWidth={2} activeDot={{ r: 6 }}/>
+                    </AreaChart>
+                </ResponsiveContainer>
             ) : (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground">You haven't set any health goals yet.</p>
-                <Button variant="link" onClick={() => setIsProfileModalOpen(true)}>Set your goals</Button>
-              </div>
+                <div className="text-center py-10 text-muted-foreground">No blood pressure data logged yet.</div>
             )}
           </CardContent>
         </Card>
@@ -356,10 +378,16 @@ const Dashboard: React.FC = () => {
             </h1>
             <p className="text-muted-foreground text-lg mt-1">Here's a quick overview of your health profile.</p>
         </div>
-        <Button onClick={handleShareProfile} variant="outline" className="w-full sm:w-auto">
-            <Share2 className="mr-2 h-4 w-4" />
-            Share Emergency Profile
-        </Button>
+        <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
+            <Button onClick={() => setIsProfileModalOpen(true)} variant="outline" className="w-full sm:w-auto">
+                <Settings className="mr-2 h-4 w-4" />
+                Edit Profile
+            </Button>
+            <Button onClick={handleShareProfile} variant="outline" className="w-full sm:w-auto">
+                <Share2 className="mr-2 h-4 w-4" />
+                Share Emergency Profile
+            </Button>
+        </div>
       </div>
       
       <div className="relative">
@@ -423,11 +451,21 @@ const Dashboard: React.FC = () => {
     </div>
     <Modal title="Log Today's Vitals" isOpen={isVitalsModalOpen} onClose={() => setIsVitalsModalOpen(false)}>
          <form className="space-y-4" onSubmit={handleUpdateVitals}>
-             <div>
+            <div>
               <label htmlFor="sugar" className="block text-sm font-medium text-foreground mb-1">Blood Sugar (mg/dL)</label>
-              <Input id="sugar" name="sugar" type="number" placeholder="e.g., 100" required />
+              <Input id="sugar" name="sugar" type="number" placeholder="e.g., 100" />
             </div>
-            
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="systolic" className="block text-sm font-medium text-foreground mb-1">Systolic (mmHg)</label>
+                    <Input id="systolic" name="systolic" type="number" placeholder="e.g., 120" />
+                </div>
+                <div>
+                    <label htmlFor="diastolic" className="block text-sm font-medium text-foreground mb-1">Diastolic (mmHg)</label>
+                    <Input id="diastolic" name="diastolic" type="number" placeholder="e.g., 80" />
+                </div>
+            </div>
+            <p className="text-xs text-muted-foreground pt-1">You only need to fill in the vitals you want to track today.</p>
             <div className="flex justify-end gap-2 pt-2">
                <Button type="button" variant="ghost" onClick={() => setIsVitalsModalOpen(false)}>Cancel</Button>
                <Button type="submit">Save Vitals</Button>
@@ -435,7 +473,7 @@ const Dashboard: React.FC = () => {
          </form>
       </Modal>
 
-      <Modal title="Update Your Profile" isOpen={isProfileModalOpen} onClose={handleCloseProfileModal}>
+      <Modal title="Update Your Profile" isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)}>
          <form className="space-y-4" onSubmit={handleSaveProfile}>
             <p className="text-sm text-muted-foreground">To help us personalize your experience, please provide some basic information. This will be used for features like your Emergency Profile and AI Tips.</p>
              <div>
@@ -471,7 +509,7 @@ const Dashboard: React.FC = () => {
               <Input id="contactPhone" name="contactPhone" type="tel" placeholder="e.g., 555-123-4567" defaultValue={profile?.emergencyContactPhone || ''} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
-               <Button type="button" variant="ghost" onClick={handleCloseProfileModal}>Skip for Now</Button>
+               <Button type="button" variant="ghost" onClick={handleSkipProfileUpdate}>Skip for Now</Button>
                <Button type="submit">Save Profile</Button>
             </div>
          </form>

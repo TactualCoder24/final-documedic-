@@ -18,6 +18,8 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
+type FilterType = 'All' | MedicalRecord['type'];
+
 const MedicalRecords: React.FC = () => {
   const { user } = useAuth();
   const [records, setRecords] = useState<MedicalRecord[]>([]);
@@ -28,6 +30,7 @@ const MedicalRecords: React.FC = () => {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [selectedDocType, setSelectedDocType] = useState<MedicalRecord['type']>('Lab Report');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterType>('All');
 
   const refreshRecords = useCallback(async () => {
     if (user) {
@@ -136,11 +139,14 @@ const MedicalRecords: React.FC = () => {
     setAnalysisError(null);
   };
 
+  const filteredRecords = activeFilter === 'All' ? records : records.filter(r => r.type === activeFilter);
+  const filterTabs: FilterType[] = ['All', 'Lab Report', 'Prescription', 'Imaging', 'Consultation Note', 'Visit Summary', 'Analyzed Document'];
+
   return (
     <>
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold font-heading">Medical Records</h1>
+          <h1 className="text-3xl font-bold font-heading">My Documents</h1>
           <p className="text-muted-foreground">Manage your health documents, reports, and prescriptions.</p>
         </div>
         <div className="flex gap-2">
@@ -156,14 +162,30 @@ const MedicalRecords: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>Your Documents</CardTitle>
-          {!isLoading && <CardDescription>You have {records.length} documents stored securely.</CardDescription>}
+          <div className="border-b border-border -mx-6 px-2 sm:px-6">
+             <nav className="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
+                {filterTabs.map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveFilter(tab)}
+                        className={`${
+                            activeFilter === tab
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                        } whitespace-nowrap py-3 px-1 border-b-2 font-semibold text-sm transition-colors`}
+                    >
+                        {tab}
+                    </button>
+                ))}
+            </nav>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {isLoading ? (
-                <p className="text-muted-foreground text-center py-10">Loading records...</p>
-            ) : records.length > 0 ? (
-                records.map(record => (
+                <p className="text-muted-foreground text-center py-10">Loading documents...</p>
+            ) : filteredRecords.length > 0 ? (
+                filteredRecords.map(record => (
                 <div key={record.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
                     <div className="flex items-center gap-4">
                     <FileText className="h-6 w-6 text-primary" />
@@ -195,7 +217,7 @@ const MedicalRecords: React.FC = () => {
                 ))
             ) : (
                 <div className="text-center py-10">
-                    <p className="text-muted-foreground">No records found. Upload your first document to get started.</p>
+                    <p className="text-muted-foreground">No documents found for this category.</p>
                 </div>
             )}
           </div>
@@ -222,6 +244,7 @@ const MedicalRecords: React.FC = () => {
                   <option value="Prescription">Prescription</option>
                   <option value="Imaging">Imaging</option>
                   <option value="Consultation Note">Consultation Note</option>
+                  <option value="Visit Summary">Visit Summary</option>
                </select>
             </div>
             <div>
