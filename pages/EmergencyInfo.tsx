@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { HeartPulse, Pill, FileText, Share2 } from '../components/icons/Icons';
-import { getFullUserData } from '../services/data';
+import { getFullUserData } from '../services/dataSupabase';
 import { Medication } from '../types';
 
 interface EmergencyData {

@@ -6,7 +6,7 @@ import { MedicalRecord, DocumentAnalysis } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getRecords, addRecord, deleteRecord } from '../services/data';
+import { getRecords, addRecord, deleteRecord } from '../services/dataSupabase';
 import { analyzeMedicalDocument } from '../services/gemini';
 
 const fileToBase64 = (file: File): Promise<string> => {

@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../co
 import { Baby } from '../components/icons/Icons';
 import { GrowthRecord } from '../types';
 import { useAuth } from '../hooks/useAuth';
-import { getGrowthRecords } from '../services/data';
+import { getGrowthRecords } from '../services/dataSupabase';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const GrowthCharts: React.FC = () => {

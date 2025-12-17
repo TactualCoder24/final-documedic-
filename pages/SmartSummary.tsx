@@ -6,7 +6,7 @@ import { BrainCircuit, ThumbsUp, ThumbsDown } from '../components/icons/Icons';
 import { getHealthSummary } from '../services/gemini';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../hooks/useAuth';
-import { getFullUserData, getWaterIntake } from '../services/data';
+import { getFullUserData, getWaterIntake } from '../services/dataSupabase';
 
 const SmartSummary: React.FC = () => {
   const { user } = useAuth();

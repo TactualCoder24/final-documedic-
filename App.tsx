@@ -35,12 +35,13 @@ import HealthTrends from './pages/HealthTrends';
 import GrowthCharts from './pages/GrowthCharts';
 import Questionnaires from './pages/Questionnaires';
 import SymptomChecker from './pages/SymptomChecker';
+import AuthCallback from './pages/AuthCallback';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -66,10 +67,11 @@ const AppRoutes = () => {
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/emergency/:id" element={<EmergencyInfo />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
-        
+
         {/* Dashboard Protected Routes */}
         <Route
           element={
@@ -102,16 +104,16 @@ const AppRoutes = () => {
           <Route path="/questionnaires" element={<Questionnaires />} />
           <Route path="/symptom-checker" element={<SymptomChecker />} />
         </Route>
-        
+
         {/* Community Protected Route */}
         <Route
-            element={
-                <ProtectedRoute>
-                    <CommunityLayout />
-                </ProtectedRoute>
-            }
+          element={
+            <ProtectedRoute>
+              <CommunityLayout />
+            </ProtectedRoute>
+          }
         >
-            <Route path="/community" element={<Community />} />
+          <Route path="/community" element={<Community />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

@@ -11,7 +11,7 @@ import {
     getHealthIssues, addHealthIssue, 
     getImmunizations, addImmunization,
     getProfile, saveProfile
-} from '../services/data';
+} from '../services/dataSupabase';
 
 const HealthSummary: React.FC = () => {
   const { user } = useAuth();

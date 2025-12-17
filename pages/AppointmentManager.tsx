@@ -7,7 +7,7 @@ import { Appointment } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getAppointments, addAppointment, deleteAppointment, updateAppointment } from '../services/data';
+import { getAppointments, addAppointment, deleteAppointment, updateAppointment } from '../services/dataSupabase';
 import { Link } from 'react-router-dom';
 
 const AppointmentManager: React.FC = () => {

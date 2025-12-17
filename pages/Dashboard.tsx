@@ -9,7 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Vital, MedicalRecord, Medication, Reminder, Profile, Symptom, TestOrProcedure } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
-import { getVitals, getRecords, getMedications, getReminders, getProfile, saveProfile, addVital, getSymptoms, getWaterIntake, updateWaterIntake, getTestsAndProcedures } from '../services/data';
+import { getVitals, getRecords, getMedications, getReminders, getProfile, saveProfile, addVital, getSymptoms, getWaterIntake, updateWaterIntake, getTestsAndProcedures } from '../services/dataSupabase';
 
 const categoryInfo = {
   record: { title: 'Medical Records', icon: FileText, color: 'text-blue-500' },

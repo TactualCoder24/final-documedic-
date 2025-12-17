@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User } from '../types';
-import { auth } from '../services/firebase';
+import { auth } from '../services/auth';
 
 interface AuthContextType {
   user: User | null;

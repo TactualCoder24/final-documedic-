@@ -6,7 +6,7 @@ import { Symptom } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getSymptoms, addSymptom, deleteSymptom } from '../services/data';
+import { getSymptoms, addSymptom, deleteSymptom } from '../services/dataSupabase';
 
 const SeverityIndicator: React.FC<{ level: number }> = ({ level }) => {
   const getColor = () => {

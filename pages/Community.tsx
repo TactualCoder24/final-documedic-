@@ -6,7 +6,7 @@ import { CommunityPost } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getCommunityPosts, addCommunityPost, deleteCommunityPost } from '../services/data';
+import { getCommunityPosts, addCommunityPost, deleteCommunityPost } from '../services/dataSupabase';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const Community: React.FC = () => {

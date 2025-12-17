@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../co
 import { Syringe, Pill, TestTube2, Target } from '../components/icons/Icons';
 import { CarePlan, Medication, TestResult } from '../types';
 import { useAuth } from '../hooks/useAuth';
-import { getCarePlans, getMedications, getTestResults } from '../services/data';
+import { getCarePlans, getMedications, getTestResults } from '../services/dataSupabase';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 

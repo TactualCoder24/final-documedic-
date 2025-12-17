@@ -57,7 +57,7 @@ export const auth = {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/#/dashboard`,
+                redirectTo: `${window.location.origin}/`,
             },
         });
 
@@ -65,13 +65,15 @@ export const auth = {
             throw new Error(error.message);
         }
 
-        // OAuth redirects, so we won't have immediate user data
+        // OAuth redirects to Google, then back to our app
         // The user will be set via onAuthStateChange after redirect
-        if (!currentUser) {
-            throw new Error('Google sign-in initiated. Please wait for redirect...');
-        }
-
-        return currentUser;
+        // Return a placeholder - actual user will be set by auth state listener
+        return currentUser || {
+            uid: '',
+            email: null,
+            displayName: null,
+            photoURL: null,
+        };
     },
 
     signUpWithEmailPassword: async (email: string, password: string): Promise<User> => {

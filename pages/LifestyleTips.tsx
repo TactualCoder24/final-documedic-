@@ -5,7 +5,7 @@ import { Lightbulb } from '../components/icons/Icons';
 import { getLifestyleTips } from '../services/gemini';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../hooks/useAuth';
-import { getProfile, getSymptoms, getFoodLogs } from '../services/data';
+import { getProfile, getSymptoms, getFoodLogs } from '../services/dataSupabase';
 
 interface Tip {
   title: string;

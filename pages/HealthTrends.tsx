@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../co
 import { LineChart as LineChartIcon, HeartPulse } from '../components/icons/Icons';
 import { Vital, TestResult } from '../types';
 import { useAuth } from '../hooks/useAuth';
-import { getVitals, getTestResults } from '../services/data';
+import { getVitals, getTestResults } from '../services/dataSupabase';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const HealthTrends: React.FC = () => {
