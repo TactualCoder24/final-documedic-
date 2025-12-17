@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../co
 import Button from '../components/ui/Button';
 import { Stethoscope, FileText, ClipboardList } from '../components/icons/Icons';
 import { AfterVisitSummary as AfterVisitSummaryType, Appointment } from '../types';
-import { getAfterVisitSummary, getAppointments } from '../services/dataSupabase';
+import { getAfterVisitSummary, getAppointments } from '../services/data';
 import { useAuth } from '../hooks/useAuth';
 
 const AfterVisitSummary: React.FC = () => {

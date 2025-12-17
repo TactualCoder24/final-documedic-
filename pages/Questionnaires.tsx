@@ -5,7 +5,7 @@ import { MessageSquareQuestion, ClipboardCheck, Clock } from '../components/icon
 import { Questionnaire } from '../types';
 import Modal from '../components/ui/Modal';
 import { useAuth } from '../hooks/useAuth';
-import { getQuestionnaires } from '../services/dataSupabase';
+import { getQuestionnaires } from '../services/data';
 
 const Questionnaires: React.FC = () => {
   const { user } = useAuth();

@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../co
 import Button from '../components/ui/Button';
 import { MapPin, Clock } from '../components/icons/Icons';
 import { CareLocation } from '../types';
-import { getCareLocations } from '../services/dataSupabase';
+import { getCareLocations } from '../services/data';
 
 const FindCare: React.FC = () => {
   const [locations, setLocations] = useState<CareLocation[]>([]);

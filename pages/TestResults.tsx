@@ -5,7 +5,7 @@ import { TestTube2 } from '../components/icons/Icons';
 import { TestResult, TestResultDetail } from '../types';
 import Modal from '../components/ui/Modal';
 import { useAuth } from '../hooks/useAuth';
-import { getTestResults } from '../services/dataSupabase';
+import { getTestResults } from '../services/data';
 
 const TestResults: React.FC = () => {
   const { user } = useAuth();

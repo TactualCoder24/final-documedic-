@@ -6,7 +6,7 @@ import { Reminder } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getReminders, addReminder, deleteReminder } from '../services/dataSupabase';
+import { getReminders, addReminder, deleteReminder } from '../services/data';
 
 const Reminders: React.FC = () => {
   const { user } = useAuth();

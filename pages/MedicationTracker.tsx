@@ -6,7 +6,7 @@ import { Medication } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getMedications, addMedication, updateMedication, deleteMedication } from '../services/dataSupabase';
+import { getMedications, addMedication, updateMedication, deleteMedication } from '../services/data';
 import { checkMedicationInteractions } from '../services/gemini';
 
 const MedicationTracker: React.FC = () => {

@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import Button from '../components/ui/Button';
 import { Download, UploadCloud, Trash2, Share2, Link as LinkIcon, ShieldCheck, Clock, Smartphone } from '../components/icons/Icons';
 import { useAuth } from '../hooks/useAuth';
-import { getFullUserData, importUserData, deleteUserData } from '../services/dataSupabase';
+import { getFullUserData, importUserData, deleteUserData } from '../services/data';
 import Modal from '../components/ui/Modal';
 import { useNavigate } from 'react-router-dom';
 import { AccessLogEntry } from '../types';

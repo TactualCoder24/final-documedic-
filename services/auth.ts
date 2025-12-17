@@ -95,9 +95,10 @@ export const auth = {
 
         // Check if email confirmation is required
         if (data.user && !data.session) {
-            throw new Error('Please check your email to confirm your account.');
+            throw new Error('Account created! Please check your email to confirm your account before signing in.');
         }
 
+        // If we have a session, user is auto-logged in (email confirmation disabled)
         const user: User = {
             uid: data.user.id,
             email: data.user.email || null,

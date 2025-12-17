@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../co
 import { Target, ClipboardCheck, Clock } from '../components/icons/Icons';
 import { PreventiveCareItem } from '../types';
 import { useAuth } from '../hooks/useAuth';
-import { getPreventiveCare } from '../services/dataSupabase';
+import { getPreventiveCare } from '../services/data';
 
 const PreventiveCare: React.FC = () => {
   const { user } = useAuth();
