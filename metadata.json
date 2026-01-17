@@ -1,0 +1,7 @@
+{
+  "name": "DocuMedic",
+  "description": "DocuMedic is a modern, responsive React web app for personal health record management. It features a clean and futuristic UI, Google Login, a dashboard for tracking vitals, medical record storage, medication tracking, and AI-powered health insights.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
