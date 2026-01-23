@@ -29,6 +29,14 @@ export interface ExerciseProgress {
     effectiveness_rating?: number;
 }
 
+export interface BetaSignup {
+    id?: string;
+    full_name: string;
+    email: string;
+    created_at?: string;
+    platform?: string; // 'web', 'mobile_interest'
+}
+
 // Interactions
 export const logInteraction = async (interaction: MentibotInteraction) => {
     const { data, error } = await supabase
@@ -105,4 +113,19 @@ export const getExerciseHistory = async (userId: string) => {
 
     if (error) throw error;
     return data;
+};
+
+// Beta Signups
+export const registerBetaUser = async (signup: BetaSignup) => {
+    const { data, error } = await supabase
+        .from('beta_signups')
+        .insert([signup])
+        .select();
+
+    if (error) {
+        // If table doesn't exist, we might get an error. 
+        // In a real app, we'd handle this or ensure table existence via migration.
+        throw error;
+    }
+    return data?.[0];
 };

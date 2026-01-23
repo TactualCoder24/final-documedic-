@@ -9,6 +9,7 @@ import ThemeToggle from '../components/ui/ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
 import ShaktiAssistant from '../components/ShaktiAssistant';
+import BetaRegistrationModal from '../components/BetaRegistrationModal';
 
 const features = [
   {
@@ -218,6 +219,7 @@ const Landing: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isBetaModalOpen, setIsBetaModalOpen] = useState(false);
 
   useEffect(() => {
     // This effect handles scrolling when a user navigates to this page
@@ -418,8 +420,8 @@ const Landing: React.FC = () => {
                       </svg>
                     </Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline" className="text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 h-auto border-2 hover:border-primary hover:bg-primary/5 w-full sm:w-auto">
-                    <Link to="#features">Watch Demo</Link>
+                  <Button size="lg" variant="outline" onClick={() => setIsBetaModalOpen(true)} className="text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 h-auto border-2 hover:border-primary hover:bg-primary/5 w-full sm:w-auto">
+                    Register for Beta
                   </Button>
                 </motion.div>
               </div>
@@ -897,6 +899,7 @@ const Landing: React.FC = () => {
       </footer>
 
       <ShaktiAssistant />
+      <BetaRegistrationModal isOpen={isBetaModalOpen} onClose={() => setIsBetaModalOpen(false)} />
     </div>
   );
 };
