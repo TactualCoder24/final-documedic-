@@ -13,6 +13,7 @@ import EmergencyInfo from './pages/EmergencyInfo';
 import NotFound from './pages/NotFound';
 import Layout from './components/Layout';
 import CommunityLayout from './components/CommunityLayout';
+import MentibotStandaloneLayout from './components/MentibotStandaloneLayout';
 import Landing from './pages/Landing';
 import { AnimatePresence } from 'framer-motion';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -25,6 +26,16 @@ import Community from './pages/Community';
 import FamilyAccess from './pages/FamilyAccess';
 import FindCare from './pages/FindCare';
 import AfterVisitSummary from './pages/AfterVisitSummary';
+import MentibotLanding from './pages/mentibot/MentibotLanding';
+import MentibotChat from './pages/mentibot/Chat';
+import MentibotExercises from './pages/mentibot/Exercises';
+import MentibotMusic from './pages/mentibot/Music';
+import MentibotMood from './pages/mentibot/Mood';
+import MentibotEmergency from './pages/mentibot/Emergency';
+import MentibotSupport from './pages/mentibot/Support';
+import MentibotJournal from './pages/mentibot/Journal';
+import MentibotSearch from './pages/mentibot/MentibotSearch';
+import MentibotSearchAdmin from './pages/mentibot/MentibotSearchAdmin';
 
 // New page imports
 import TestResults from './pages/TestResults';
@@ -63,7 +74,7 @@ const AppRoutes = () => {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+      <Routes location={location}>
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
@@ -103,6 +114,18 @@ const AppRoutes = () => {
           <Route path="/growth-charts" element={<GrowthCharts />} />
           <Route path="/questionnaires" element={<Questionnaires />} />
           <Route path="/symptom-checker" element={<SymptomChecker />} />
+
+          {/* Mentibot Dashboard Routes */}
+          <Route path="/dashboard/mentibot" element={<MentibotLanding />} />
+          <Route path="/dashboard/mentibot/chat" element={<MentibotChat />} />
+          <Route path="/dashboard/mentibot/exercises" element={<MentibotExercises />} />
+          <Route path="/dashboard/mentibot/music" element={<MentibotMusic />} />
+          <Route path="/dashboard/mentibot/mood" element={<MentibotMood />} />
+          <Route path="/dashboard/mentibot/emergency" element={<MentibotEmergency />} />
+          <Route path="/dashboard/mentibot/support" element={<MentibotSupport />} />
+          <Route path="/dashboard/mentibot/journal" element={<MentibotJournal />} />
+          <Route path="/dashboard/mentibot/search" element={<MentibotSearch />} />
+          <Route path="/dashboard/mentibot/search-admin" element={<MentibotSearchAdmin />} />
         </Route>
 
         {/* Community Protected Route */}
@@ -114,6 +137,26 @@ const AppRoutes = () => {
           }
         >
           <Route path="/community" element={<Community />} />
+        </Route>
+
+        {/* Mentibot Standalone Protected Routes */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <MentibotStandaloneLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/mentibot" element={<MentibotLanding />} />
+          <Route path="/mentibot/chat" element={<MentibotChat />} />
+          <Route path="/mentibot/exercises" element={<MentibotExercises />} />
+          <Route path="/mentibot/music" element={<MentibotMusic />} />
+          <Route path="/mentibot/mood" element={<MentibotMood />} />
+          <Route path="/mentibot/emergency" element={<MentibotEmergency />} />
+          <Route path="/mentibot/support" element={<MentibotSupport />} />
+          <Route path="/mentibot/journal" element={<MentibotJournal />} />
+          <Route path="/mentibot/search" element={<MentibotSearch />} />
+          <Route path="/mentibot/search-admin" element={<MentibotSearchAdmin />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

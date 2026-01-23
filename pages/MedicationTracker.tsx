@@ -7,7 +7,7 @@ import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
 import { getMedications, addMedication, updateMedication, deleteMedication } from '../services/dataSupabase';
-import { checkMedicationInteractions } from '../services/gemini';
+import { checkMedicationInteractions } from '../services/aiService';
 
 const MedicationTracker: React.FC = () => {
   const { user } = useAuth();

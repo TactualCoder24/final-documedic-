@@ -297,6 +297,9 @@ const Landing: React.FC = () => {
             <Button variant="ghost" asChild>
               <Link to="/community">Community</Link>
             </Button>
+            <Button variant="ghost" asChild>
+              <Link to="/mentibot">Mentibot</Link>
+            </Button>
             <ThemeToggle />
             <Button asChild>
               <Link to="/login">Get Started</Link>
@@ -324,6 +327,9 @@ const Landing: React.FC = () => {
             <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
               <Button variant="ghost" asChild>
                 <Link to="/community" onClick={() => setIsMenuOpen(false)}>Community</Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link to="/mentibot" onClick={() => setIsMenuOpen(false)}>Mentibot</Link>
               </Button>
               <Button asChild size="lg" className="w-full">
                 <Link to="/login" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
@@ -356,19 +362,22 @@ const Landing: React.FC = () => {
                   transition={{ duration: 0.8 }}
                 >
                   <div className="flex flex-col gap-3 mb-6">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 w-fit">
-                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                      <span className="text-sm font-semibold text-primary">Trusted by many across India</span>
+                    <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-primary/10 border border-primary/20 w-fit max-w-full">
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse flex-shrink-0" />
+                      <span className="text-xs sm:text-sm font-semibold text-primary">Trusted by many across India</span>
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 w-fit">
-                      <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 w-fit max-w-full">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
-                      <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">₹1 Lakh Grant - Delhi Startup Yuva Festival by Govt. of Delhi NCT</span>
+                      <span className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300 leading-tight">
+                        <span className="hidden sm:inline">₹1 Lakh Grant - Delhi Startup Yuva Festival by Govt. of Delhi NCT</span>
+                        <span className="sm:hidden">₹1L Grant - Delhi Startup Festival</span>
+                      </span>
                     </div>
                   </div>
 
-                  <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black font-heading leading-[0.9] tracking-tight">
+                  <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-heading leading-[0.9] tracking-tight">
                     Your Health,
                     <br />
                     <span className="relative inline-block mt-2">
@@ -387,7 +396,7 @@ const Landing: React.FC = () => {
                 </motion.div>
 
                 <motion.p
-                  className="text-xl sm:text-2xl text-muted-foreground leading-relaxed max-w-xl"
+                  className="text-base sm:text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-xl"
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.2 }}
@@ -401,15 +410,15 @@ const Landing: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.4 }}
                 >
-                  <Button asChild size="lg" variant="gradient" className="text-lg px-8 py-7 h-auto shadow-2xl hover:shadow-primary/50 group">
-                    <Link to="/login" className="flex items-center gap-2">
+                  <Button asChild size="lg" variant="gradient" className="text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 h-auto shadow-2xl hover:shadow-primary/50 group w-full sm:w-auto">
+                    <Link to="/login" className="flex items-center justify-center gap-2">
                       Get Started Free
                       <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline" className="text-lg px-8 py-7 h-auto border-2 hover:border-primary hover:bg-primary/5">
+                  <Button asChild size="lg" variant="outline" className="text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 h-auto border-2 hover:border-primary hover:bg-primary/5 w-full sm:w-auto">
                     <Link to="#features">Watch Demo</Link>
                   </Button>
                 </motion.div>

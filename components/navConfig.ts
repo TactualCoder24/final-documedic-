@@ -1,14 +1,14 @@
-import { 
-    HeartPulse, FileText, Pill, BrainCircuit, Bell, Lightbulb, Settings, 
-    CalendarDays, Activity, Utensils, Users, MessageCircle, TestTube2,
-    ClipboardCheck, Target, Syringe, LineChart, Baby, MessageSquareQuestion, Bot
+import {
+  HeartPulse, FileText, Pill, BrainCircuit, Bell, Lightbulb, Settings,
+  CalendarDays, Activity, Utensils, Users, MessageCircle, TestTube2,
+  ClipboardCheck, Target, Syringe, LineChart, Baby, MessageSquareQuestion, Bot, Brain
 } from './icons/Icons';
 
 export const navItems = [
   // Overview
   { path: '/dashboard', label: 'Dashboard', icon: HeartPulse },
   { path: '/summary', label: 'Smart Summary', icon: BrainCircuit },
-  
+
   // My Health Record
   { path: '/health-summary', label: 'Health Summary', icon: ClipboardCheck },
   { path: '/documents', label: 'My Documents', icon: FileText },
@@ -30,6 +30,7 @@ export const navItems = [
   { path: '/reminders', label: 'Reminders & Alerts', icon: Bell },
 
   // Connect & Personalize
+  { path: '/dashboard/mentibot', label: 'Mentibot', icon: Brain },
   { path: '/family-access', label: 'Family Access', icon: Users },
   { path: '/community', label: 'Community', icon: MessageCircle },
   { path: '/tips', label: 'Lifestyle Tips', icon: Lightbulb },

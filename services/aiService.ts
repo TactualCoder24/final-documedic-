@@ -3,7 +3,7 @@ import { DocumentAnalysis } from "../types";
 
 // Per security best practices and platform requirements, the API key is
 // sourced exclusively from the `process.env.API_KEY` environment variable.
-const API_KEY = process.env.API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY;
 
 // A single, reusable instance of the GoogleGenAI client is created.
 // This is more efficient than creating a new instance for every API call.
@@ -24,7 +24,7 @@ export const getHealthSummary = async (healthData: string): Promise<string> => {
   if (!ai) {
     return "AI features are currently unavailable. Please ensure your API key is configured.";
   }
-  
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -42,42 +42,42 @@ export const getHealthSummary = async (healthData: string): Promise<string> => {
 };
 
 export const getLifestyleTips = async (userInfo: string): Promise<string> => {
-    // Gracefully handle the case where the AI client could not be initialized.
-    if (!ai) {
-      return "[]"; // Return an empty JSON array string as the function expects a JSON string.
-    }
-    
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `Generate 5 actionable and personalized lifestyle tips for a person with the following profile. User Profile: ${userInfo}`,
-            config: {
-                systemInstruction: "You are a health and wellness coach. Provide encouraging and practical tips based on the user's profile. Do not provide medical advice.",
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            title: {
-                                type: Type.STRING,
-                                description: 'A short, catchy title for the tip.',
-                            },
-                            description: {
-                                type: Type.STRING,
-                                description: 'A detailed, actionable description of the lifestyle tip.',
-                            },
-                        },
-                        required: ["title", "description"]
-                    },
-                },
-            }
-        });
-        return response.text;
-    } catch (error) {
-        console.error("Error generating lifestyle tips:", error);
-        return "[]"; // Return empty array string on error
-    }
+  // Gracefully handle the case where the AI client could not be initialized.
+  if (!ai) {
+    return "[]"; // Return an empty JSON array string as the function expects a JSON string.
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Generate 5 actionable and personalized lifestyle tips for a person with the following profile. User Profile: ${userInfo}`,
+      config: {
+        systemInstruction: "You are a health and wellness coach. Provide encouraging and practical tips based on the user's profile. Do not provide medical advice.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: {
+                type: Type.STRING,
+                description: 'A short, catchy title for the tip.',
+              },
+              description: {
+                type: Type.STRING,
+                description: 'A detailed, actionable description of the lifestyle tip.',
+              },
+            },
+            required: ["title", "description"]
+          },
+        },
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Error generating lifestyle tips:", error);
+    return "[]"; // Return empty array string on error
+  }
 };
 
 export const analyzeMedicalDocument = async (base64Image: string, mimeType: string): Promise<DocumentAnalysis | null> => {
@@ -96,7 +96,7 @@ export const analyzeMedicalDocument = async (base64Image: string, mimeType: stri
       model: 'gemini-2.5-flash-image',
       contents: { parts: [imagePart, textPart] },
     });
-    
+
     const extractedText = visionResponse.text;
     if (!extractedText || extractedText.trim().length < 10) { // Basic check for meaningful text
       throw new Error("Could not extract sufficient text from the document.");

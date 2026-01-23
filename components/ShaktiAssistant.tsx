@@ -4,7 +4,7 @@ import Button from './ui/Button';
 import { Sparkles, X, SendHorizonal } from './icons/Icons';
 import Input from './ui/Input';
 import { ChatMessage } from '../types';
-import { chatWithShakti } from '../services/gemini';
+import { chatWithShakti } from '../services/aiService';
 import Logo from './icons/Logo';
 
 const ShaktiAssistant: React.FC = () => {
@@ -28,7 +28,7 @@ const ShaktiAssistant: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-  
+
   useEffect(() => {
     // Show tooltip after a delay on first load
     const showTimer = setTimeout(() => {
@@ -103,7 +103,7 @@ const ShaktiAssistant: React.FC = () => {
               <header className="flex items-center justify-between p-4 border-b border-border/60">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-primary/10 rounded-full">
-                     <Sparkles className="h-5 w-5 text-primary" />
+                    <Sparkles className="h-5 w-5 text-primary" />
                   </div>
                   <h3 className="font-bold font-heading">Shakti</h3>
                 </div>
@@ -122,29 +122,29 @@ const ShaktiAssistant: React.FC = () => {
                     )}
                     <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.sender === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-secondary text-secondary-foreground rounded-bl-none'}`}>
                       {msg.text.split('\n').map((line, index) => {
-                          if (line.trim().startsWith('-')) return <p key={index} className="pl-2">{line.trim()}</p>;
-                          return <p key={index}>{line}</p>;
+                        if (line.trim().startsWith('-')) return <p key={index} className="pl-2">{line.trim()}</p>;
+                        return <p key={index}>{line}</p>;
                       })}
                     </div>
                   </div>
                 ))}
                 {isLoading && (
-                   <div className="flex items-end gap-2 justify-start">
-                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                       <Logo className="w-5 h-5 text-primary" />
-                     </div>
-                     <div className="p-3 rounded-2xl bg-secondary rounded-bl-none">
-                        <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0s'}}></span>
-                            <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
-                            <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></span>
-                        </div>
-                     </div>
-                   </div>
+                  <div className="flex items-end gap-2 justify-start">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Logo className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="p-3 rounded-2xl bg-secondary rounded-bl-none">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                        <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                        <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
-              
+
               <footer className="p-4 border-t border-border/60">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                   <Input
@@ -166,25 +166,25 @@ const ShaktiAssistant: React.FC = () => {
         </AnimatePresence>
 
         <AnimatePresence>
-            {!isOpen && showTooltip && (
-                <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                    transition={{ duration: 0.3, ease: 'easeOut' }}
-                    className="absolute bottom-20 right-0 w-max max-w-xs bg-card p-3 rounded-lg shadow-lg border border-border/60 origin-bottom-right"
-                    role="tooltip"
-                >
-                    <p className="text-sm text-foreground">Hi there! Have a question? <span className="font-semibold text-primary">Chat with me!</span></p>
-                    <div className="absolute -bottom-2 right-5 w-4 h-4 bg-card border-b border-r border-border/60 transform rotate-45"></div>
-                </motion.div>
-            )}
+          {!isOpen && showTooltip && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.9 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="absolute bottom-20 right-0 w-max max-w-xs bg-card p-3 rounded-lg shadow-lg border border-border/60 origin-bottom-right"
+              role="tooltip"
+            >
+              <p className="text-sm text-foreground">Hi there! Have a question? <span className="font-semibold text-primary">Chat with me!</span></p>
+              <div className="absolute -bottom-2 right-5 w-4 h-4 bg-card border-b border-r border-border/60 transform rotate-45"></div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 1, duration: 0.3, type: 'spring', stiffness: 200 }}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 1, duration: 0.3, type: 'spring', stiffness: 200 }}
         >
           <Button
             size="lg"
@@ -193,15 +193,15 @@ const ShaktiAssistant: React.FC = () => {
             aria-label={isOpen ? "Close Shakti" : "Open Shakti"}
           >
             <AnimatePresence initial={false} mode="wait">
-                 <motion.div
-                    key={isOpen ? 'close' : 'open'}
-                    initial={{ rotate: -45, opacity: 0, scale: 0.5 }}
-                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                    exit={{ rotate: 45, opacity: 0, scale: 0.5 }}
-                    transition={{ duration: 0.2 }}
-                 >
-                    {isOpen ? <X className="h-7 w-7"/> : <Sparkles className="h-7 w-7"/>}
-                 </motion.div>
+              <motion.div
+                key={isOpen ? 'close' : 'open'}
+                initial={{ rotate: -45, opacity: 0, scale: 0.5 }}
+                animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                exit={{ rotate: 45, opacity: 0, scale: 0.5 }}
+                transition={{ duration: 0.2 }}
+              >
+                {isOpen ? <X className="h-7 w-7" /> : <Sparkles className="h-7 w-7" />}
+              </motion.div>
             </AnimatePresence>
           </Button>
         </motion.div>

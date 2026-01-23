@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { BrainCircuit, ThumbsUp, ThumbsDown } from '../components/icons/Icons';
-import { getHealthSummary } from '../services/gemini';
+import { getHealthSummary } from '../services/aiService';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../hooks/useAuth';
 import { getFullUserData, getWaterIntake } from '../services/dataSupabase';
@@ -25,7 +25,7 @@ const SmartSummary: React.FC = () => {
     const today = new Date().toISOString().split('T')[0];
     const waterIntake = await getWaterIntake(user.uid, today);
     const waterGoal = userData.profile.waterGoal || 8;
-    
+
     // Construct a detailed string of the user's health data for the AI.
     let healthDataString = `
 - Patient Profile: Age ${userData.profile.age || 'N/A'}, Conditions: ${userData.profile.conditions || 'None specified'}, Goals: ${userData.profile.goals || 'None specified'}, Target Blood Sugar: ${userData.profile.targetBloodSugar || 'N/A'}
@@ -56,7 +56,7 @@ const SmartSummary: React.FC = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-  
+
   const handleDownloadRecord = async () => {
     if (!user) return;
     const userData = await getFullUserData(user.uid);
@@ -94,12 +94,12 @@ const SmartSummary: React.FC = () => {
         </CardHeader>
         <CardContent>
           {loading ? (
-             <div className="space-y-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-             </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
           ) : summary ? (
             <div className="prose prose-sm dark:prose-invert max-w-none prose-p:text-foreground prose-headings:text-foreground">
               {summary.split('\n').map((line, index) => {
@@ -134,9 +134,9 @@ const SmartSummary: React.FC = () => {
           </div>
           {summary && !loading && (
             <div className="flex items-center gap-2 flex-shrink-0">
-                <p className="text-sm text-muted-foreground">Was this summary helpful?</p>
-                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Helpful"><ThumbsUp className="h-4 w-4" /></Button>
-                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Not helpful"><ThumbsDown className="h-4 w-4" /></Button>
+              <p className="text-sm text-muted-foreground">Was this summary helpful?</p>
+              <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Helpful"><ThumbsUp className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Not helpful"><ThumbsDown className="h-4 w-4" /></Button>
             </div>
           )}
         </CardFooter>

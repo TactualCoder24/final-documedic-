@@ -25,7 +25,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
     <>
       <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-card border-r border-border/60 transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="flex items-center justify-between h-16 px-4 border-b border-border/60">
-           <NavLink to="/dashboard" className="flex items-center gap-2">
+          <NavLink to="/dashboard" className="flex items-center gap-2">
             <Logo className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold font-heading">DocuMedic</span>
           </NavLink>
@@ -34,7 +34,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
           </Button>
         </div>
         <div className="flex flex-col h-[calc(100vh-4rem)]">
-          <nav className="flex-1 px-2 py-4 space-y-1">
+          <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto custom-scrollbar">
             {navItems.map(({ path, label, icon: Icon }) => (
               <NavLink
                 key={path}
@@ -50,11 +50,11 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
           </nav>
           <div className="px-4 py-4 border-t border-border/60">
             <div className="flex items-center gap-3 px-3 py-2">
-                <img src={user?.photoURL || "https://i.pravatar.cc/150?u=priya-sharma"} alt="User" className="w-10 h-10 rounded-full" />
-                <div>
-                    <p className="font-semibold text-sm">{user?.displayName}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
-                </div>
+              <img src={user?.photoURL || "https://i.pravatar.cc/150?u=priya-sharma"} alt="User" className="w-10 h-10 rounded-full" />
+              <div>
+                <p className="font-semibold text-sm">{user?.displayName}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
             </div>
             <Button variant="ghost" className="w-full justify-start mt-2 text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
               <LogOut className="mr-3 h-5 w-5" />
@@ -91,15 +91,15 @@ const Layout: React.FC = () => {
       <div className="md:pl-64">
         <Header toggleSidebar={toggleSidebar} />
         <main className="p-4 sm:p-6 lg:p-8">
-            <Breadcrumbs />
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-            >
-             <Outlet />
-            </motion.div>
+          <Breadcrumbs />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Outlet />
+          </motion.div>
         </main>
       </div>
     </div>
