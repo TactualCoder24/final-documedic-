@@ -26,7 +26,8 @@ interface TourTooltipProps {
 
 function getTooltipStyle(position: string, targetRect: DOMRect): React.CSSProperties {
     const gap = 16;
-    const tooltipWidth = 340;
+    const isMobile = window.innerWidth < 400;
+    const tooltipWidth = isMobile ? window.innerWidth - 40 : 340;
 
     switch (position) {
         case 'right':
@@ -85,7 +86,7 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="glass-card rounded-2xl shadow-2xl p-5 z-[10000] w-[340px]"
+            className="glass-card rounded-2xl shadow-2xl p-4 sm:p-5 z-[10000] w-[calc(100vw-40px)] sm:w-[340px] max-h-[85vh] overflow-y-auto"
             style={style}
         >
             {/* Step counter */}

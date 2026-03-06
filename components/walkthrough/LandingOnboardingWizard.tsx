@@ -114,15 +114,37 @@ const StepProfile: React.FC<{
                     ))}
                 </select>
             </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label className="block text-sm font-medium mb-1.5">Any Chronic Conditions?</label>
+                <label className="block text-sm font-medium mb-1.5">Blood Sugar (mg/dL)</label>
                 <input
-                    type="text"
+                    type="number"
                     className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    placeholder="e.g., Type 2 Diabetes, Asthma"
-                    value={data.conditions || ''}
-                    onChange={e => onChange('conditions', e.target.value)}
+                    placeholder="e.g., 100"
+                    value={data.sugar || ''}
+                    onChange={e => onChange('sugar', e.target.value)}
                 />
+            </div>
+            <div>
+                <label className="block text-sm font-medium mb-1.5">Blood Pressure</label>
+                <div className="flex items-center gap-2">
+                    <input
+                        type="number"
+                        className="w-full px-3 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-center"
+                        placeholder="120"
+                        value={data.systolic || ''}
+                        onChange={e => onChange('systolic', e.target.value)}
+                    />
+                    <span className="text-muted-foreground font-medium">/</span>
+                    <input
+                        type="number"
+                        className="w-full px-3 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-center"
+                        placeholder="80"
+                        value={data.diastolic || ''}
+                        onChange={e => onChange('diastolic', e.target.value)}
+                    />
+                </div>
             </div>
         </div>
     </div>
@@ -186,10 +208,11 @@ const StepMedications: React.FC<{
                     : 'bg-background border-border hover:border-green-500/40'
                     }`}
             >
-                {selectedMeds.includes('None') ? '✓ ' : ''}None / Not Needed
+                {selectedMeds.includes('None') ? '✓ ' : ''}
+                <span className="whitespace-normal">None / Not Needed</span>
             </button>
 
-            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1 opacity-100 transition-opacity" style={{ opacity: selectedMeds.includes('None') ? 0.3 : 1, pointerEvents: selectedMeds.includes('None') ? 'none' : 'auto' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1 opacity-100 transition-opacity" style={{ opacity: selectedMeds.includes('None') ? 0.3 : 1, pointerEvents: selectedMeds.includes('None') ? 'none' : 'auto' }}>
                 {commonMeds.map(med => (
                     <button
                         key={med}
@@ -248,18 +271,18 @@ const StepGoals: React.FC<{
                 <h2 className="text-2xl font-bold font-heading">Your Health Goals</h2>
                 <p className="text-muted-foreground mt-1">What would you like to achieve?</p>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-left">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
                 {goals.map(g => (
                     <button
                         key={g.id}
                         onClick={() => onToggle(g.id)}
-                        className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all border ${selectedGoals.includes(g.id)
+                        className={`flex items-start gap-2 h-auto px-4 py-3 rounded-xl text-sm font-medium transition-all border ${selectedGoals.includes(g.id)
                             ? 'bg-primary/15 border-primary text-primary'
                             : 'bg-background border-border hover:border-primary/40'
                             }`}
                     >
-                        <span>{g.icon}</span>
-                        <span className="truncate">{g.label}</span>
+                        <span className="shrink-0">{g.icon}</span>
+                        <span className="text-left leading-snug whitespace-normal break-words">{g.label}</span>
                     </button>
                 ))}
             </div>
@@ -375,6 +398,11 @@ const LandingOnboardingWizard: React.FC = () => {
                 conditions: profileData.conditions,
                 goals: selectedGoals.join(', '),
                 waterGoal: waterGoal,
+            },
+            vitals: {
+                sugar: profileData.sugar ? Number(profileData.sugar) : undefined,
+                systolic: profileData.systolic ? Number(profileData.systolic) : undefined,
+                diastolic: profileData.diastolic ? Number(profileData.diastolic) : undefined,
             },
             medications: selectedMeds
         };

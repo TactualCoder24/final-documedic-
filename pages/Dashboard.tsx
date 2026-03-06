@@ -449,7 +449,7 @@ const Dashboard: React.FC = () => {
             <label htmlFor="sugar" className="block text-sm font-medium text-foreground mb-1">Blood Sugar (mg/dL)</label>
             <Input id="sugar" name="sugar" type="number" placeholder="e.g., 100" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="systolic" className="block text-sm font-medium text-foreground mb-1">Systolic (mmHg)</label>
               <Input id="systolic" name="systolic" type="number" placeholder="e.g., 120" />

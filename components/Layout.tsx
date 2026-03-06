@@ -13,7 +13,7 @@ import OnboardingChecklist from './walkthrough/OnboardingChecklist';
 import FeatureHint from './walkthrough/FeatureHint';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { PENDING_ONBOARDING_KEY } from './walkthrough/LandingOnboardingWizard';
-import { saveProfile, addMedication } from '../services/dataSupabase';
+import { saveProfile, addMedication, addVital } from '../services/dataSupabase';
 
 const COLLAPSED_KEY = 'sidebar-collapsed-groups';
 
@@ -209,6 +209,12 @@ const Layout: React.FC = () => {
                 addMedication(user.uid, { name: med, dosage: 'As prescribed', frequency: 'Daily' })
               )
             );
+          }
+          if (pendingData.vitals) {
+            const { sugar, systolic, diastolic } = pendingData.vitals;
+            if (sugar || systolic || diastolic) {
+              await addVital(user.uid, { sugar, systolic, diastolic });
+            }
           }
         };
         saveData();
