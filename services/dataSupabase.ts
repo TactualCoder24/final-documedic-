@@ -21,6 +21,7 @@ import {
     CarePlan,
     GrowthRecord,
     Questionnaire,
+    CommunityComment
 } from '../types';
 
 // ============================================================================
@@ -911,39 +912,73 @@ export const getTestsAndProcedures = async (userId: string): Promise<TestOrProce
 // ============================================================================
 
 export const getCommunityPosts = async (): Promise<CommunityPost[]> => {
-    const { data, error } = await supabase
+    // We purposefully embed the comments via a secondary fetch for simplicity,
+    // although Supabase supports join syntax if foreign keys are set up strictly.
+    const { data: posts, error: postsError } = await supabase
         .from('community_posts')
         .select('*')
         .order('timestamp', { ascending: false });
 
-    if (error) {
-        console.error('Error fetching community posts:', error);
-        throw error;
+    if (postsError) {
+        console.error('Error fetching community posts:', postsError);
+        throw postsError;
     }
 
-    return (data || []).map(p => ({
-        id: p.id,
-        title: p.title,
-        content: p.content,
-        authorId: p.author_id,
-        authorName: p.author_name,
-        authorPhotoURL: p.author_photo_url,
-        timestamp: p.timestamp,
-    }));
+    const { data: comments, error: commentsError } = await supabase
+        .from('community_comments')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+    if (commentsError) {
+        console.error('Error fetching community comments:', commentsError);
+    }
+
+    return (posts || []).map(p => {
+        const postComments = (comments || []).filter(c => c.post_id === p.id).map(c => ({
+            id: c.id,
+            postId: c.post_id,
+            authorId: c.author_id,
+            authorName: c.author_name,
+            authorPhotoURL: c.author_photo_url,
+            content: c.content,
+            isAnonymous: c.is_anonymous,
+            likes: c.likes || [],
+            createdAt: c.created_at,
+        }));
+
+        return {
+            id: p.id,
+            title: p.title,
+            content: p.content,
+            authorId: p.author_id,
+            authorName: p.author_name,
+            authorPhotoURL: p.author_photo_url,
+            timestamp: p.timestamp,
+            category: p.category || 'General',
+            isAnonymous: p.is_anonymous || false,
+            likes: p.likes || [],
+            imageUrl: p.image_url,
+            comments: postComments,
+        };
+    });
 };
 
 export const addCommunityPost = async (
     userId: string,
-    post: Omit<CommunityPost, 'id' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'timestamp'>,
+    post: { title: string; content: string; category?: string; isAnonymous?: boolean; imageUrl?: string },
     author: { name: string; photoURL: string | null }
 ): Promise<void> => {
     const { error } = await supabase.from('community_posts').insert({
         author_id: userId,
-        author_name: author.name,
-        author_photo_url: author.photoURL,
+        author_name: post.isAnonymous ? 'Anonymous Member' : author.name,
+        author_photo_url: post.isAnonymous ? null : author.photoURL,
         title: post.title,
         content: post.content,
         timestamp: new Date().toISOString(),
+        category: post.category || 'General',
+        is_anonymous: post.isAnonymous || false,
+        image_url: post.imageUrl || null,
+        likes: []
     });
 
     if (error) {
@@ -962,6 +997,112 @@ export const deleteCommunityPost = async (postId: string): Promise<void> => {
         console.error('Error deleting community post:', error);
         throw error;
     }
+};
+
+export const togglePostLike = async (postId: string, userId: string): Promise<void> => {
+    const { data: post, error: fetchError } = await supabase
+        .from('community_posts')
+        .select('likes')
+        .eq('id', postId)
+        .single();
+
+    if (fetchError || !post) throw fetchError;
+
+    let currentLikes: string[] = post.likes || [];
+    if (currentLikes.includes(userId)) {
+        currentLikes = currentLikes.filter(id => id !== userId);
+    } else {
+        currentLikes.push(userId);
+    }
+
+    const { error: updateError } = await supabase
+        .from('community_posts')
+        .update({ likes: currentLikes })
+        .eq('id', postId);
+
+    if (updateError) throw updateError;
+};
+
+export const reportPost = async (postId: string, userId: string): Promise<void> => {
+    const { data: post, error: fetchError } = await supabase
+        .from('community_posts')
+        .select('reported_by')
+        .eq('id', postId)
+        .single();
+
+    if (fetchError || !post) throw fetchError;
+
+    let reportedBy: string[] = post.reported_by || [];
+    if (!reportedBy.includes(userId)) {
+        reportedBy.push(userId);
+    }
+
+    const { error: updateError } = await supabase
+        .from('community_posts')
+        .update({ reported_by: reportedBy })
+        .eq('id', postId);
+
+    if (updateError) throw updateError;
+};
+
+export const addCommunityComment = async (
+    postId: string,
+    userId: string,
+    content: string,
+    author: { name: string; photoURL: string | null },
+    isAnonymous: boolean = false
+): Promise<void> => {
+    const { error } = await supabase.from('community_comments').insert({
+        post_id: postId,
+        author_id: userId,
+        author_name: isAnonymous ? 'Anonymous Member' : author.name,
+        author_photo_url: isAnonymous ? null : author.photoURL,
+        content: content,
+        is_anonymous: isAnonymous,
+        likes: [],
+        created_at: new Date().toISOString()
+    });
+
+    if (error) {
+        console.error('Error adding community comment:', error);
+        throw error;
+    }
+};
+
+export const deleteCommunityComment = async (commentId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('community_comments')
+        .delete()
+        .eq('id', commentId);
+
+    if (error) {
+        console.error('Error deleting community comment:', error);
+        throw error;
+    }
+};
+
+export const toggleCommentLike = async (commentId: string, userId: string): Promise<void> => {
+    const { data: comment, error: fetchError } = await supabase
+        .from('community_comments')
+        .select('likes')
+        .eq('id', commentId)
+        .single();
+
+    if (fetchError || !comment) throw fetchError;
+
+    let currentLikes: string[] = comment.likes || [];
+    if (currentLikes.includes(userId)) {
+        currentLikes = currentLikes.filter(id => id !== userId);
+    } else {
+        currentLikes.push(userId);
+    }
+
+    const { error: updateError } = await supabase
+        .from('community_comments')
+        .update({ likes: currentLikes })
+        .eq('id', commentId);
+
+    if (updateError) throw updateError;
 };
 
 // ============================================================================

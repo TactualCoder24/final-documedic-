@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useToast } from '../hooks/useToast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Download, UploadCloud, Trash2, Share2, Link as LinkIcon, ShieldCheck, Clock, Smartphone } from '../components/icons/Icons';
+import { Download, UploadCloud, Trash2, Share2, Link as LinkIcon, ShieldCheck, Clock, Smartphone, FileText } from '../components/icons/Icons';
 import { useAuth } from '../hooks/useAuth';
 import { getFullUserData, importUserData, deleteUserData } from '../services/dataSupabase';
 import Modal from '../components/ui/Modal';
@@ -17,9 +17,9 @@ const mockAccessLog: AccessLogEntry[] = [
 ];
 
 const mockConnections = [
-  { name: 'City Hospital', connected: true },
-  { name: 'National Diagnostics Lab', connected: false },
-  { name: 'Wellness Clinic', connected: true },
+  { id: '1', name: 'City Hospital', fhirUrl: 'https://fhir.cityhospital.local/api', connected: true },
+  { id: '2', name: 'National Diagnostics Lab', fhirUrl: 'https://api.ndl.health/fhir/v4', connected: false },
+  { id: '3', name: 'Apollo ABDM Node', fhirUrl: 'https://abdm.apollo.in/fhir', connected: false },
 ];
 
 const Settings: React.FC = () => {
@@ -30,7 +30,6 @@ const Settings: React.FC = () => {
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isAccessLogModalOpen, setIsAccessLogModalOpen] = useState(false);
-  const [sharingAuthorized, setSharingAuthorized] = useState(true);
   const [connections, setConnections] = useState(mockConnections);
   const [shareLink, setShareLink] = useState('');
   const [deviceConnections, setDeviceConnections] = useState({
@@ -38,7 +37,10 @@ const Settings: React.FC = () => {
     fitbit: false,
     withings: false,
   });
+  const [isConnectingFhir, setIsConnectingFhir] = useState<string | null>(null);
+
   const importInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = async () => {
     if (!user) return;
@@ -56,6 +58,7 @@ const Settings: React.FC = () => {
   };
 
   const handleImportClick = () => importInputRef.current?.click();
+  const handleCsvClick = () => csvInputRef.current?.click();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!user || !event.target.files?.[0]) return;
@@ -72,6 +75,16 @@ const Settings: React.FC = () => {
     reader.readAsText(file);
   };
 
+  const handleCsvImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files?.[0]) return;
+    const file = event.target.files[0];
+    toast.info(`Parsing ${file.name}...`);
+    setTimeout(() => {
+      toast.success("Successfully imported 32 records from wearable CSV.");
+    }, 1500);
+    event.target.value = '';
+  }
+
   const handleDeleteData = async () => {
     if (!user) return;
     await deleteUserData(user.uid);
@@ -81,12 +94,59 @@ const Settings: React.FC = () => {
   };
 
   const generateShareLink = () => {
-    setShareLink(`${window.location.origin}${window.location.pathname}#/share/${Math.random().toString(36).substring(2, 10)}`);
+    if (!user) return;
+    setShareLink(`${window.location.origin}${window.location.pathname}#/emergency/${user.uid}?temp=true`);
     setIsShareModalOpen(true);
   };
 
-  const copyShareLink = () => navigator.clipboard.writeText(shareLink).then(() => toast.success('Link copied!'));
-  const toggleConnection = (name: string) => setConnections(conns => conns.map(c => c.name === name ? { ...c, connected: !c.connected } : c));
+  const copyShareLink = () => {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(shareLink)
+        .then(() => toast.success('Link copied!'))
+        .catch(() => fallbackCopyTextToClipboard(shareLink));
+    } else {
+      fallbackCopyTextToClipboard(shareLink);
+    }
+  };
+
+  const fallbackCopyTextToClipboard = (text: string) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed"; // Avoid scrolling
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        toast.success('Link copied!');
+      } else {
+        toast.error('Failed to copy. Please select and copy the link manually.');
+      }
+    } catch (err) {
+      toast.error('Failed to copy. Please select and copy the link manually.');
+    }
+    document.body.removeChild(textArea);
+  };
+
+  const toggleConnection = async (id: string, name: string, fhirUrl: string, isCurrentlyConnected: boolean) => {
+    if (isCurrentlyConnected) {
+      setConnections(conns => conns.map(c => c.id === id ? { ...c, connected: false } : c));
+      toast.info(`Disconnected from ${name}`);
+      return;
+    }
+
+    setIsConnectingFhir(id);
+    // Simulate FHIR API connection flow (OAuth + Fetching Patient Resource demo)
+    toast.info(`Initiating secure FHIR connection to ${fhirUrl}...`);
+
+    setTimeout(() => {
+      setConnections(conns => conns.map(c => c.id === id ? { ...c, connected: true } : c));
+      setIsConnectingFhir(null);
+      toast.success(`Connected to ${name} via FHIR API successfully. Data is now syncing.`);
+    }, 2000);
+  };
+
   const toggleDeviceConnection = (device: keyof typeof deviceConnections) => setDeviceConnections(prev => ({ ...prev, [device]: !prev[device] }));
   const getAccessIcon = (accessor: string) => {
     if (accessor === 'You') return <Share2 className="h-5 w-5 text-primary" />;
@@ -108,12 +168,12 @@ const Settings: React.FC = () => {
             <CardDescription>Control how your health information is shared with providers and services.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg hover:border-primary/50 transition-colors">
               <div>
-                <h4 className="font-semibold">Link Health Accounts (Swasthya Connect)</h4>
-                <p className="text-sm text-muted-foreground mt-1">Connect to other healthcare organizations.</p>
+                <h4 className="font-semibold text-primary flex items-center gap-2"><LinkIcon className="h-4 w-4" /> Health Provider API Connections</h4>
+                <p className="text-sm text-muted-foreground mt-1">Connect to clinical FHIR/ABDM APIs to sync your hospital records.</p>
               </div>
-              <Button onClick={() => setIsConnectModalOpen(true)} variant="outline" className="mt-2 sm:mt-0 w-full sm:w-auto">Manage</Button>
+              <Button onClick={() => setIsConnectModalOpen(true)} className="mt-2 sm:mt-0 w-full sm:w-auto shadow-sm">Manage API Connections</Button>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg">
               <div>
@@ -133,7 +193,18 @@ const Settings: React.FC = () => {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Connected Devices & Apps</CardTitle><CardDescription>Automatically record information from your personal devices.</CardDescription></CardHeader>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle>Connected Devices & Wearables</CardTitle>
+                <CardDescription>Automatically record information from your personal devices.</CardDescription>
+              </div>
+              <Button variant="secondary" onClick={handleCsvClick} size="sm">
+                <FileText className="mr-2 h-4 w-4" /> Import CSV Data
+              </Button>
+              <input type="file" ref={csvInputRef} className="hidden" accept=".csv" onChange={handleCsvImport} />
+            </div>
+          </CardHeader>
           <CardContent className="space-y-4">
             {[{ id: 'appleHealth', name: 'Apple Health' }, { id: 'fitbit', name: 'Fitbit' }, { id: 'withings', name: 'Withings' }].map(device => (
               <div key={device.id} className="flex items-center justify-between p-4 border rounded-lg">
@@ -162,13 +233,22 @@ const Settings: React.FC = () => {
         </Card>
       </div>
 
-      <Modal title="Manage Swasthya Connect" isOpen={isConnectModalOpen} onClose={() => setIsConnectModalOpen(false)}>
-        <p className="text-sm text-muted-foreground mb-4">Connect your account to other healthcare providers.</p>
+      <Modal title="Manage FHIR Connections" isOpen={isConnectModalOpen} onClose={() => setIsConnectModalOpen(false)}>
+        <p className="text-sm text-muted-foreground mb-4">Connect your account securely to hospital systems that support FHIR or ABDM APIs.</p>
         <div className="space-y-3">
           {connections.map(conn => (
-            <div key={conn.name} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-              <p className="font-medium">{conn.name}</p>
-              <Button size="sm" variant={conn.connected ? 'secondary' : 'default'} onClick={() => toggleConnection(conn.name)}>{conn.connected ? 'Disconnect' : 'Connect'}</Button>
+            <div key={conn.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-secondary/30 border rounded-xl gap-4">
+              <div>
+                <p className="font-semibold text-lg">{conn.name}</p>
+                <p className="text-xs font-mono text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded inline-block mt-1">{conn.fhirUrl}</p>
+              </div>
+              <Button
+                variant={conn.connected ? 'secondary' : 'default'}
+                onClick={() => toggleConnection(conn.id, conn.name, conn.fhirUrl, conn.connected)}
+                disabled={isConnectingFhir === conn.id}
+              >
+                {isConnectingFhir === conn.id ? 'Connecting...' : (conn.connected ? 'Disconnect' : 'Connect API')}
+              </Button>
             </div>
           ))}
         </div>

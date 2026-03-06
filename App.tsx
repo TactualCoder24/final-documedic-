@@ -15,6 +15,7 @@ import LifestyleTips from './pages/LifestyleTips';
 import EmergencyInfo from './pages/EmergencyInfo';
 import NotFound from './pages/NotFound';
 import Layout from './components/Layout';
+import { AutoTranslator } from './components/AutoTranslator';
 import CommunityLayout from './components/CommunityLayout';
 import MentibotStandaloneLayout from './components/MentibotStandaloneLayout';
 import Landing from './pages/Landing';
@@ -172,6 +173,7 @@ const AppRoutes = () => {
 function App() {
   return (
     <ThemeProvider>
+      <AutoTranslator />
       <AuthProvider>
         <OnboardingProvider>
           <ToastProvider>

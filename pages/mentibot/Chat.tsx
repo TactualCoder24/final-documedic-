@@ -10,7 +10,7 @@ import {
 import Button from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface Message {
     role: 'user' | 'model';
@@ -22,6 +22,7 @@ interface Message {
 
 const MentibotChat: React.FC = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -76,6 +77,10 @@ const MentibotChat: React.FC = () => {
                 feature_used: 'AI Chat',
                 notes: aiResponse.isCrisis ? 'CRISIS DETECTED' : undefined
             });
+
+            if (aiResponse.isCrisis) {
+                setTimeout(() => navigate('/dashboard/mentibot/emergency'), 3000);
+            }
 
         } catch (err) {
             console.error(err);

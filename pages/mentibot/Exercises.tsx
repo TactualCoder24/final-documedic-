@@ -17,6 +17,7 @@ interface Exercise {
     difficulty: 'Easy' | 'Medium' | 'Hard';
     icon: any;
     steps: string[];
+    audioUrl?: string;
 }
 
 const exercises: Exercise[] = [
@@ -28,6 +29,7 @@ const exercises: Exercise[] = [
         duration: '5 min',
         difficulty: 'Easy',
         icon: Wind,
+        audioUrl: 'https://cdn.pixabay.com/download/audio/2022/10/05/audio_24a2ef6bbc.mp3?filename=box-breathing-meditation-122477.mp3', // Placeholder royalty free track
         steps: [
             'Inhale slowly through your nose for 4 seconds.',
             'Hold your breath for 4 seconds.',
@@ -60,6 +62,7 @@ const exercises: Exercise[] = [
         duration: '15 min',
         difficulty: 'Easy',
         icon: Activity,
+        audioUrl: 'https://cdn.pixabay.com/download/audio/2023/12/15/audio_ff12d9bed6.mp3?filename=deep-meditation-20531.mp3', // Placeholder royalty free track
         steps: [
             'Lie down or sit comfortably in a quiet space.',
             'Bring awareness to your feet and toes, noticing any sensations.',
@@ -181,6 +184,25 @@ const MentibotExercises: React.FC = () => {
                                     <PlayCircle className="h-5 w-5 text-primary" />
                                     Step-by-Step Guide
                                 </h3>
+
+                                {selectedExercise.audioUrl && (
+                                    <div className="mb-8 p-4 bg-primary/10 rounded-2xl border border-primary/20">
+                                        <h4 className="text-sm font-bold text-primary mb-2 flex items-center gap-2">
+                                            <Wind className="h-4 w-4" />
+                                            Guided Audio
+                                        </h4>
+                                        <audio
+                                            controls
+                                            className="w-full focus:outline-none"
+                                            controlsList="nodownload"
+                                            src={selectedExercise.audioUrl}
+                                        >
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                        <p className="text-xs text-muted-foreground mt-2 italic">Listen to the guided meditation while following the steps below.</p>
+                                    </div>
+                                )}
+
                                 <div className="space-y-6">
                                     {selectedExercise.steps.map((step, idx) => (
                                         <div key={idx} className="flex gap-4">

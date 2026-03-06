@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { SUPPORTED_LANGUAGES, getAppLanguage, setAppLanguage } from '../AutoTranslator';
 
 // ============================================================================
 // STEP INDICATOR
@@ -59,25 +60,40 @@ const stepVariants = {
 // ============================================================================
 
 // Step 0: Welcome
-const StepWelcome: React.FC = () => (
-    <div className="text-center space-y-6">
-        <div className="text-7xl mb-4">👋</div>
-        <h2 className="text-3xl font-bold font-heading">
-            Welcome to <span className="text-gradient">DocuMedic</span>
-        </h2>
-        <p className="text-muted-foreground text-lg mx-auto leading-relaxed">
-            Let's customize your health dashboard in <strong>60 seconds</strong> before you even sign up.
-        </p>
-        <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                🔒 Private & Secure
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-600 text-sm font-medium">
-                ⚡ Takes 60 seconds
+const StepWelcome: React.FC = () => {
+    const currentLang = getAppLanguage();
+    return (
+        <div className="text-center space-y-6">
+            <div className="text-7xl mb-4">👋</div>
+            <h2 className="text-3xl font-bold font-heading">
+                Welcome to <span className="text-gradient">DocuMedic</span>
+            </h2>
+            <p className="text-muted-foreground text-lg mx-auto leading-relaxed">
+                Let's customize your health dashboard in <strong>60 seconds</strong> before you even sign up.
+            </p>
+            <div className="flex flex-col items-center justify-center gap-4 pt-4">
+                <div className="flex flex-col items-center gap-2 w-full max-w-xs">
+                    <label className="text-sm font-semibold text-muted-foreground" data-notranslate>App Language</label>
+                    <select
+                        className="p-3 rounded-xl border-2 border-primary/20 bg-background outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 w-full text-center font-bold text-foreground transition-all cursor-pointer"
+                        value={currentLang}
+                        onChange={(e) => setAppLanguage(e.target.value)}
+                    >
+                        {SUPPORTED_LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                </div>
+                <div className="flex flex-wrap justify-center gap-4 mt-2">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                        🔒 Private & Secure
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-600 text-sm font-medium">
+                        ⚡ Takes 60 seconds
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 // Step 1: Health Profile
 const StepProfile: React.FC<{

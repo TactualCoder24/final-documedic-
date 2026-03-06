@@ -26,10 +26,19 @@ interface TourTooltipProps {
 
 function getTooltipStyle(position: string, targetRect: DOMRect): React.CSSProperties {
     const gap = 16;
-    const isMobile = window.innerWidth < 400;
+    const isMobile = window.innerWidth < 768;
     const tooltipWidth = isMobile ? window.innerWidth - 40 : 340;
 
-    switch (position) {
+    // Force bottom/top on mobile to prevent horizontal overflow
+    let actualPosition = position;
+    if (isMobile) {
+        actualPosition = targetRect.bottom + 250 > window.innerHeight ? 'top' : 'bottom';
+    }
+
+    const centerX = targetRect.left + targetRect.width / 2 - tooltipWidth / 2;
+    const safeLeft = Math.max(20, Math.min(centerX, window.innerWidth - tooltipWidth - 20));
+
+    switch (actualPosition) {
         case 'right':
             return {
                 position: 'fixed',
@@ -47,14 +56,14 @@ function getTooltipStyle(position: string, targetRect: DOMRect): React.CSSProper
         case 'bottom':
             return {
                 position: 'fixed',
-                left: Math.max(20, Math.min(targetRect.left + targetRect.width / 2 - tooltipWidth / 2, window.innerWidth - tooltipWidth - 20)),
+                left: safeLeft,
                 top: targetRect.bottom + gap,
             };
         case 'top':
         default:
             return {
                 position: 'fixed',
-                left: Math.max(20, Math.min(targetRect.left + targetRect.width / 2 - tooltipWidth / 2, window.innerWidth - tooltipWidth - 20)),
+                left: safeLeft,
                 bottom: window.innerHeight - targetRect.top + gap,
             };
     }

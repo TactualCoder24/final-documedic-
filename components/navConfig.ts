@@ -2,7 +2,7 @@ import React from 'react';
 import {
   HeartPulse, FileText, Pill, BrainCircuit, Bell, Lightbulb, Settings,
   CalendarDays, Activity, Utensils, Users, MessageCircle, TestTube2,
-  ClipboardCheck, Target, Syringe, LineChart, Baby, MessageSquareQuestion, Bot, Brain
+  ClipboardCheck, Target, Syringe, LineChart, Baby, MessageSquareQuestion, Bot, Brain, MapPin
 } from './icons/Icons';
 
 export interface NavItem {
@@ -47,6 +47,7 @@ export const navGroups: NavGroup[] = [
     label: 'Care Planning',
     items: [
       { path: '/appointments', label: 'Appointments', icon: CalendarDays },
+      { path: '/find-care', label: 'Find Care', icon: MapPin },
       { path: '/preventive-care', label: 'Preventive Care', icon: Target },
       { path: '/plan-of-care', label: 'Plan of Care', icon: Syringe },
       { path: '/questionnaires', label: 'Questionnaires', icon: MessageSquareQuestion },

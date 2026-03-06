@@ -40,14 +40,15 @@ const SpotlightTour: React.FC = () => {
             const el = document.querySelector(currentStepData.target);
             if (el) {
                 const rect = el.getBoundingClientRect();
-                // If element is off-screen or hidden, skip it
-                if (rect.width === 0 || rect.height === 0 || rect.bottom < 0 || rect.right < 0) {
+                // If element is hidden (0 width/height), skip it.
+                // We no longer skip if just off-screen, because we want to scroll to it!
+                if (rect.width === 0 || rect.height === 0) {
                     handleNext();
                     return;
                 }
                 setTargetRect(rect);
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else if (retryCount < 5) {
+            } else if (retryCount < 20) {
                 // Retry finding the element (it may take a moment to mount)
                 retryCount++;
                 timer = setTimeout(findTarget, 200);

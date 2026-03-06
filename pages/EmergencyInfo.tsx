@@ -34,7 +34,8 @@ const EmergencyInfo: React.FC = () => {
     const fetchUserData = async () => {
       if (id) {
         const userData = await getFullUserData(id);
-        if (userData && userData.profile && userData.profile.age) {
+        if (userData) {
+          if (!userData.profile) userData.profile = {};
           setData(userData);
         }
       }
@@ -97,7 +98,15 @@ const EmergencyInfo: React.FC = () => {
             <dl className="space-y-2">
               <InfoRow label="Age" value={data.profile.age || 'N/A'} />
               <InfoRow label="Blood Type" value={data.profile.bloodType || 'N/A'} />
-              <InfoRow label="Target Blood Sugar" value={data.profile.targetBloodSugar ? `${data.profile.targetBloodSugar} mg/dL` : 'N/A'} />
+              {(() => {
+                const latestVitals = data.vitals && data.vitals.length > 0 ? data.vitals[data.vitals.length - 1] : null;
+                return (
+                  <>
+                    <InfoRow label="Latest Blood Sugar" value={latestVitals?.sugar ? `${latestVitals.sugar} mg/dL` : 'N/A'} />
+                    <InfoRow label="Latest Blood Pressure" value={latestVitals?.systolic && latestVitals?.diastolic ? `${latestVitals.systolic}/${latestVitals.diastolic} mmHg` : 'N/A'} />
+                  </>
+                );
+              })()}
               <InfoRow label="Emergency Contact" value={
                 data.profile.emergencyContactName ?
                   `${data.profile.emergencyContactName} - ${data.profile.emergencyContactPhone}` : 'N/A'

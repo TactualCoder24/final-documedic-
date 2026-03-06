@@ -165,6 +165,38 @@ export const checkMedicationInteractions = async (medications: string[]): Promis
   }
 };
 
+export const chatWithSymptomChecker = async (conversationText: string, userProfileInfo: string): Promise<string> => {
+  if (!ai) return JSON.stringify({
+    type: "result",
+    title: "System Error",
+    recommendation: "AI features are currently unavailable.",
+    triageLevel: "Routine",
+    action: "Reset"
+  });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `User Profile Info: ${userProfileInfo}\n\nConversation so far:\n${conversationText}\n\nBased on the conversation, if you need more information to suggest a triage level, output a JSON object with type "question" and the "question" text. If you have enough information (usually after 2-3 questions), output a JSON object with type "result", "title", "recommendation", "triageLevel" (Emergency, Urgent, Routine, or Self-care), and "action" (FindER, ScheduleAppointment, or SelfCare). Do not provide medical diagnosis. Your response MUST be valid JSON only.`,
+      config: {
+        systemInstruction: "You are an intelligent clinical triage assistant. You ask 1-3 targeted questions to understand the severity of the symptoms. Then you output a JSON schema to direct the user to the correct level of care.",
+        responseMimeType: "application/json",
+        temperature: 0.1,
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Error chatting with symptom checker:", error);
+    return JSON.stringify({
+      type: "result",
+      title: "Error",
+      recommendation: "Could not process symptoms at this time.",
+      triageLevel: "Routine",
+      action: "Reset"
+    });
+  }
+};
+
 export const chatWithShakti = async (message: string): Promise<string> => {
   if (!ai) return "AI features are currently unavailable.";
 
@@ -183,3 +215,34 @@ export const chatWithShakti = async (message: string): Promise<string> => {
     return "I'm having a little trouble connecting right now. Please try again in a moment.";
   }
 };
+
+export const translateTexts = async (texts: string[], targetLang: string): Promise<string[]> => {
+  if (!ai || targetLang === 'English' || texts.length === 0) return texts;
+
+  try {
+    const payload: Record<string, string> = {};
+    texts.forEach((t, i) => { payload[`t_${i}`] = t; });
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `You are a strict translation API. Translate the values of this JSON object from English to ${targetLang}. Return ONLY a valid JSON object with the EXACT same keys. Do not merge or split values. \n\nInput JSON:\n${JSON.stringify(payload)}`,
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.1,
+      }
+    });
+
+    let textRes = response.text || "{}";
+    textRes = textRes.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const translatedObj = JSON.parse(textRes);
+
+    return texts.map((t, i) => {
+      const key = `t_${i}`;
+      return translatedObj[key] ? translatedObj[key] : t;
+    });
+  } catch (error) {
+    console.error("Error translating texts:", error);
+    return texts;
+  }
+};
+

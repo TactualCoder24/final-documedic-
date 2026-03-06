@@ -65,7 +65,7 @@ export interface Appointment {
 
 // Defines the structure for a symptom log entry.
 export interface Symptom {
-  id:string;
+  id: string;
   date: string; // ISO string for datetime-local input
   name: string;
   severity: number; // 1-10
@@ -101,6 +101,7 @@ export interface Profile {
   waterGoal?: number; // in glasses
   personalHistory?: string;
   familyHistory?: string;
+  language?: string;
 }
 
 // Defines the structure for a chat message with the AI assistant.
@@ -119,6 +120,18 @@ export interface AccessLogEntry {
 }
 
 // Defines the structure for a community post.
+export interface CommunityComment {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  authorPhotoURL: string | null;
+  content: string;
+  isAnonymous: boolean;
+  likes: string[]; // array of user IDs
+  createdAt: string; // ISO string
+}
+
 export interface CommunityPost {
   id: string;
   title: string;
@@ -127,115 +140,120 @@ export interface CommunityPost {
   authorName: string;
   authorPhotoURL: string | null;
   timestamp: string; // ISO string
+  category: string;
+  isAnonymous: boolean;
+  likes: string[]; // array of user IDs
+  imageUrl: string | null;
+  comments: CommunityComment[];
 }
 
 // Defines the structure for an After Visit Summary.
 export interface AfterVisitSummary {
-    id: string;
-    appointmentId: string;
-    visitReason: string;
-    clinicalNotes: string;
-    followUpInstructions: string;
+  id: string;
+  appointmentId: string;
+  visitReason: string;
+  clinicalNotes: string;
+  followUpInstructions: string;
 }
 
 // Defines the structure for an upcoming test or procedure.
 export interface TestOrProcedure {
-    id: string;
-    name: string;
-    date: string; // ISO string
-    location: string;
-    instructions: string;
+  id: string;
+  name: string;
+  date: string; // ISO string
+  location: string;
+  instructions: string;
 }
 
 // Defines the structure for a care location (Urgent Care / ER).
 export interface CareLocation {
-    id:string;
-    name: string;
-    type: 'Urgent Care' | 'Emergency Room';
-    address: string;
-    waitTime: number; // in minutes
-    distance: number; // in km
+  id: string;
+  name: string;
+  type: 'Urgent Care' | 'Emergency Room';
+  address: string;
+  waitTime: number; // in minutes
+  distance: number; // in km
 }
 
 // Defines the structure for a detailed test result component.
 export interface TestResultDetail {
-    name: string;
-    value: string;
-    referenceRange: string;
-    isAbnormal: boolean;
+  name: string;
+  value: string;
+  referenceRange: string;
+  isAbnormal: boolean;
 }
 
 // Defines the structure for a test result summary.
 export interface TestResult {
-    id: string;
-    name: string;
-    date: string; // ISO string
-    status: 'Final' | 'Pending';
-    provider: string;
-    details: TestResultDetail[];
+  id: string;
+  name: string;
+  date: string; // ISO string
+  status: 'Final' | 'Pending';
+  provider: string;
+  details: TestResultDetail[];
 }
 
 // Defines the structure for an allergy.
 export interface Allergy {
-    id: string;
-    name: string;
-    reaction: string;
-    severity: 'Mild' | 'Moderate' | 'Severe';
+  id: string;
+  name: string;
+  reaction: string;
+  severity: 'Mild' | 'Moderate' | 'Severe';
 }
 
 // Defines the structure for a health issue.
 export interface HealthIssue {
-    id: string;
-    name: string;
-    onset_date: string; // YYYY-MM-DD
+  id: string;
+  name: string;
+  onset_date: string; // YYYY-MM-DD
 }
 
 // Defines the structure for an immunization record.
 export interface Immunization {
-    id: string;
-    name: string;
-    date: string; // YYYY-MM-DD
-    provider: string;
+  id: string;
+  name: string;
+  date: string; // YYYY-MM-DD
+  provider: string;
 }
 
 // Defines the structure for a preventive care item.
 export interface PreventiveCareItem {
-    id: string;
-    name: string;
-    dueDate: string; // YYYY-MM-DD
-    status: 'Due' | 'Overdue' | 'Up-to-date';
-    lastCompleted?: string; // YYYY-MM-DD
+  id: string;
+  name: string;
+  dueDate: string; // YYYY-MM-DD
+  status: 'Due' | 'Overdue' | 'Up-to-date';
+  lastCompleted?: string; // YYYY-MM-DD
 }
 
 // Defines a goal for a care plan.
 export interface CarePlanGoal {
-    id: string;
-    description: string;
-    isComplete: boolean;
+  id: string;
+  description: string;
+  isComplete: boolean;
 }
 
 // Defines the structure for a specific plan of care.
 export interface CarePlan {
-    id: string;
-    conditionName: string;
-    relatedMedicationIds: string[];
-    relatedTestResultIds: string[];
-    goals: CarePlanGoal[];
+  id: string;
+  conditionName: string;
+  relatedMedicationIds: string[];
+  relatedTestResultIds: string[];
+  goals: CarePlanGoal[];
 }
 
 // Defines a single data point for a growth chart.
 export interface GrowthRecord {
-    age: number; // in months
-    weight?: number; // in kg
-    height?: number; // in cm
-    headCircumference?: number; // in cm
+  age: number; // in months
+  weight?: number; // in kg
+  height?: number; // in cm
+  headCircumference?: number; // in cm
 }
 
 // Defines a questionnaire from a provider.
 export interface Questionnaire {
-    id: string;
-    title: string;
-    provider: string;
-    dueDate: string; // YYYY-MM-DD
-    status: 'Pending' | 'Completed';
+  id: string;
+  title: string;
+  provider: string;
+  dueDate: string; // YYYY-MM-DD
+  status: 'Pending' | 'Completed';
 }

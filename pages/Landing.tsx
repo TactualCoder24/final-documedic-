@@ -727,9 +727,9 @@ const Landing: React.FC = () => {
                 <CardContent className="pt-6">
                   <p className="text-muted-foreground">"DocuMedic has been a game-changer for managing my family's medical records. Everything is organized and accessible. I feel so much more in control."</p>
                   <div className="mt-4 flex items-center gap-3">
-                    <img src="https://i.pravatar.cc/150?u=ananya" alt="user" className="w-10 h-10 rounded-full" />
+                    <img src="https://randomuser.me/api/portraits/women/90.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
                     <div>
-                      <p className="font-semibold">Ananya K.</p>
+                      <p className="font-semibold">Ananya Sharma</p>
                       <p className="text-sm text-muted-foreground">Parent & Caregiver</p>
                     </div>
                   </div>
@@ -739,9 +739,9 @@ const Landing: React.FC = () => {
                 <CardContent className="pt-6">
                   <p className="text-muted-foreground">"As someone with a chronic condition, the medication tracker and smart summaries are invaluable. My doctor was impressed with the detailed logs I could share."</p>
                   <div className="mt-4 flex items-center gap-3">
-                    <img src="https://i.pravatar.cc/150?u=vikram" alt="user" className="w-10 h-10 rounded-full" />
+                    <img src="https://randomuser.me/api/portraits/men/42.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
                     <div>
-                      <p className="font-semibold">Vikram S.</p>
+                      <p className="font-semibold">Vikram Singh</p>
                       <p className="text-sm text-muted-foreground">Fitness Enthusiast</p>
                     </div>
                   </div>
@@ -751,9 +751,9 @@ const Landing: React.FC = () => {
                 <CardContent className="pt-6">
                   <p className="text-muted-foreground">"The secure QR code for emergencies gives me peace of mind. It's a brilliant feature that makes critical information available when it matters most."</p>
                   <div className="mt-4 flex items-center gap-3">
-                    <img src="https://i.pravatar.cc/150?u=meera" alt="user" className="w-10 h-10 rounded-full" />
+                    <img src="https://randomuser.me/api/portraits/women/16.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
                     <div>
-                      <p className="font-semibold">Meera N.</p>
+                      <p className="font-semibold">Meera Patel</p>
                       <p className="text-sm text-muted-foreground">Frequent Traveler</p>
                     </div>
                   </div>
@@ -763,9 +763,9 @@ const Landing: React.FC = () => {
                 <CardContent className="pt-6">
                   <p className="text-muted-foreground">"Managing my diabetes used to be a chore, but DocuMedic's vitals tracking and reminders have made it so much easier. The AI tips are surprisingly helpful too."</p>
                   <div className="mt-4 flex items-center gap-3">
-                    <img src="https://i.pravatar.cc/150?u=rajesh" alt="user" className="w-10 h-10 rounded-full" />
+                    <img src="https://randomuser.me/api/portraits/men/82.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
                     <div>
-                      <p className="font-semibold">Rajesh P.</p>
+                      <p className="font-semibold">Rajesh Pandey</p>
                       <p className="text-sm text-muted-foreground">Retiree</p>
                     </div>
                   </div>
@@ -775,9 +775,9 @@ const Landing: React.FC = () => {
                 <CardContent className="pt-6">
                   <p className="text-muted-foreground">"I'm proactive about my health, and this app is perfect. Having a centralized place for all my check-ups and lab results helps me see the bigger picture of my wellness journey."</p>
                   <div className="mt-4 flex items-center gap-3">
-                    <img src="https://i.pravatar.cc/150?u=priya" alt="user" className="w-10 h-10 rounded-full" />
+                    <img src="https://randomuser.me/api/portraits/women/0.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
                     <div>
-                      <p className="font-semibold">Priya S.</p>
+                      <p className="font-semibold">Priya Srinivasan</p>
                       <p className="text-sm text-muted-foreground">Software Developer</p>
                     </div>
                   </div>
@@ -787,9 +787,9 @@ const Landing: React.FC = () => {
                 <CardContent className="pt-6">
                   <p className="text-muted-foreground">"The Smart Summary feature is incredible. It puts complex lab reports into simple terms I can actually understand. It's like having a doctor explain things to you anytime."</p>
                   <div className="mt-4 flex items-center gap-3">
-                    <img src="https://i.pravatar.cc/150?u=sunita" alt="user" className="w-10 h-10 rounded-full" />
+                    <img src="https://randomuser.me/api/portraits/women/23.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
                     <div>
-                      <p className="font-semibold">Sunita D.</p>
+                      <p className="font-semibold">Sunita Desai</p>
                       <p className="text-sm text-muted-foreground">Teacher</p>
                     </div>
                   </div>

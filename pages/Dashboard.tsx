@@ -11,6 +11,7 @@ import { Vital, MedicalRecord, Medication, Reminder, Profile, Symptom, TestOrPro
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { getVitals, getRecords, getMedications, getReminders, getProfile, saveProfile, addVital, getSymptoms, getWaterIntake, updateWaterIntake, getTestsAndProcedures } from '../services/dataSupabase';
+import { getMoodHistory, MoodEntry } from '../services/mentibotSupabase';
 
 const categoryInfo = {
   record: { title: 'Medical Records', icon: FileText, color: 'text-blue-500' },
@@ -35,6 +36,7 @@ const Dashboard: React.FC = () => {
   const [tests, setTests] = React.useState<TestOrProcedure[]>([]);
   const [waterIntake, setWaterIntake] = React.useState(0);
   const [profile, setProfile] = React.useState<Profile | null>(null);
+  const [moodHistory, setMoodHistory] = React.useState<MoodEntry[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   const [isVitalsModalOpen, setIsVitalsModalOpen] = React.useState(false);
@@ -46,7 +48,7 @@ const Dashboard: React.FC = () => {
   const refreshData = React.useCallback(async () => {
     if (user) {
       setIsLoading(true);
-      const [vitalsData, recordsData, medsData, remindersData, symptomsData, waterIntakeData, profileData, testsData] = await Promise.all([
+      const [vitalsData, recordsData, medsData, remindersData, symptomsData, waterIntakeData, profileData, testsData, moodData] = await Promise.all([
         getVitals(user.uid),
         getRecords(user.uid),
         getMedications(user.uid),
@@ -54,7 +56,8 @@ const Dashboard: React.FC = () => {
         getSymptoms(user.uid),
         getWaterIntake(user.uid, todayStr),
         getProfile(user.uid),
-        getTestsAndProcedures(user.uid)
+        getTestsAndProcedures(user.uid),
+        getMoodHistory(user.uid)
       ]);
 
       setVitals(vitalsData);
@@ -65,9 +68,10 @@ const Dashboard: React.FC = () => {
       setTests(testsData);
       setWaterIntake(waterIntakeData);
       setProfile(profileData);
+      setMoodHistory(moodData);
 
-      const profileUpdateSkipped = sessionStorage.getItem('profileUpdateSkipped');
-      if (!profileUpdateSkipped && profileData && !profileData.age && !profileData.conditions && !profileData.goals) {
+      const lastProfileSkipDate = localStorage.getItem('profileUpdateSkippedDate');
+      if (lastProfileSkipDate !== todayStr && profileData && !profileData.age && !profileData.conditions && !profileData.goals) {
         setIsProfileModalOpen(true);
       }
       setIsLoading(false);
@@ -127,7 +131,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleSkipProfileUpdate = () => {
-    sessionStorage.setItem('profileUpdateSkipped', 'true');
+    localStorage.setItem('profileUpdateSkippedDate', todayStr);
     setIsProfileModalOpen(false);
   };
 
@@ -170,6 +174,7 @@ const Dashboard: React.FC = () => {
   const waterGoal = profile?.waterGoal || 8;
   const latestBPressure = [...vitals].reverse().find(v => v.systolic && v.diastolic);
   const bpData = vitals.filter(v => v.systolic && v.diastolic);
+  const latestMood = moodHistory.length > 0 ? moodHistory[0] : null;
 
   const DashboardContent = () => (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -253,6 +258,30 @@ const Dashboard: React.FC = () => {
               <>
                 <div className="text-2xl font-bold text-success">All Taken!</div>
                 <p className="text-xs text-muted-foreground mt-1">Great job staying on track.</p>
+              </>
+            )}
+          </CardContent>
+        </Link>
+      </Card>
+
+      <Card variant="premium" hover className="bg-gradient-to-br from-card to-primary/10">
+        <Link to="/dashboard/mentibot/mood" className="block">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Latest Mood</CardTitle>
+            <div className="p-2 rounded-lg bg-primary/10">
+              <BrainCircuit className="h-5 w-5 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {latestMood ? (
+              <>
+                <div className="text-2xl font-bold text-gradient">{latestMood.mood_label || 'Logged'}</div>
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{latestMood.notes || 'Tracked via AI Wellness'}</p>
+              </>
+            ) : (
+              <>
+                <div className="text-lg font-bold text-muted-foreground">Not logged today</div>
+                <p className="text-xs text-primary mt-1 font-medium">Log mood now &rarr;</p>
               </>
             )}
           </CardContent>

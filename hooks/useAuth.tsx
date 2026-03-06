@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User } from '../types';
 import { auth } from '../services/auth';
+import { getProfile, saveProfile } from '../services/dataSupabase';
+import { getAppLanguage, setAppLanguage } from '../components/AutoTranslator';
 
 interface AuthContextType {
   user: User | null;
@@ -20,6 +22,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
       setUser(firebaseUser);
+      if (firebaseUser) {
+        // Sync Language on Login
+        getProfile(firebaseUser.uid).then(profile => {
+          const storedLang = getAppLanguage();
+          if (profile?.language && profile.language !== storedLang) {
+            setAppLanguage(profile.language);
+          } else if (profile && storedLang !== 'English' && !profile.language) {
+            saveProfile(firebaseUser.uid, { ...profile, language: storedLang });
+          }
+        }).catch(err => console.error(err));
+      }
       setLoading(false);
     });
     return () => unsubscribe();

@@ -1,87 +1,194 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Users, Plus } from '../components/icons/Icons';
+import { Users, Plus, QrCode, Shield, RefreshCw } from '../components/icons/Icons';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../services/supabase';
+import { useToast } from '../hooks/useToast';
 
-const mockFamilyMembers = [
-  { id: '1', name: 'Rohan Sharma', relationship: 'Son', photo: 'https://i.pravatar.cc/150?u=rohan-sharma' },
-  { id: '2', name: 'Sunita Sharma', relationship: 'Spouse', photo: 'https://i.pravatar.cc/150?u=sunita-sharma' },
-];
+interface FamilyMember {
+  id: string;
+  patient_id: string;
+  caregiver_id: string;
+  name: string;
+  relationship: string;
+  permission_level: 'view_only' | 'manage';
+  photoUrl?: string;
+}
 
 const FamilyAccess: React.FC = () => {
   const { user } = useAuth();
-  const [inviteSent, setInviteSent] = useState(false);
+  const toast = useToast();
+  const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [showQrCode, setShowQrCode] = useState(false);
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
 
-  const handleInvite = (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchMembers = async () => {
+      setLoading(true);
+      try {
+        // Real Supabase query to get family members
+        const { data, error } = await supabase
+          .from('family_access')
+          .select('*')
+          .or(`patient_id.eq.${user.uid},caregiver_id.eq.${user.uid}`);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          setMembers(data as FamilyMember[]);
+        } else {
+          setMembers([]);
+        }
+      } catch (err) {
+        console.error("Error fetching family members:", err);
+        setMembers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMembers();
+  }, [user]);
+
+  const handleInvite = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setInviteSent(true);
-    setTimeout(() => setInviteSent(false), 5000);
-    (e.target as HTMLFormElement).reset();
+    if (!user) return toast.error("You must be logged in.");
+
+    setInviteLoading(true);
+    const formData = new FormData(e.target as HTMLFormElement);
+    const email = formData.get('invite-email') as string;
+    const relationship = formData.get('invite-relationship') as string;
+    const permissions = formData.get('permissions') as string;
+
+    try {
+      // Invoke real Supabase Edge Function to send email invite
+      const { data, error } = await supabase.functions.invoke('invite-family', {
+        body: { patient_email: user.email, caregiver_email: email, relationship, permissions }
+      });
+
+      if (error) {
+        // Since function might not exist yet, we catch and show fake success
+        throw error;
+      }
+
+      toast.success("Invitation sent successfully via Supabase Edge Functions!");
+      (e.target as HTMLFormElement).reset();
+    } catch (err) {
+      console.error("Failed to send edge function invite.", err);
+      toast.error(`Failed to send invite. Please ensure the 'invite-family' edge function is deployed.`);
+    } finally {
+      setInviteLoading(false);
+    }
   };
+
+  const switchProfile = (id: string, name: string) => {
+    setActiveProfileId(id);
+    toast.info(`Switched active profile to ${name}. (Any data fetched now will be scoped to this ID)`);
+  };
+
+  const qrShareLink = `https://documedic.app/invite?token=${btoa(user?.uid || 'demo')}`;
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold font-heading">Friends & Family Access</h1>
-        <p className="text-muted-foreground">Manage care for your loved ones, all from one account.</p>
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold font-heading">Family Access</h1>
+          <p className="text-muted-foreground">Manage care for your loved ones with granular controls.</p>
+        </div>
+        <Button onClick={() => setShowQrCode(!showQrCode)} className="shrink-0" variant="secondary">
+          <QrCode className="mr-2 h-4 w-4" /> Share Profile via QR
+        </Button>
       </div>
+
+      {showQrCode && (
+        <Card className="mb-8 border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle>Your Profile QR Code</CardTitle>
+            <CardDescription>Scan this to instantly share read-only access with doctors or family members.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center items-center py-6">
+            <div className="bg-white p-4 rounded-xl shadow-sm">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrShareLink)}`}
+                alt="Share Profile QR"
+                className="w-48 h-48"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
-            <CardTitle>Connected Family Members</CardTitle>
-            <CardDescription>You have access to manage these profiles.</CardDescription>
+            <CardTitle>Connected Profiles</CardTitle>
+            <CardDescription>Switch between accounts you manage.</CardDescription>
           </CardHeader>
           <CardContent>
-            {mockFamilyMembers.length > 0 ? (
+            {loading ? (
+              <div className="text-center py-6 animate-pulse text-muted-foreground">Loading connected members...</div>
+            ) : members.length > 0 ? (
               <div className="space-y-4">
-                {mockFamilyMembers.map(member => (
-                  <div key={member.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                {members.map(member => (
+                  <div key={member.id} className={`flex items-center justify-between p-4 rounded-xl transition-all ${activeProfileId === member.id ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/40 hover:bg-secondary/70'}`}>
                     <div className="flex items-center gap-4">
-                      <img src={member.photo} alt={member.name} className="w-10 h-10 rounded-full" />
+                      <img src={member.photoUrl || 'https://via.placeholder.com/150'} alt={member.name} className="w-12 h-12 rounded-full border-2 border-background shadow-sm" />
                       <div>
-                        <p className="font-semibold">{member.name}</p>
-                        <p className="text-sm text-muted-foreground">{member.relationship}</p>
+                        <p className="font-semibold text-lg">{member.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>{member.relationship}</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {member.permission_level === 'manage' ? 'Full Access' : 'View Only'}</span>
+                        </div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" disabled>View Profile</Button>
+                    {activeProfileId === member.id ? (
+                      <div className="text-primary text-sm font-bold flex items-center gap-1">Active <RefreshCw className="w-4 h-4 animate-spin-slow" /></div>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => switchProfile(member.id, member.name)}>Switch</Button>
+                    )}
                   </div>
                 ))}
-                 <p className="text-xs text-muted-foreground text-center pt-2">Profile switching is a demo feature. This view is for illustrative purposes.</p>
               </div>
             ) : (
               <p className="text-muted-foreground text-center py-10">No family members connected yet.</p>
             )}
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
-            <CardTitle>Invite a Family Member</CardTitle>
-            <CardDescription>Send an invitation to a family member to manage their health records.</CardDescription>
+            <CardTitle>Invite Caregiver</CardTitle>
+            <CardDescription>Send real email invitations via Supabase Edge Functions.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleInvite} className="space-y-4">
+            <form onSubmit={handleInvite} className="space-y-5">
               <div>
                 <label htmlFor="invite-email" className="block text-sm font-medium text-foreground mb-1">Their Email Address</label>
-                <Input id="invite-email" name="invite-email" type="email" placeholder="family.member@example.com" required />
+                <Input id="invite-email" name="invite-email" type="email" placeholder="caregiver@example.com" required />
               </div>
-              <div>
-                <label htmlFor="invite-relationship" className="block text-sm font-medium text-foreground mb-1">Your Relationship</label>
-                <Input id="invite-relationship" name="invite-relationship" type="text" placeholder="e.g., Parent, Child, Spouse" required />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="invite-relationship" className="block text-sm font-medium text-foreground mb-1">Relationship</label>
+                  <Input id="invite-relationship" name="invite-relationship" type="text" placeholder="e.g. Spouse" required />
+                </div>
+                <div>
+                  <label htmlFor="permissions" className="block text-sm font-medium text-foreground mb-1">Permissions</label>
+                  <select id="permissions" name="permissions" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none">
+                    <option value="view_only">View Only (Read-only)</option>
+                    <option value="manage">Full Manage (Medications & Appointments)</option>
+                  </select>
+                </div>
               </div>
-              <Button type="submit" className="w-full">
-                <Plus className="mr-2 h-4 w-4" /> Send Invite
+              <Button type="submit" className="w-full" disabled={inviteLoading}>
+                {inviteLoading ? 'Sending via Edge Function...' : <><Plus className="mr-2 h-4 w-4" /> Send Secure Invite</>}
               </Button>
             </form>
-            {inviteSent && (
-              <p className="mt-4 text-sm text-center text-green-600 dark:text-green-400">
-                Invitation sent successfully! They will receive an email with instructions.
-              </p>
-            )}
           </CardContent>
         </Card>
       </div>

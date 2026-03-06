@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { logMood, getMoodHistory, MoodEntry } from '../../services/mentibotSupabase';
 import {
-    ArrowLeft, Activity, Calendar, TrendingUp,
+    ArrowLeft, Activity, Calendar, TrendingUp, Sparkles,
     Smile, Frown, Meh, Laugh, Angry, CloudRain
 } from '../../components/icons/Icons';
 import Button from '../../components/ui/Button';
@@ -175,17 +175,70 @@ const MentibotMood: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Mini Chart Mockup */}
+                    {/* Dynamic Chart & Insights */}
                     <Card variant="premium" className="bg-primary/5 border-primary/10">
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-xs font-bold text-primary">7-DAY SUMMARY</span>
-                                <span className="text-xs text-muted-foreground">Average: Good</span>
+                                <span className="text-xs font-bold text-primary uppercase tracking-wider">7-DAY MOOD TREND</span>
+                                {(() => {
+                                    if (history.length === 0) return <span className="text-xs text-muted-foreground">No data yet</span>;
+                                    const last7 = history.slice(0, 7);
+                                    const avg = last7.reduce((acc, curr) => acc + (curr.mood_score || 0), 0) / (last7.length || 1);
+                                    let avgLabel = "Neutral";
+                                    if (avg >= 4) avgLabel = "Good";
+                                    else if (avg >= 3) avgLabel = "Neutral";
+                                    else if (avg >= 2) avgLabel = "Down";
+                                    else avgLabel = "Stressed/Depressed";
+                                    return <span className="text-xs font-bold text-foreground">Avg: {avgLabel}</span>;
+                                })()}
                             </div>
-                            <div className="flex items-end justify-between h-20 gap-2">
-                                {[40, 60, 45, 80, 55, 70, 90].map((h, i) => (
-                                    <div key={i} className="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style={{ height: `${h}%` }} />
-                                ))}
+
+                            <div className="flex items-end justify-between h-24 gap-2 mb-6 border-b border-border/50 pb-2">
+                                {/* Generate 7 bars from history */}
+                                {(() => {
+                                    const chartData = [...history].slice(0, 7).reverse();
+                                    // Pad if less than 7
+                                    while (chartData.length < 7 && chartData.length > 0) {
+                                        chartData.unshift({ mood_score: 0, date: '', id: '', user_id: '' });
+                                    }
+                                    if (chartData.length === 0) {
+                                        return [0, 0, 0, 0, 0, 0, 0].map((_, i) => (
+                                            <div key={i} className="flex-1 bg-primary/10 rounded-t-lg transition-all" style={{ height: '10%' }} />
+                                        ));
+                                    }
+
+                                    return chartData.map((entry, i) => {
+                                        const score = entry.mood_score !== undefined ? entry.mood_score : 0;
+                                        // Score 0-5. Height = (Score / 5) * 100%
+                                        const heightPercentage = Math.max((score / 5) * 100, 10);
+                                        return (
+                                            <div
+                                                key={i}
+                                                className={`flex-1 rounded-t-lg transition-all ${entry.date ? 'bg-primary/40 hover:bg-primary/60' : 'bg-primary/10'}`}
+                                                style={{ height: `${heightPercentage}%` }}
+                                                title={entry.date ? `Score: ${score}` : 'No data'}
+                                            />
+                                        );
+                                    });
+                                })()}
+                            </div>
+
+                            {/* AI Insights Section */}
+                            <div className="p-4 rounded-xl bg-background/50 border border-primary/20">
+                                <h3 className="text-sm font-bold flex items-center gap-2 mb-2 text-primary">
+                                    <Sparkles className="h-4 w-4" />
+                                    AI Weekly Insight
+                                </h3>
+                                <p className="text-xs text-muted-foreground leading-relaxed italic">
+                                    {(() => {
+                                        if (history.length < 3) return "Log a few more days of mood data to unlock personalized AI insights into your emotional patterns.";
+                                        const recentScores = history.slice(0, 5).map(h => h.mood_score || 0);
+                                        const avg = recentScores.reduce((a, b) => a + b, 0) / recentScores.length;
+                                        if (avg >= 4) return "You've been experiencing predominantly positive emotions recently. This is a great time to reflect on what habits or events are contributing to this well-being so you can sustain them.";
+                                        if (avg >= 2.5) return "Your mood has been fluctuating but remains mostly stable. Consider journaling on the days your mood dips to identify potential triggers.";
+                                        return "It looks like you've been going through a tougher emotional stretch. Remember to be gentle with yourself. Utilize the breathing exercises or reach out to your support network if things feel overwhelming.";
+                                    })()}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
