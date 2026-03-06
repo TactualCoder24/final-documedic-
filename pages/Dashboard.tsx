@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Pill, FileText, BrainCircuit, ClipboardList, Search, Bell, Share2, Lightbulb, Activity, GlassWater, Utensils, Plus, HeartPulse, Stethoscope, MapPin, CalendarDays, Settings } from '../components/icons/Icons';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Link, useNavigate } from 'react-router-dom';
+import { useToast } from '../hooks/useToast';
 import { Vital, MedicalRecord, Medication, Reminder, Profile, Symptom, TestOrProcedure } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
@@ -25,6 +26,7 @@ const getTodayDateString = (): string => {
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [vitals, setVitals] = React.useState<Vital[]>([]);
   const [records, setRecords] = React.useState<MedicalRecord[]>([]);
   const [medications, setMedications] = React.useState<Medication[]>([]);
@@ -91,7 +93,7 @@ const Dashboard: React.FC = () => {
       newVitals.systolic = systolic;
       newVitals.diastolic = diastolic;
     } else if (systolic > 0 || diastolic > 0) {
-      alert("Please enter both systolic and diastolic values for blood pressure.");
+      toast.warning("Please enter both systolic and diastolic values for blood pressure.");
       return;
     }
 
@@ -101,7 +103,7 @@ const Dashboard: React.FC = () => {
       setIsVitalsModalOpen(false);
       e.currentTarget.reset();
     } else {
-      alert("Please enter at least one valid vital measurement.");
+      toast.warning("Please enter at least one valid vital measurement.");
     }
   };
 
@@ -133,7 +135,7 @@ const Dashboard: React.FC = () => {
     if (!user) return;
     const url = `${window.location.origin}${window.location.pathname}#/emergency/${user.uid}`;
     navigator.clipboard.writeText(url).then(() => {
-      alert('Emergency profile link copied to clipboard!');
+      toast.success('Emergency profile link copied to clipboard!');
     }).catch(err => {
       console.error('Failed to copy: ', err);
     });
@@ -171,7 +173,7 @@ const Dashboard: React.FC = () => {
 
   const DashboardContent = () => (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <Card variant="gradient" className="col-span-1 md:col-span-2 lg:col-span-3">
+      <Card variant="gradient" className="col-span-1 md:col-span-2 lg:col-span-3" data-tour="quick-actions">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary" />
@@ -194,7 +196,7 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card variant="premium" hover className="bg-gradient-to-br from-card to-accent/10">
+      <Card variant="premium" hover className="bg-gradient-to-br from-card to-accent/10" data-tour="water-intake">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Water Intake</CardTitle>
           <div className="p-2 rounded-lg bg-accent/10">
@@ -211,7 +213,7 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card variant="premium" hover className="bg-gradient-to-br from-card to-destructive/10">
+      <Card variant="premium" hover className="bg-gradient-to-br from-card to-destructive/10" data-tour="blood-pressure">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Blood Pressure</CardTitle>
           <div className="p-2 rounded-lg bg-destructive/10">
@@ -382,7 +384,7 @@ const Dashboard: React.FC = () => {
         </div>
 
 
-        <div className="relative group">
+        <div className="relative group" data-tour="search-bar">
           <label htmlFor="dashboard-search" className="sr-only">
             Search records, medications, reminders
           </label>

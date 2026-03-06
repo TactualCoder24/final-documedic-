@@ -2,6 +2,9 @@ import React from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './hooks/useTheme';
+import { OnboardingProvider } from './hooks/useOnboarding';
+import { ToastProvider } from './hooks/useToast';
+import ToastContainer from './components/ui/Toast';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import MedicalRecords from './pages/MedicalRecords';
@@ -170,9 +173,14 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <HashRouter>
-          <AppRoutes />
-        </HashRouter>
+        <OnboardingProvider>
+          <ToastProvider>
+            <HashRouter>
+              <AppRoutes />
+            </HashRouter>
+            <ToastContainer />
+          </ToastProvider>
+        </OnboardingProvider>
       </AuthProvider>
     </ThemeProvider>
   );

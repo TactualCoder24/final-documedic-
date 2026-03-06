@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useToast } from '../hooks/useToast';
+import EmptyState from '../components/ui/EmptyState';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { MessageSquareQuestion, ClipboardCheck, Clock } from '../components/icons/Icons';
@@ -9,6 +11,7 @@ import { getQuestionnaires } from '../services/dataSupabase';
 
 const Questionnaires: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,9 +34,9 @@ const Questionnaires: React.FC = () => {
     setSelectedQuestionnaire(q);
     setIsModalOpen(true);
   };
-  
+
   const handleSubmit = () => {
-    alert("Thank you for submitting your questionnaire. This is a demo feature.");
+    toast.success("Thank you for submitting your questionnaire. This is a demo feature.");
     setIsModalOpen(false);
     setSelectedQuestionnaire(null);
   };
@@ -58,24 +61,26 @@ const Questionnaires: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {isLoading ? (
-                <p className="text-muted-foreground text-center py-10">Loading questionnaires...</p>
+              <p className="text-muted-foreground text-center py-10">Loading questionnaires...</p>
             ) : questionnaires.length > 0 ? (
-                questionnaires.map(q => (
+              questionnaires.map(q => (
                 <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                    <div className="flex items-center gap-4">
-                        {getStatusIcon(q.status)}
-                        <div>
-                            <p className="font-semibold">{q.title}</p>
-                            <p className="text-sm text-muted-foreground">From: {q.provider} | Due: {new Date(q.dueDate).toLocaleDateString()}</p>
-                        </div>
+                  <div className="flex items-center gap-4">
+                    {getStatusIcon(q.status)}
+                    <div>
+                      <p className="font-semibold">{q.title}</p>
+                      <p className="text-sm text-muted-foreground">From: {q.provider} | Due: {new Date(q.dueDate).toLocaleDateString()}</p>
                     </div>
-                    {q.status === 'Pending' && <Button variant="outline" size="sm" onClick={() => handleStart(q)}>Start</Button>}
+                  </div>
+                  {q.status === 'Pending' && <Button variant="outline" size="sm" onClick={() => handleStart(q)}>Start</Button>}
                 </div>
-                ))
+              ))
             ) : (
-                <div className="text-center py-10">
-                    <p className="text-muted-foreground">You have no pending questionnaires.</p>
-                </div>
+              <EmptyState
+                icon={MessageSquareQuestion}
+                title="No pending questionnaires"
+                description="When your healthcare provider sends you a questionnaire, it will appear here."
+              />
             )}
           </div>
         </CardContent>
@@ -84,17 +89,17 @@ const Questionnaires: React.FC = () => {
       <Modal title={selectedQuestionnaire?.title || 'Questionnaire'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <p className="text-sm text-muted-foreground mb-4">Please answer the following questions. Your responses will be securely sent to your provider. (This is a demo).</p>
         <div className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium">Have you experienced any new symptoms in the last 2 weeks?</label>
-                <div className="flex gap-4 mt-2"><Button variant="outline" size="sm">Yes</Button><Button variant="outline" size="sm">No</Button></div>
-            </div>
-             <div>
-                <label className="block text-sm font-medium">On a scale of 1-10, how would you rate your overall health today?</label>
-                <input type="range" min="1" max="10" defaultValue="7" className="w-full mt-2 accent-primary"/>
-            </div>
+          <div>
+            <label className="block text-sm font-medium">Have you experienced any new symptoms in the last 2 weeks?</label>
+            <div className="flex gap-4 mt-2"><Button variant="outline" size="sm">Yes</Button><Button variant="outline" size="sm">No</Button></div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium">On a scale of 1-10, how would you rate your overall health today?</label>
+            <input type="range" min="1" max="10" defaultValue="7" className="w-full mt-2 accent-primary" />
+          </div>
         </div>
         <div className="flex justify-end pt-6">
-            <Button onClick={handleSubmit}>Submit</Button>
+          <Button onClick={handleSubmit}>Submit</Button>
         </div>
       </Modal>
     </>

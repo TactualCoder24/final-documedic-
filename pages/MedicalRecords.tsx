@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useToast } from '../hooks/useToast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { UploadCloud, FileText, Trash2, Download, Sparkles } from '../components/icons/Icons';
@@ -8,6 +9,7 @@ import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
 import { getRecords, addRecord, deleteRecord } from '../services/dataSupabase';
 import { analyzeMedicalDocument } from '../services/aiService';
+import EmptyState from '../components/ui/EmptyState';
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -22,6 +24,7 @@ type FilterType = 'All' | MedicalRecord['type'];
 
 const MedicalRecords: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -124,7 +127,7 @@ const MedicalRecords: React.FC = () => {
 
   const handleExport = () => {
     if (records.length === 0) {
-      alert("No records to export.");
+      toast.warning("No records to export.");
       return;
     }
     const headers = ["ID", "Name", "Type", "Date"];
@@ -223,9 +226,13 @@ const MedicalRecords: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-10">
-                <p className="text-muted-foreground">No documents found for this category.</p>
-              </div>
+              <EmptyState
+                icon={FileText}
+                title="No documents found"
+                description="Upload your first medical report and let AI analyze it for you."
+                ctaText="Upload Document"
+                ctaAction={openUploadModal}
+              />
             )}
           </div>
         </CardContent>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../hooks/useToast';
 import { useParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -25,18 +26,19 @@ const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, v
 
 const EmergencyInfo: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const toast = useToast();
   const [data, setData] = useState<any>(null); // Use any for simplicity as it combines multiple types
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
-        if (id) {
-            const userData = await getFullUserData(id);
-            if (userData && userData.profile && userData.profile.age) {
-                setData(userData);
-            }
+      if (id) {
+        const userData = await getFullUserData(id);
+        if (userData && userData.profile && userData.profile.age) {
+          setData(userData);
         }
-        setLoading(false);
+      }
+      setLoading(false);
     };
 
     fetchUserData();
@@ -44,21 +46,21 @@ const EmergencyInfo: React.FC = () => {
 
   const handleShare = () => {
     if (navigator.share) {
-        navigator.share({
-            title: `Emergency Info`,
-            text: `View the emergency medical profile.`,
-            url: window.location.href,
-        })
+      navigator.share({
+        title: `Emergency Info`,
+        text: `View the emergency medical profile.`,
+        url: window.location.href,
+      })
         .catch((error) => console.log('Error sharing', error));
     } else {
-        navigator.clipboard.writeText(window.location.href);
-        alert('Profile link copied to clipboard!');
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Profile link copied to clipboard!');
     }
   };
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen bg-background">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
     </div>;
   }
 
@@ -79,12 +81,12 @@ const EmergencyInfo: React.FC = () => {
           <h1 className="text-3xl sm:text-4xl font-bold font-heading text-destructive">Emergency Medical Information</h1>
           <p className="text-muted-foreground mt-1">This information is provided for emergency use only.</p>
         </header>
-        
+
         <div className="flex justify-end mb-4">
-            <Button onClick={handleShare}>
-                <Share2 className="mr-2 h-4 w-4" />
-                Share Profile
-            </Button>
+          <Button onClick={handleShare}>
+            <Share2 className="mr-2 h-4 w-4" />
+            Share Profile
+          </Button>
         </div>
 
         <Card className="shadow-xl">
@@ -97,49 +99,49 @@ const EmergencyInfo: React.FC = () => {
               <InfoRow label="Blood Type" value={data.profile.bloodType || 'N/A'} />
               <InfoRow label="Target Blood Sugar" value={data.profile.targetBloodSugar ? `${data.profile.targetBloodSugar} mg/dL` : 'N/A'} />
               <InfoRow label="Emergency Contact" value={
-                data.profile.emergencyContactName ? 
-                `${data.profile.emergencyContactName} - ${data.profile.emergencyContactPhone}` : 'N/A'
+                data.profile.emergencyContactName ?
+                  `${data.profile.emergencyContactName} - ${data.profile.emergencyContactPhone}` : 'N/A'
               } />
             </dl>
           </CardContent>
         </Card>
 
         <div className="grid md:grid-cols-2 gap-6 mt-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-primary"/> Key Information</CardTitle>
-                </CardHeader>
-                 <CardContent>
-                    <h3 className="font-semibold text-lg mb-2">Chronic Conditions</h3>
-                    <ul className="list-disc list-inside text-muted-foreground">
-                        {data.profile.conditions ? data.profile.conditions.split(',').map((c:string) => <li key={c}>{c.trim()}</li>) : <li>None specified</li>}
-                    </ul>
-                 </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Pill className="h-5 w-5 text-primary"/> Current Medications</CardTitle>
-                </CardHeader>
-                 <CardContent>
-                    {data.medications.length > 0 ? (
-                        <ul className="space-y-3">
-                        {data.medications.map((m: Medication) => (
-                            <li key={m.id}>
-                            <p className="font-semibold">{m.name}</p>
-                            <p className="text-sm text-muted-foreground">{m.dosage} - {m.frequency}</p>
-                            </li>
-                        ))}
-                        </ul>
-                    ) : (
-                        <p className="text-muted-foreground">No medications listed.</p>
-                    )}
-                 </CardContent>
-            </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-primary" /> Key Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <h3 className="font-semibold text-lg mb-2">Chronic Conditions</h3>
+              <ul className="list-disc list-inside text-muted-foreground">
+                {data.profile.conditions ? data.profile.conditions.split(',').map((c: string) => <li key={c}>{c.trim()}</li>) : <li>None specified</li>}
+              </ul>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Pill className="h-5 w-5 text-primary" /> Current Medications</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.medications.length > 0 ? (
+                <ul className="space-y-3">
+                  {data.medications.map((m: Medication) => (
+                    <li key={m.id}>
+                      <p className="font-semibold">{m.name}</p>
+                      <p className="text-sm text-muted-foreground">{m.dosage} - {m.frequency}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground">No medications listed.</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
-         <footer className="text-center mt-12 text-sm text-muted-foreground">
-              <p>Information confirmed accurate as of {new Date().toLocaleDateString()}.</p>
-              <p className="font-semibold mt-1">Powered by DocuMedic</p>
-          </footer>
+        <footer className="text-center mt-12 text-sm text-muted-foreground">
+          <p>Information confirmed accurate as of {new Date().toLocaleDateString()}.</p>
+          <p className="font-semibold mt-1">Powered by DocuMedic</p>
+        </footer>
       </div>
     </div>
   );

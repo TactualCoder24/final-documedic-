@@ -150,7 +150,7 @@ const BetaRegistrationModal: React.FC<BetaRegistrationModalProps> = ({ isOpen, o
                             </div>
                             <h2 className="text-2xl font-bold font-heading">You're on the list!</h2>
                             <p className="text-muted-foreground max-w-[280px] mx-auto">
-                                Thanks for your interest, <span className="text-foreground font-semibold">{name}</span>! We'll reach out to <span className="text-foreground font-semibold">{email}</span> soon with next steps.
+                                Applications for our beta program close in <strong>March 2026</strong>. Thanks for your interest, <span className="text-foreground font-semibold">{name}</span>! We'll reach out to <span className="text-foreground font-semibold">{email}</span> soon with next steps.
                             </p>
                             <div className="pt-4">
                                 <Button variant="outline" onClick={onClose} className="w-full">

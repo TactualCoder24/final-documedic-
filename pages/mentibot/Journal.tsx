@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useToast } from '../../hooks/useToast';
 import { motion } from 'framer-motion';
 import {
     PenSquare, ArrowLeft, Sparkles, BookOpen,
@@ -20,6 +21,7 @@ const MentibotJournal: React.FC = () => {
     const [entry, setEntry] = useState('');
     const [selectedPrompt, setSelectedPrompt] = useState(prompts[0]);
     const [isSaving, setIsSaving] = useState(false);
+    const toast = useToast();
 
     const handleSave = async () => {
         if (!entry.trim()) return;
@@ -28,7 +30,7 @@ const MentibotJournal: React.FC = () => {
         setTimeout(() => {
             setIsSaving(false);
             setEntry('');
-            alert('Journal entry saved successfully!');
+            toast.success('Journal entry saved successfully!');
         }, 1500);
     };
 

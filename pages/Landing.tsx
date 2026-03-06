@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
 import ShaktiAssistant from '../components/ShaktiAssistant';
 import BetaRegistrationModal from '../components/BetaRegistrationModal';
+import LandingOnboardingWizard from '../components/walkthrough/LandingOnboardingWizard';
 
 const features = [
   {
@@ -288,6 +289,7 @@ const Landing: React.FC = () => {
 
   return (
     <div className="bg-background text-foreground">
+      <LandingOnboardingWizard />
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto flex items-center justify-between h-20 px-4">
           <Link to="/" className="flex items-center gap-2">
