@@ -5,78 +5,80 @@ import * as Icons from '../../components/icons/Icons';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 
-// Features array with relative paths and explicit icons to avoid IDE import issues
-const features = [
-    {
-        title: 'Sentiment Analysis',
-        description: 'AI-powered understanding of your emotional state through conversation.',
-        icon: Icons.Sparkles,
-        path: 'chat',
-        color: 'text-primary',
-        bg: 'bg-primary/10'
-    },
-    {
-        title: 'Personalized Support',
-        description: 'Tailored mental health guidance based on your history and goals.',
-        icon: Icons.HeartPulse,
-        path: 'support',
-        color: 'text-indigo-500',
-        bg: 'bg-indigo-500/10'
-    },
-    {
-        title: 'Crisis Detection',
-        description: '24/7 monitoring for urgent situations with immediate professional alerts.',
-        icon: Icons.Bell,
-        path: 'emergency',
-        color: 'text-destructive',
-        bg: 'bg-destructive/10'
-    },
-    {
-        title: 'Therapeutic Exercises',
-        description: 'Evidence-based CBT and mindfulness activities for daily wellness.',
-        icon: Icons.Brain,
-        path: 'exercises',
-        color: 'text-emerald-500',
-        bg: 'bg-emerald-500/10'
-    },
-    {
-        title: 'Mood Tracker',
-        description: 'Visualize your emotional journey with daily mood logging.',
-        icon: Icons.Activity,
-        path: 'mood',
-        color: 'text-amber-500',
-        bg: 'bg-amber-500/10'
-    },
-    {
-        title: 'Mood-Based Music',
-        description: 'Curated playlists that adapt to your current emotional needs.',
-        icon: Icons.Music,
-        path: 'music',
-        color: 'text-pink-500',
-        bg: 'bg-pink-500/10'
-    },
-    {
-        title: 'AI Journaling',
-        description: 'Reflect on your day with guided prompts and sentiment feedback.',
-        icon: Icons.PenSquare,
-        path: 'journal',
-        color: 'text-blue-500',
-        bg: 'bg-blue-500/10'
-    },
-    {
-        title: 'Resource Library',
-        description: 'Expansive collection of mental health articles and workshops.',
-        icon: Icons.BookOpen,
-        path: 'search',
-        color: 'text-teal-500',
-        bg: 'bg-teal-500/10'
-    }
-];
+import { useTranslation } from 'react-i18next';
 
 const MentibotLanding: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const isDashboard = location.pathname.startsWith('/dashboard');
+
+    const features = [
+        {
+            title: t('mentibot.feature_sentiment_title', 'Sentiment Analysis'),
+            description: t('mentibot.feature_sentiment_desc', 'AI-powered understanding of your emotional state through conversation.'),
+            icon: Icons.Sparkles,
+            path: 'chat',
+            color: 'text-primary',
+            bg: 'bg-primary/10'
+        },
+        {
+            title: t('mentibot.feature_support_title', 'Personalized Support'),
+            description: t('mentibot.feature_support_desc', 'Tailored mental health guidance based on your history and goals.'),
+            icon: Icons.HeartPulse,
+            path: 'support',
+            color: 'text-indigo-500',
+            bg: 'bg-indigo-500/10'
+        },
+        {
+            title: t('mentibot.feature_crisis_title', 'Crisis Detection'),
+            description: t('mentibot.feature_crisis_desc', '24/7 monitoring for urgent situations with immediate professional alerts.'),
+            icon: Icons.Bell,
+            path: 'emergency',
+            color: 'text-destructive',
+            bg: 'bg-destructive/10'
+        },
+        {
+            title: t('mentibot.feature_exercises_title', 'Therapeutic Exercises'),
+            description: t('mentibot.feature_exercises_desc', 'Evidence-based CBT and mindfulness activities for daily wellness.'),
+            icon: Icons.Brain,
+            path: 'exercises',
+            color: 'text-emerald-500',
+            bg: 'bg-emerald-500/10'
+        },
+        {
+            title: t('mentibot.feature_mood_title', 'Mood Tracker'),
+            description: t('mentibot.feature_mood_desc', 'Visualize your emotional journey with daily mood logging.'),
+            icon: Icons.Activity,
+            path: 'mood',
+            color: 'text-amber-500',
+            bg: 'bg-amber-500/10'
+        },
+        {
+            title: t('mentibot.feature_music_title', 'Mood-Based Music'),
+            description: t('mentibot.feature_music_desc', 'Curated playlists that adapt to your current emotional needs.'),
+            icon: Icons.Music,
+            path: 'music',
+            color: 'text-pink-500',
+            bg: 'bg-pink-500/10'
+        },
+        {
+            title: t('mentibot.feature_journal_title', 'AI Journaling'),
+            description: t('mentibot.feature_journal_desc', 'Reflect on your day with guided prompts and sentiment feedback.'),
+            icon: Icons.PenSquare,
+            path: 'journal',
+            color: 'text-blue-500',
+            bg: 'bg-blue-500/10'
+        },
+        {
+            title: t('mentibot.feature_library_title', 'Resource Library'),
+            description: t('mentibot.feature_library_desc', 'Expansive collection of mental health articles and workshops.'),
+            icon: Icons.BookOpen,
+            path: 'search',
+            color: 'text-teal-500',
+            bg: 'bg-teal-500/10'
+        }
+    ];
 
     return (
         <div className="space-y-6 sm:space-y-8 pb-12 overflow-x-hidden font-sans">
@@ -102,7 +104,7 @@ const MentibotLanding: React.FC = () => {
                         <div className="flex flex-wrap justify-center lg:justify-start gap-3">
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
                                 <Icons.Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest font-sans">DocuMedic AI Companion</span>
+                                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest font-sans">{t('mentibot.badge', 'DocuMedic AI Companion')}</span>
                             </div>
                             {isDashboard && (
                                 <Button
@@ -112,26 +114,26 @@ const MentibotLanding: React.FC = () => {
                                     className="rounded-full bg-white/5 dark:bg-white/5 backdrop-blur border border-white/10 hover:bg-white/10 transition-colors text-[10px] sm:text-xs font-bold uppercase tracking-widest font-sans"
                                 >
                                     <Icons.Smartphone className="h-3.5 w-3.5 mr-2" />
-                                    Standalone Mode
+                                    {t('mentibot.standalone_mode', 'Standalone Mode')}
                                 </Button>
                             )}
                         </div>
 
                         <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-heading leading-[0.9] sm:leading-tight tracking-tighter uppercase italic text-white flex flex-col">
-                            <span>Better mental</span>
-                            <span className="text-primary italic">Health with AI</span>
+                            <span>{t('mentibot.hero_title_1', 'Better mental')}</span>
+                            <span className="text-primary italic">{t('mentibot.hero_title_2', 'Health with AI')}</span>
                         </h1>
 
                         <p className="text-sm sm:text-base md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 font-sans">
-                            A comprehensive mental health companion designed to help you navigate your emotions, track your growth, and find the support you need, whenever you need it.
+                            {t('mentibot.hero_desc', 'A comprehensive mental health companion designed to help you navigate your emotions, track your growth, and find the support you need, whenever you need it.')}
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                             <Button size="lg" variant="gradient" className="rounded-full px-10 py-7 text-base sm:text-lg font-black uppercase italic tracking-tighter w-full sm:w-auto font-heading" asChild>
-                                <Link to={isDashboard ? "/dashboard/mentibot/chat" : "/mentibot/chat"}>Talk to AI</Link>
+                                <Link to={isDashboard ? "/dashboard/mentibot/chat" : "/mentibot/chat"}>{t('mentibot.talk_to_ai', 'Talk to AI')}</Link>
                             </Button>
                             <Button size="lg" variant="outline" className="rounded-full px-10 py-7 text-base sm:text-lg font-black uppercase italic tracking-tighter border-white/20 hover:bg-white/5 w-full sm:w-auto text-white font-heading" asChild>
-                                <Link to={isDashboard ? "/dashboard/mentibot/exercises" : "/mentibot/exercises"}>Wellness Tools</Link>
+                                <Link to={isDashboard ? "/dashboard/mentibot/exercises" : "/mentibot/exercises"}>{t('mentibot.wellness_tools', 'Wellness Tools')}</Link>
                             </Button>
                         </div>
                     </motion.div>
@@ -153,8 +155,8 @@ const MentibotLanding: React.FC = () => {
                                     <Icons.Activity className="h-6 w-6 text-emerald-500" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest font-sans">System Status</p>
-                                    <p className="text-sm text-emerald-500 font-black font-heading">AI ONLINE</p>
+                                    <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest font-sans">{t('mentibot.system_status', 'System Status')}</p>
+                                    <p className="text-sm text-emerald-500 font-black font-heading">{t('mentibot.system_online', 'AI ONLINE')}</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -169,8 +171,8 @@ const MentibotLanding: React.FC = () => {
                                     <Icons.Shield className="h-6 w-6 text-primary" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest font-sans">Privacy level</p>
-                                    <p className="text-sm text-primary font-black font-heading">HIPAA READY</p>
+                                    <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest font-sans">{t('mentibot.privacy_level', 'Privacy level')}</p>
+                                    <p className="text-sm text-primary font-black font-heading">{t('mentibot.hipaa_ready', 'HIPAA READY')}</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -182,9 +184,9 @@ const MentibotLanding: React.FC = () => {
             <section className="px-1 sm:px-0">
                 <div className="flex flex-col mb-8 items-center lg:items-start text-center lg:text-left">
                     <h2 className="text-2xl sm:text-3xl font-black font-heading uppercase italic skew-x-[-10deg] tracking-tighter">
-                        Platform <span className="text-primary">Ecosystem</span>
+                        {t('mentibot.platform', 'Platform')} <span className="text-primary">{t('mentibot.ecosystem', 'Ecosystem')}</span>
                     </h2>
-                    <p className="text-muted-foreground mt-1 text-sm sm:text-lg font-sans">Power tools for your emotional wellbeing journey</p>
+                    <p className="text-muted-foreground mt-1 text-sm sm:text-lg font-sans">{t('mentibot.power_tools', 'Power tools for your emotional wellbeing journey')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
@@ -209,7 +211,7 @@ const MentibotLanding: React.FC = () => {
                                             {feature.description}
                                         </p>
                                         <div className="flex items-center text-primary text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-[-10px] group-hover:translate-x-0 font-sans">
-                                            Initialize Module
+                                            {t('mentibot.init_module', 'Initialize Module')}
                                             <Icons.ArrowRight className="w-3 h-3 ml-2" />
                                         </div>
                                     </CardContent>
@@ -233,14 +235,14 @@ const MentibotLanding: React.FC = () => {
                         <Icons.Bell className="h-6 w-6 sm:h-8 sm:w-8 text-red-500" />
                     </div>
                     <div>
-                        <h3 className="text-xl sm:text-2xl font-black uppercase italic tracking-tighter text-red-500 font-heading">In immediate danger?</h3>
+                        <h3 className="text-xl sm:text-2xl font-black uppercase italic tracking-tighter text-red-500 font-heading">{t('mentibot.danger_title', 'In immediate danger?')}</h3>
                         <p className="text-muted-foreground text-sm sm:text-base max-w-md mt-1 font-medium font-sans">
-                            Mentibot provides support, but if you are in a life-threatening crisis, please reach out to emergency services immediately.
+                            {t('mentibot.danger_desc', 'Mentibot provides support, but if you are in a life-threatening crisis, please reach out to emergency services immediately.')}
                         </p>
                     </div>
                 </div>
                 <Button variant="danger" className="w-full md:w-auto rounded-full px-8 py-6 font-black uppercase italic tracking-tighter relative z-10 font-heading" asChild>
-                    <Link to={isDashboard ? "/dashboard/mentibot/emergency" : "/mentibot/emergency"}>Emergency Protocol</Link>
+                    <Link to={isDashboard ? "/dashboard/mentibot/emergency" : "/mentibot/emergency"}>{t('mentibot.emergency_btn', 'Emergency Protocol')}</Link>
                 </Button>
             </section>
         </div>

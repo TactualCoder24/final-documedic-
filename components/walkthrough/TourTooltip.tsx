@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 // ============================================================================
 // TYPES
@@ -87,6 +88,7 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
     isFirst,
     isLast,
 }) => {
+    const { t } = useTranslation();
     const style = getTooltipStyle(position, targetRect);
 
     return (
@@ -101,7 +103,7 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
             {/* Step counter */}
             <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-                    📍 Step {stepNumber} of {totalSteps}
+                    📍 {t('tour.step', 'Step')} {stepNumber} {t('tour.of', 'of')} {totalSteps}
                 </span>
                 <button
                     onClick={onClose}
@@ -113,14 +115,14 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
             </div>
 
             {/* Content */}
-            <h3 className="text-lg font-bold font-heading mb-2">{title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-3">{description}</p>
+            <h3 className="text-lg font-bold font-heading mb-2">{t(`tour.titles.${title}`, title)}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-3">{t(`tour.descriptions.${title}`, description)}</p>
 
             {/* Pro tip */}
             {tip && (
                 <div className="bg-accent/10 rounded-xl px-3 py-2.5 mb-4 flex items-start gap-2">
                     <span className="text-sm">💡</span>
-                    <p className="text-xs text-accent-foreground font-medium leading-relaxed">{tip}</p>
+                    <p className="text-xs text-accent-foreground font-medium leading-relaxed">{t(`tour.tips.${title}`, tip)}</p>
                 </div>
             )}
 
@@ -141,14 +143,14 @@ const TourTooltip: React.FC<TourTooltipProps> = ({
                             onClick={onPrev}
                             className="px-3 py-1.5 rounded-lg border border-border text-xs font-semibold hover:bg-muted transition-all"
                         >
-                            ← Back
+                            ← {t('tour.back', 'Back')}
                         </button>
                     )}
                     <button
                         onClick={onNext}
                         className="px-4 py-1.5 rounded-lg gradient-primary text-white text-xs font-semibold hover:opacity-90 transition-all shadow-sm shadow-primary/25"
                     >
-                        {isLast ? 'Finish ✓' : 'Next →'}
+                        {isLast ? t('tour.finish', 'Finish ✓') : t('tour.next', 'Next →')}
                     </button>
                 </div>
             </div>

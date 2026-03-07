@@ -6,6 +6,7 @@ import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../services/supabase';
 import { useToast } from '../hooks/useToast';
+import { useTranslation } from 'react-i18next';
 
 interface FamilyMember {
   id: string;
@@ -18,6 +19,7 @@ interface FamilyMember {
 }
 
 const FamilyAccess: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
   const [members, setMembers] = useState<FamilyMember[]>([]);
@@ -57,7 +59,7 @@ const FamilyAccess: React.FC = () => {
 
   const handleInvite = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) return toast.error("You must be logged in.");
+    if (!user) return toast.error(t('common.login_required', 'You must be logged in.'));
 
     setInviteLoading(true);
     const formData = new FormData(e.target as HTMLFormElement);
@@ -76,11 +78,11 @@ const FamilyAccess: React.FC = () => {
         throw error;
       }
 
-      toast.success("Invitation sent successfully via Supabase Edge Functions!");
+      toast.success(t('family.invite_success', "Invitation sent successfully via Supabase Edge Functions!"));
       (e.target as HTMLFormElement).reset();
     } catch (err) {
       console.error("Failed to send edge function invite.", err);
-      toast.error(`Failed to send invite. Please ensure the 'invite-family' edge function is deployed.`);
+      toast.error(t('family.invite_fail', "Failed to send invite. Please ensure the 'invite-family' edge function is deployed."));
     } finally {
       setInviteLoading(false);
     }
@@ -88,7 +90,7 @@ const FamilyAccess: React.FC = () => {
 
   const switchProfile = (id: string, name: string) => {
     setActiveProfileId(id);
-    toast.info(`Switched active profile to ${name}. (Any data fetched now will be scoped to this ID)`);
+    toast.info(t('family.switched_profile', 'Switched active profile to {{name}}.', { name }));
   };
 
   const qrShareLink = `https://documedic.app/invite?token=${btoa(user?.uid || 'demo')}`;
@@ -97,19 +99,19 @@ const FamilyAccess: React.FC = () => {
     <>
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-heading">Family Access</h1>
-          <p className="text-muted-foreground">Manage care for your loved ones with granular controls.</p>
+          <h1 className="text-3xl font-bold font-heading">{t('family.title', 'Family Access')}</h1>
+          <p className="text-muted-foreground">{t('family.subtitle', 'Manage care for your loved ones with granular controls.')}</p>
         </div>
         <Button onClick={() => setShowQrCode(!showQrCode)} className="shrink-0" variant="secondary">
-          <QrCode className="mr-2 h-4 w-4" /> Share Profile via QR
+          <QrCode className="mr-2 h-4 w-4" /> {t('family.share_qr', 'Share Profile via QR')}
         </Button>
       </div>
 
       {showQrCode && (
         <Card className="mb-8 border-primary/20 bg-primary/5">
           <CardHeader>
-            <CardTitle>Your Profile QR Code</CardTitle>
-            <CardDescription>Scan this to instantly share read-only access with doctors or family members.</CardDescription>
+            <CardTitle>{t('family.qr.title', 'Your Profile QR Code')}</CardTitle>
+            <CardDescription>{t('family.qr.desc', 'Scan this to instantly share read-only access with doctors or family members.')}</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center items-center py-6">
             <div className="bg-white p-4 rounded-xl shadow-sm">
@@ -126,12 +128,12 @@ const FamilyAccess: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card>
           <CardHeader>
-            <CardTitle>Connected Profiles</CardTitle>
-            <CardDescription>Switch between accounts you manage.</CardDescription>
+            <CardTitle>{t('family.connected.title', 'Connected Profiles')}</CardTitle>
+            <CardDescription>{t('family.connected.desc', 'Switch between accounts you manage.')}</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-6 animate-pulse text-muted-foreground">Loading connected members...</div>
+              <div className="text-center py-6 animate-pulse text-muted-foreground">{t('family.loading', 'Loading connected members...')}</div>
             ) : members.length > 0 ? (
               <div className="space-y-4">
                 {members.map(member => (
@@ -143,50 +145,50 @@ const FamilyAccess: React.FC = () => {
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <span>{member.relationship}</span>
                           <span>•</span>
-                          <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {member.permission_level === 'manage' ? 'Full Access' : 'View Only'}</span>
+                          <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {member.permission_level === 'manage' ? t('family.full_access', 'Full Access') : t('family.view_only', 'View Only')}</span>
                         </div>
                       </div>
                     </div>
                     {activeProfileId === member.id ? (
-                      <div className="text-primary text-sm font-bold flex items-center gap-1">Active <RefreshCw className="w-4 h-4 animate-spin-slow" /></div>
+                      <div className="text-primary text-sm font-bold flex items-center gap-1">{t('family.active', 'Active')} <RefreshCw className="w-4 h-4 animate-spin-slow" /></div>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={() => switchProfile(member.id, member.name)}>Switch</Button>
+                      <Button variant="outline" size="sm" onClick={() => switchProfile(member.id, member.name)}>{t('family.switch', 'Switch')}</Button>
                     )}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-10">No family members connected yet.</p>
+              <p className="text-muted-foreground text-center py-10">{t('family.no_members', 'No family members connected yet.')}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Invite Caregiver</CardTitle>
-            <CardDescription>Send real email invitations via Supabase Edge Functions.</CardDescription>
+            <CardTitle>{t('family.invite.title', 'Invite Caregiver')}</CardTitle>
+            <CardDescription>{t('family.invite.desc', 'Send real email invitations via Supabase Edge Functions.')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleInvite} className="space-y-5">
               <div>
-                <label htmlFor="invite-email" className="block text-sm font-medium text-foreground mb-1">Their Email Address</label>
+                <label htmlFor="invite-email" className="block text-sm font-medium text-foreground mb-1">{t('family.invite.email', 'Their Email Address')}</label>
                 <Input id="invite-email" name="invite-email" type="email" placeholder="caregiver@example.com" required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="invite-relationship" className="block text-sm font-medium text-foreground mb-1">Relationship</label>
-                  <Input id="invite-relationship" name="invite-relationship" type="text" placeholder="e.g. Spouse" required />
+                  <label htmlFor="invite-relationship" className="block text-sm font-medium text-foreground mb-1">{t('family.invite.relationship', 'Relationship')}</label>
+                  <Input id="invite-relationship" name="invite-relationship" type="text" placeholder={t('family.invite.rel_placeholder', 'e.g. Spouse')} required />
                 </div>
                 <div>
-                  <label htmlFor="permissions" className="block text-sm font-medium text-foreground mb-1">Permissions</label>
+                  <label htmlFor="permissions" className="block text-sm font-medium text-foreground mb-1">{t('family.invite.permissions', 'Permissions')}</label>
                   <select id="permissions" name="permissions" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none">
-                    <option value="view_only">View Only (Read-only)</option>
-                    <option value="manage">Full Manage (Medications & Appointments)</option>
+                    <option value="view_only">{t('family.invite.perm_view', 'View Only (Read-only)')}</option>
+                    <option value="manage">{t('family.invite.perm_manage', 'Full Manage (Medications & Appointments)')}</option>
                   </select>
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={inviteLoading}>
-                {inviteLoading ? 'Sending via Edge Function...' : <><Plus className="mr-2 h-4 w-4" /> Send Secure Invite</>}
+                {inviteLoading ? t('family.invite.sending', 'Sending via Edge Function...') : <><Plus className="mr-2 h-4 w-4" /> {t('family.invite.send_btn', 'Send Secure Invite')}</>}
               </Button>
             </form>
           </CardContent>

@@ -7,35 +7,38 @@ import {
 import Button from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { Link } from 'react-router-dom';
-
-const contacts = [
-    {
-        name: 'National Suicide Prevention Lifeline',
-        number: '988',
-        description: '24/7, free and confidential support for people in distress.',
-        type: 'Primary'
-    },
-    {
-        name: 'Crisis Text Line',
-        number: 'Text HOME to 741741',
-        description: 'Free, 24/7 crisis counseling via text message.',
-        type: 'Text'
-    },
-    {
-        name: 'Emergency Services',
-        number: '911',
-        description: 'For immediate danger or medical emergencies.',
-        type: 'Emergency'
-    },
-    {
-        name: 'Disaster Distress Helpline',
-        number: '1-800-985-5990',
-        description: 'Crisis counseling for people experiencing emotional distress related to natural or human-caused disasters.',
-        type: 'Specialized'
-    }
-];
+import { useTranslation } from 'react-i18next';
 
 const MentibotEmergency: React.FC = () => {
+    const { t } = useTranslation();
+
+    const contacts = [
+        {
+            name: t('emergency.contact.lifeline.name', 'National Suicide Prevention Lifeline'),
+            number: '988',
+            description: t('emergency.contact.lifeline.desc', '24/7, free and confidential support for people in distress.'),
+            type: t('emergency.contact.type.primary', 'Primary')
+        },
+        {
+            name: t('emergency.contact.text.name', 'Crisis Text Line'),
+            number: t('emergency.contact.text.number', 'Text HOME to 741741'),
+            description: t('emergency.contact.text.desc', 'Free, 24/7 crisis counseling via text message.'),
+            type: t('emergency.contact.type.text', 'Text')
+        },
+        {
+            name: t('emergency.contact.services.name', 'Emergency Services'),
+            number: '911',
+            description: t('emergency.contact.services.desc', 'For immediate danger or medical emergencies.'),
+            type: t('emergency.contact.type.emergency', 'Emergency')
+        },
+        {
+            name: t('emergency.contact.disaster.name', 'Disaster Distress Helpline'),
+            number: '1-800-985-5990',
+            description: t('emergency.contact.disaster.desc', 'Crisis counseling for people experiencing emotional distress related to natural or human-caused disasters.'),
+            type: t('emergency.contact.type.specialized', 'Specialized')
+        }
+    ];
+
     return (
         <div className="space-y-8 pb-12">
             {/* Header */}
@@ -48,9 +51,9 @@ const MentibotEmergency: React.FC = () => {
                 <div>
                     <h1 className="text-3xl font-bold font-heading flex items-center gap-2 text-destructive">
                         <Bell className="h-8 w-8" />
-                        Crisis & Emergency Support
+                        {t('emergency.title', 'Crisis & Emergency Support')}
                     </h1>
-                    <p className="text-muted-foreground font-medium">You are not alone. Immediate help is available.</p>
+                    <p className="text-muted-foreground font-medium">{t('emergency.subtitle', 'You are not alone. Immediate help is available.')}</p>
                 </div>
             </div>
 
@@ -76,7 +79,7 @@ const MentibotEmergency: React.FC = () => {
                                     <p className="text-sm text-muted-foreground mb-6">{contact.description}</p>
                                     <Button variant="danger" className="w-full h-12 rounded-xl gap-2 font-bold shadow-lg shadow-destructive/20">
                                         <Phone className="h-4 w-4" />
-                                        Call Now
+                                        {t('emergency.call_now', 'Call Now')}
                                     </Button>
                                 </CardContent>
                             </Card>
@@ -87,25 +90,25 @@ const MentibotEmergency: React.FC = () => {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <ShieldAlert className="h-5 w-5 text-primary" />
-                                Wait, before you act...
+                                {t('emergency.wait.title', 'Wait, before you act...')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <p className="text-sm text-muted-foreground leading-relaxed">
-                                If you're feeling overwhelmed, please try these small steps first while waiting for professional help:
+                                {t('emergency.wait.desc', "If you're feeling overwhelmed, please try these small steps first while waiting for professional help:")}
                             </p>
                             <ul className="space-y-3">
                                 <li className="flex items-start gap-3 text-sm">
                                     <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
-                                    Take 10 deep, slow breaths.
+                                    {t('emergency.wait.step1', 'Take 10 deep, slow breaths.')}
                                 </li>
                                 <li className="flex items-start gap-3 text-sm">
                                     <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
-                                    Drinking a glass of cold water can ground your nervous system.
+                                    {t('emergency.wait.step2', 'Drinking a glass of cold water can ground your nervous system.')}
                                 </li>
                                 <li className="flex items-start gap-3 text-sm">
                                     <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
-                                    Reach out to one person you trust—even if it's just a text.
+                                    {t('emergency.wait.step3', "Reach out to one person you trust—even if it's just a text.")}
                                 </li>
                             </ul>
                         </CardContent>
@@ -116,10 +119,10 @@ const MentibotEmergency: React.FC = () => {
                 <div className="space-y-6">
                     <Card variant="premium">
                         <CardHeader>
-                            <CardTitle className="text-xl">International Resources</CardTitle>
+                            <CardTitle className="text-xl">{t('emergency.international.title', 'International Resources')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <p className="text-sm text-muted-foreground">Find support outside the United States.</p>
+                            <p className="text-sm text-muted-foreground">{t('emergency.international.desc', 'Find support outside the United States.')}</p>
                             <div className="space-y-2">
                                 <Button variant="outline" className="w-full justify-between gap-2" asChild>
                                     <a href="https://www.befrienders.org/" target="_blank" rel="noopener noreferrer">
@@ -149,13 +152,13 @@ const MentibotEmergency: React.FC = () => {
                                 <div className="p-3 rounded-full bg-emerald-500/10 text-emerald-500">
                                     <HelpCircle className="h-6 w-6" />
                                 </div>
-                                <h3 className="font-bold">Need a conversation?</h3>
+                                <h3 className="font-bold">{t('emergency.ai_chat.title', 'Need a conversation?')}</h3>
                             </div>
                             <p className="text-xs text-muted-foreground mb-6">
-                                If you're not in immediate danger but need someone to talk to, Mentibot is here to listen.
+                                {t('emergency.ai_chat.desc', "If you're not in immediate danger but need someone to talk to, Mentibot is here to listen.")}
                             </p>
                             <Button variant="outline" className="w-full border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10" asChild>
-                                <Link to="/mentibot/chat">Speak to Wellness AI</Link>
+                                <Link to="/mentibot/chat">{t('emergency.ai_chat.btn', 'Speak to Wellness AI')}</Link>
                             </Button>
                         </CardContent>
                     </Card>

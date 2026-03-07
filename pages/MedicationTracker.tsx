@@ -8,9 +8,11 @@ import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
 import { getMedications, addMedication, updateMedication, deleteMedication } from '../services/dataSupabase';
 import { checkMedicationInteractions } from '../services/aiService';
+import { useTranslation } from 'react-i18next';
 
 const MedicationTracker: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [medications, setMedications] = useState<Medication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -48,8 +50,8 @@ const MedicationTracker: React.FC = () => {
             if (notificationTime > now) {
               const timeout = notificationTime.getTime() - now.getTime();
               const timeoutId = window.setTimeout(() => {
-                new Notification('Medication Reminder', {
-                  body: `It's time to take your ${med.name} (${med.dosage}).`,
+                new Notification(t('meds.notification.title', 'Medication Reminder'), {
+                  body: t('meds.notification.body', "It's time to take your {{name}} ({{dosage}}).", { name: med.name, dosage: med.dosage }),
                   icon: '/vite.svg',
                   badge: '/vite.svg'
                 });
@@ -173,23 +175,23 @@ const MedicationTracker: React.FC = () => {
     <>
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-4xl font-bold font-heading">Medications</h1>
-          <p className="text-muted-foreground mt-1">Log your medications and track your adherence.</p>
+          <h1 className="text-4xl font-bold font-heading">{t('meds.title', 'Medications')}</h1>
+          <p className="text-muted-foreground mt-1">{t('meds.subtitle', 'Log your medications and track your adherence.')}</p>
         </div>
         <Button onClick={openAddModal} variant="gradient">
-          <Plus className="mr-2 h-4 w-4" /> Add Medication
+          <Plus className="mr-2 h-4 w-4" /> {t('meds.add', 'Add Medication')}
         </Button>
       </div>
 
       <div className="space-y-6">
         <Card variant="gradient">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary" />Notification Settings</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary" />{t('meds.notif_settings', 'Notification Settings')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {notificationPermission === 'granted' && <p className="text-sm font-medium text-success flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>Notifications are enabled.</p>}
-            {notificationPermission === 'default' && <Button onClick={handleEnableNotifications} variant="gradient"><Bell className="mr-2 h-4 w-4" />Enable Notifications</Button>}
-            {notificationPermission === 'denied' && <p className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">Notifications are blocked in your browser settings.</p>}
+            {notificationPermission === 'granted' && <p className="text-sm font-medium text-success flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>{t('meds.notif_enabled', 'Notifications are enabled.')}</p>}
+            {notificationPermission === 'default' && <Button onClick={handleEnableNotifications} variant="gradient"><Bell className="mr-2 h-4 w-4" />{t('meds.notif_enable_btn', 'Enable Notifications')}</Button>}
+            {notificationPermission === 'denied' && <p className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">{t('meds.notif_blocked', 'Notifications are blocked in your browser settings.')}</p>}
           </CardContent>
         </Card>
 
@@ -197,15 +199,15 @@ const MedicationTracker: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
-              Today's Progress
+              {t('meds.progress_title', "Today's Progress")}
             </CardTitle>
-            <CardDescription>You've taken <span className="font-bold text-foreground">{takenCount}</span> of <span className="font-bold text-foreground">{totalCount}</span> medications today.</CardDescription>
+            <CardDescription>{t('meds.progress_desc', "You've taken {{takenCount}} of {{totalCount}} medications today.", { takenCount, totalCount })}</CardDescription>
           </CardHeader>
           <CardContent>
             <div role="progressbar" aria-valuenow={percentage} className="w-full bg-secondary rounded-full h-3 overflow-hidden shadow-inner">
               <div className="gradient-primary h-3 rounded-full transition-all duration-500 shadow-lg" style={{ width: `${percentage}%` }}></div>
             </div>
-            <p className="text-center mt-3 text-sm font-semibold text-primary">{Math.round(percentage)}% Complete</p>
+            <p className="text-center mt-3 text-sm font-semibold text-primary">{Math.round(percentage)}{t('meds.percent_complete', '% Complete')}</p>
           </CardContent>
         </Card>
 
@@ -213,13 +215,13 @@ const MedicationTracker: React.FC = () => {
           <CardHeader className="flex-row justify-between items-center">
             <CardTitle className="flex items-center gap-2">
               <Pill className="h-5 w-5 text-primary" />
-              Your Active Medications
+              {t('meds.active_title', 'Your Active Medications')}
             </CardTitle>
-            <Button variant="outline" size="sm" onClick={() => setIsReportModalOpen(true)} className="hover:border-warning hover:text-warning">Report Not Taking</Button>
+            <Button variant="outline" size="sm" onClick={() => setIsReportModalOpen(true)} className="hover:border-warning hover:text-warning">{t('meds.report_not_taking', 'Report Not Taking')}</Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {isLoading ? (<p className="text-muted-foreground text-center py-10">Loading medications...</p>
+              {isLoading ? (<p className="text-muted-foreground text-center py-10">{t('meds.loading', 'Loading medications...')}</p>
               ) : activeMedications.length > 0 ? (
                 activeMedications.map(med => (
                   <div key={med.id} className={`flex items-center justify-between p-4 rounded-xl transition-all duration-300 border-2 ${med.takenToday ? 'bg-success/10 border-success/30 shadow-sm' : 'bg-secondary/50 border-border hover:border-primary/50'}`}>
@@ -234,18 +236,18 @@ const MedicationTracker: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant={med.takenToday ? 'outline' : 'gradient'} size="sm" onClick={() => toggleTaken(med.id)} className="transition-all">{med.takenToday ? 'Mark as Not Taken' : 'Mark as Taken'}</Button>
+                      <Button variant={med.takenToday ? 'outline' : 'gradient'} size="sm" onClick={() => toggleTaken(med.id)} className="transition-all">{med.takenToday ? t('meds.mark_not_taken', 'Mark as Not Taken') : t('meds.mark_taken', 'Mark as Taken')}</Button>
                     </div>
                   </div>
                 ))
-              ) : (<div className="text-center py-10"><p className="text-muted-foreground">No active medications added yet.</p></div>)}
+              ) : (<div className="text-center py-10"><p className="text-muted-foreground">{t('meds.no_active', 'No active medications added yet.')}</p></div>)}
             </div>
           </CardContent>
           {inactiveMedications.length > 0 && (
             <>
               <CardHeader>
-                <CardTitle>Inactive Medications</CardTitle>
-                <CardDescription>Medications you have reported you are no longer taking.</CardDescription>
+                <CardTitle>{t('meds.inactive_title', 'Inactive Medications')}</CardTitle>
+                <CardDescription>{t('meds.inactive_desc', 'Medications you have reported you are no longer taking.')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {inactiveMedications.map(med => (
@@ -259,14 +261,14 @@ const MedicationTracker: React.FC = () => {
         </Card>
       </div>
 
-      <Modal title="Add New Medication" isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)}>
+      <Modal title={t('meds.modals.add_title', 'Add New Medication')} isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)}>
         <form className="space-y-4" onSubmit={handleAddMedication}>
-          <div><label htmlFor="med-name" className="block text-sm font-medium text-foreground mb-1">Medication Name</label><Input id="med-name" name="med-name" placeholder="e.g., Ibuprofen" required /></div>
-          <div><label htmlFor="med-dosage" className="block text-sm font-medium text-foreground mb-1">Dosage</label><Input id="med-dosage" name="med-dosage" placeholder="e.g., 200mg" required /></div>
-          <div><label htmlFor="med-frequency" className="block text-sm font-medium text-foreground mb-1">Frequency</label><Input id="med-frequency" name="med-frequency" placeholder="e.g., Twice a day" required /></div>
+          <div><label htmlFor="med-name" className="block text-sm font-medium text-foreground mb-1">{t('meds.modals.name', 'Medication Name')}</label><Input id="med-name" name="med-name" placeholder={t('meds.modals.name_placeholder', 'e.g., Ibuprofen')} required /></div>
+          <div><label htmlFor="med-dosage" className="block text-sm font-medium text-foreground mb-1">{t('meds.modals.dosage', 'Dosage')}</label><Input id="med-dosage" name="med-dosage" placeholder={t('meds.modals.dosage_placeholder', 'e.g., 200mg')} required /></div>
+          <div><label htmlFor="med-frequency" className="block text-sm font-medium text-foreground mb-1">{t('meds.modals.freq', 'Frequency')}</label><Input id="med-frequency" name="med-frequency" placeholder={t('meds.modals.freq_placeholder', 'e.g., Twice a day')} required /></div>
           <div className="p-3 bg-secondary/50 rounded-md">
-            <label className="block text-sm font-medium text-foreground mb-2">Notification Times</label>
-            {notificationPermission !== 'granted' ? (<p className="text-xs text-muted-foreground">Enable notifications to receive alerts.</p>) : (
+            <label className="block text-sm font-medium text-foreground mb-2">{t('meds.modals.times', 'Notification Times')}</label>
+            {notificationPermission !== 'granted' ? (<p className="text-xs text-muted-foreground">{t('meds.modals.enable_notifs', 'Enable notifications to receive alerts.')}</p>) : (
               <>
                 {times.map((time, index) => (
                   <div key={index} className="flex items-center gap-2 mb-2">
@@ -274,36 +276,36 @@ const MedicationTracker: React.FC = () => {
                     <Button type="button" variant="ghost" size="icon" onClick={() => removeTime(index)} aria-label="Remove time" className="h-9 w-9"><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={addTime}><Plus className="mr-2 h-4 w-4" /> Add Time</Button>
+                <Button type="button" variant="outline" size="sm" onClick={addTime}><Plus className="mr-2 h-4 w-4" /> {t('meds.modals.add_time', 'Add Time')}</Button>
               </>
             )}
           </div>
-          <div className="flex justify-end gap-2 pt-2"><Button type="button" variant="ghost" onClick={() => setIsAddModalOpen(false)}>Cancel</Button><Button type="submit">Check & Add</Button></div>
+          <div className="flex justify-end gap-2 pt-2"><Button type="button" variant="ghost" onClick={() => setIsAddModalOpen(false)}>{t('meds.modals.cancel', 'Cancel')}</Button><Button type="submit">{t('meds.modals.check_add', 'Check & Add')}</Button></div>
         </form>
       </Modal>
 
-      <Modal title="Report Medication" isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)}>
+      <Modal title={t('meds.report.title', 'Report Medication')} isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)}>
         <form className="space-y-4" onSubmit={handleReportNotTaking}>
           <div>
-            <label htmlFor="med-id" className="block text-sm font-medium text-foreground mb-1">Which medication are you no longer taking?</label>
+            <label htmlFor="med-id" className="block text-sm font-medium text-foreground mb-1">{t('meds.report.choose', 'Which medication are you no longer taking?')}</label>
             <select id="med-id" name="med-id" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
               {activeMedications.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </div>
-          <p className="text-xs text-muted-foreground">This will move the medication to an inactive list. It will not be permanently deleted.</p>
-          <div className="flex justify-end gap-2 pt-2"><Button type="button" variant="ghost" onClick={() => setIsReportModalOpen(false)}>Cancel</Button><Button type="submit">Confirm</Button></div>
+          <p className="text-xs text-muted-foreground">{t('meds.report.desc', 'This will move the medication to an inactive list. It will not be permanently deleted.')}</p>
+          <div className="flex justify-end gap-2 pt-2"><Button type="button" variant="ghost" onClick={() => setIsReportModalOpen(false)}>{t('meds.modals.cancel', 'Cancel')}</Button><Button type="submit">{t('meds.report.confirm', 'Confirm')}</Button></div>
         </form>
       </Modal>
 
-      <Modal title="AI Interaction Check" isOpen={isChecking || !!interactionResult} onClose={() => { setInteractionResult(null); setStagedMed(null); }}>
+      <Modal title={t('meds.ai.title', 'AI Interaction Check')} isOpen={isChecking || !!interactionResult} onClose={() => { setInteractionResult(null); setStagedMed(null); }}>
         {isChecking ? (
-          <div className="text-center p-8"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div><p className="text-muted-foreground">Checking for potential interactions...</p></div>
+          <div className="text-center p-8"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div><p className="text-muted-foreground">{t('meds.ai.checking', 'Checking for potential interactions...')}</p></div>
         ) : interactionResult ? (
           <div className="space-y-4">
-            <h3 className="font-bold text-lg text-destructive">Potential Interaction Warning</h3>
+            <h3 className="font-bold text-lg text-destructive">{t('meds.ai.warning_title', 'Potential Interaction Warning')}</h3>
             <div className="p-3 bg-destructive/10 rounded-md"><p className="text-sm">{interactionResult}</p></div>
-            <p className="text-xs text-muted-foreground"><strong>Disclaimer:</strong> This is an AI-generated analysis and not a substitute for professional medical advice. Please consult your doctor or pharmacist.</p>
-            <div className="flex justify-end gap-2 pt-2"><Button variant="ghost" onClick={() => { setInteractionResult(null); setStagedMed(null); }}>Cancel</Button><Button variant="destructive" onClick={confirmAddMedication}>Add Anyway</Button></div>
+            <p className="text-xs text-muted-foreground"><strong>{t('meds.ai.disclaimer_title', 'Disclaimer:')}</strong> {t('meds.ai.disclaimer_desc', 'This is an AI-generated analysis and not a substitute for professional medical advice. Please consult your doctor or pharmacist.')}</p>
+            <div className="flex justify-end gap-2 pt-2"><Button variant="ghost" onClick={() => { setInteractionResult(null); setStagedMed(null); }}>{t('meds.modals.cancel', 'Cancel')}</Button><Button variant="destructive" onClick={confirmAddMedication}>{t('meds.ai.add_anyway', 'Add Anyway')}</Button></div>
           </div>
         ) : null}
       </Modal>

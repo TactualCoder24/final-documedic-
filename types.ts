@@ -80,6 +80,17 @@ export interface FoodLog {
   description: string;
 }
 
+// Defines the structure for a sleep log entry.
+export interface SleepLog {
+  id: string;
+  date: string; // YYYY-MM-DD
+  hours: number; // total hours slept
+  quality: 'Poor' | 'Fair' | 'Good' | 'Excellent';
+  bedtime?: string; // e.g., "22:30"
+  wakeTime?: string; // e.g., "06:30"
+  notes?: string;
+}
+
 
 // Defines the structure for a vital sign entry.
 export interface Vital {

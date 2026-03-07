@@ -8,6 +8,7 @@ import {
 import Button from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface Track {
     id: string;
@@ -16,42 +17,42 @@ interface Track {
     duration: string;
     moods: string[];
 }
-
-const playlists = [
-    {
-        name: 'Calm & Peaceful',
-        description: 'Soft instrumental tracks to lower anxiety and find focus.',
-        color: 'bg-emerald-500/10 text-emerald-500',
-        icon: Sparkles
-    },
-    {
-        name: 'Energetic & Joyful',
-        description: 'Uplifting beats to boost your mood and energy levels.',
-        color: 'bg-amber-500/10 text-amber-500',
-        icon: Play
-    },
-    {
-        name: 'Deep Reflection',
-        description: 'Melancholic piano and ambient sounds for emotional processing.',
-        color: 'bg-indigo-500/10 text-indigo-500',
-        icon: Music
-    },
-    {
-        name: 'Sleep & Relaxation',
-        description: 'Nature sounds and white noise for better rest.',
-        color: 'bg-violet-500/10 text-violet-500',
-        icon: Heart
-    }
-];
-
-const mockTracks: Track[] = [
-    { id: '1', title: 'Midnight Rain', artist: 'Nature Sounds', duration: '3:45', moods: ['Calm', 'Sleep'] },
-    { id: '2', title: 'Golden Hour', artist: 'Skyline', duration: '4:20', moods: ['Joyful', 'Energetic'] },
-    { id: '3', title: 'Solitude', artist: 'Ambient Echoes', duration: '5:12', moods: ['Reflection', 'Calm'] },
-    { id: '4', title: 'Sunrise Path', artist: 'Modern Zen', duration: '3:15', moods: ['Joyful', 'Energetic'] }
-];
-
 const MentibotMusic: React.FC = () => {
+    const { t } = useTranslation();
+    const playlists = [
+        {
+            name: t('music.playlist.calm.name', 'Calm & Peaceful'),
+            description: t('music.playlist.calm.desc', 'Soft instrumental tracks to lower anxiety and find focus.'),
+            color: 'bg-emerald-500/10 text-emerald-500',
+            icon: Sparkles
+        },
+        {
+            name: t('music.playlist.energetic.name', 'Energetic & Joyful'),
+            description: t('music.playlist.energetic.desc', 'Uplifting beats to boost your mood and energy levels.'),
+            color: 'bg-amber-500/10 text-amber-500',
+            icon: Play
+        },
+        {
+            name: t('music.playlist.reflection.name', 'Deep Reflection'),
+            description: t('music.playlist.reflection.desc', 'Melancholic piano and ambient sounds for emotional processing.'),
+            color: 'bg-indigo-500/10 text-indigo-500',
+            icon: Music
+        },
+        {
+            name: t('music.playlist.sleep.name', 'Sleep & Relaxation'),
+            description: t('music.playlist.sleep.desc', 'Nature sounds and white noise for better rest.'),
+            color: 'bg-violet-500/10 text-violet-500',
+            icon: Heart
+        }
+    ];
+
+    const mockTracks: Track[] = [
+        { id: '1', title: t('music.track1.title', 'Midnight Rain'), artist: t('music.track1.artist', 'Nature Sounds'), duration: '3:45', moods: [t('music.mood.calm', 'Calm'), t('music.mood.sleep', 'Sleep')] },
+        { id: '2', title: t('music.track2.title', 'Golden Hour'), artist: t('music.track2.artist', 'Skyline'), duration: '4:20', moods: [t('music.mood.joyful', 'Joyful'), t('music.mood.energetic', 'Energetic')] },
+        { id: '3', title: t('music.track3.title', 'Solitude'), artist: t('music.track3.artist', 'Ambient Echoes'), duration: '5:12', moods: [t('music.mood.reflection', 'Reflection'), t('music.mood.calm', 'Calm')] },
+        { id: '4', title: t('music.track4.title', 'Sunrise Path'), artist: t('music.track4.artist', 'Modern Zen'), duration: '3:15', moods: [t('music.mood.joyful', 'Joyful'), t('music.mood.energetic', 'Energetic')] }
+    ];
+
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrack, setCurrentTrack] = useState<Track | null>(mockTracks[0]);
 
@@ -67,9 +68,9 @@ const MentibotMusic: React.FC = () => {
                 <div>
                     <h1 className="text-3xl font-bold font-heading flex items-center gap-2">
                         <Music className="h-8 w-8 text-primary" />
-                        Mood-Based Music
+                        {t('music.title', 'Mood-Based Music')}
                     </h1>
-                    <p className="text-muted-foreground">Soundscapes curated for your emotional journey.</p>
+                    <p className="text-muted-foreground">{t('music.subtitle', 'Soundscapes curated for your emotional journey.')}</p>
                 </div>
             </div>
 
@@ -78,7 +79,7 @@ const MentibotMusic: React.FC = () => {
                 <div className="lg:col-span-2 space-y-6">
                     <h2 className="text-xl font-bold font-heading flex items-center gap-2">
                         <ListMusic className="h-5 w-5 text-primary" />
-                        Featured Playlists
+                        {t('music.featured_playlists', 'Featured Playlists')}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {playlists.map((playlist) => (
@@ -94,15 +95,15 @@ const MentibotMusic: React.FC = () => {
                         ))}
                     </div>
 
-                    <h2 className="text-xl font-bold font-heading mt-8 mb-6">Recent Tracks</h2>
+                    <h2 className="text-xl font-bold font-heading mt-8 mb-6">{t('music.recent_tracks', 'Recent Tracks')}</h2>
                     <div className="space-y-2">
                         {mockTracks.map((track) => (
                             <div
                                 key={track.id}
                                 onClick={() => setCurrentTrack(track)}
                                 className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${currentTrack?.id === track.id
-                                        ? 'bg-primary/10 border-primary/30'
-                                        : 'bg-card border-border/50 hover:bg-muted/50'
+                                    ? 'bg-primary/10 border-primary/30'
+                                    : 'bg-card border-border/50 hover:bg-muted/50'
                                     }`}
                             >
                                 <div className="flex items-center gap-4">
@@ -195,11 +196,11 @@ const MentibotMusic: React.FC = () => {
                                 <div className="flex justify-center gap-4 pt-4">
                                     <Button variant="outline" size="sm" className="flex-1 gap-2">
                                         <Heart className="h-4 w-4" />
-                                        Save
+                                        {t('common.save', 'Save')}
                                     </Button>
                                     <Button variant="outline" size="sm" className="flex-1 gap-2">
                                         <Share2 className="h-4 w-4" />
-                                        Share
+                                        {t('common.share', 'Share')}
                                     </Button>
                                 </div>
                             </div>

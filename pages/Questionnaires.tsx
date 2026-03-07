@@ -7,9 +7,11 @@ import { MessageSquareQuestion, ClipboardCheck, Clock } from '../components/icon
 import { Questionnaire } from '../types';
 import Modal from '../components/ui/Modal';
 import { useAuth } from '../hooks/useAuth';
-import { getQuestionnaires } from '../services/dataSupabase';
+import { getQuestionnaires, updateQuestionnaireStatus } from '../services/dataSupabase';
+import { useTranslation } from 'react-i18next';
 
 const Questionnaires: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
@@ -35,10 +37,17 @@ const Questionnaires: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = () => {
-    toast.success("Thank you for submitting your questionnaire. This is a demo feature.");
-    setIsModalOpen(false);
-    setSelectedQuestionnaire(null);
+  const handleSubmit = async () => {
+    if (!selectedQuestionnaire) return;
+    try {
+      await updateQuestionnaireStatus(selectedQuestionnaire.id, 'Completed');
+      toast.success(t('questionnaires.submit_success', "Questionnaire submitted successfully!"));
+      setIsModalOpen(false);
+      setSelectedQuestionnaire(null);
+      refreshData();
+    } catch (err) {
+      toast.error(t('questionnaires.submit_error', "Failed to submit questionnaire."));
+    }
   };
 
   const getStatusIcon = (status: Questionnaire['status']) => {
@@ -49,19 +58,19 @@ const Questionnaires: React.FC = () => {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold font-heading">Questionnaires</h1>
-        <p className="text-muted-foreground">Respond to questions from your healthcare provider.</p>
+        <h1 className="text-3xl font-bold font-heading">{t('questionnaires.title', 'Questionnaires')}</h1>
+        <p className="text-muted-foreground">{t('questionnaires.subtitle', 'Respond to questions from your healthcare provider.')}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Questionnaires</CardTitle>
-          {!isLoading && <CardDescription>You have {questionnaires.length} questionnaires.</CardDescription>}
+          <CardTitle>{t('questionnaires.your', 'Your Questionnaires')}</CardTitle>
+          {!isLoading && <CardDescription>{t('questionnaires.count', 'You have {{count}} questionnaires.', { count: questionnaires.length })}</CardDescription>}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {isLoading ? (
-              <p className="text-muted-foreground text-center py-10">Loading questionnaires...</p>
+              <p className="text-muted-foreground text-center py-10">{t('questionnaires.loading', 'Loading questionnaires...')}</p>
             ) : questionnaires.length > 0 ? (
               questionnaires.map(q => (
                 <div key={q.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
@@ -69,37 +78,37 @@ const Questionnaires: React.FC = () => {
                     {getStatusIcon(q.status)}
                     <div>
                       <p className="font-semibold">{q.title}</p>
-                      <p className="text-sm text-muted-foreground">From: {q.provider} | Due: {new Date(q.dueDate).toLocaleDateString()}</p>
+                      <p className="text-sm text-muted-foreground">{t('questionnaires.from', 'From')}: {q.provider} | {t('questionnaires.due', 'Due')}: {new Date(q.dueDate).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  {q.status === 'Pending' && <Button variant="outline" size="sm" onClick={() => handleStart(q)}>Start</Button>}
+                  {q.status === 'Pending' && <Button variant="outline" size="sm" onClick={() => handleStart(q)}>{t('questionnaires.start', 'Start')}</Button>}
                 </div>
               ))
             ) : (
               <EmptyState
                 icon={MessageSquareQuestion}
-                title="No pending questionnaires"
-                description="When your healthcare provider sends you a questionnaire, it will appear here."
+                title={t('questionnaires.no_pending', "No pending questionnaires")}
+                description={t('questionnaires.empty_desc', "When your healthcare provider sends you a questionnaire, it will appear here.")}
               />
             )}
           </div>
         </CardContent>
       </Card>
 
-      <Modal title={selectedQuestionnaire?.title || 'Questionnaire'} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <p className="text-sm text-muted-foreground mb-4">Please answer the following questions. Your responses will be securely sent to your provider. (This is a demo).</p>
+      <Modal title={selectedQuestionnaire?.title || t('questionnaires.title', 'Questionnaires')} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <p className="text-sm text-muted-foreground mb-4">{t('questionnaires.modal_desc', 'Please answer the following questions. Your responses will be securely sent to your provider. (This is a demo).')}</p>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium">Have you experienced any new symptoms in the last 2 weeks?</label>
-            <div className="flex gap-4 mt-2"><Button variant="outline" size="sm">Yes</Button><Button variant="outline" size="sm">No</Button></div>
+            <label className="block text-sm font-medium">{t('questionnaires.q1', 'Have you experienced any new symptoms in the last 2 weeks?')}</label>
+            <div className="flex gap-4 mt-2"><Button variant="outline" size="sm">{t('common.yes', 'Yes')}</Button><Button variant="outline" size="sm">{t('common.no', 'No')}</Button></div>
           </div>
           <div>
-            <label className="block text-sm font-medium">On a scale of 1-10, how would you rate your overall health today?</label>
+            <label className="block text-sm font-medium">{t('questionnaires.q2', 'On a scale of 1-10, how would you rate your overall health today?')}</label>
             <input type="range" min="1" max="10" defaultValue="7" className="w-full mt-2 accent-primary" />
           </div>
         </div>
         <div className="flex justify-end pt-6">
-          <Button onClick={handleSubmit}>Submit</Button>
+          <Button onClick={handleSubmit}>{t('common.submit', 'Submit')}</Button>
         </div>
       </Modal>
     </>

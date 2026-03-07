@@ -2,7 +2,8 @@ import React from 'react';
 import {
   HeartPulse, FileText, Pill, BrainCircuit, Bell, Lightbulb, Settings,
   CalendarDays, Activity, Utensils, Users, MessageCircle, TestTube2,
-  ClipboardCheck, Target, Syringe, LineChart, Baby, MessageSquareQuestion, Bot, Brain, MapPin
+  ClipboardCheck, Target, Syringe, LineChart, Baby, MessageSquareQuestion, Bot, Brain, MapPin,
+  Printer, BarChart, Moon
 } from './icons/Icons';
 
 export interface NavItem {
@@ -22,6 +23,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { path: '/dashboard', label: 'Dashboard', icon: HeartPulse },
       { path: '/summary', label: 'Smart Summary', icon: BrainCircuit },
+      { path: '/analytics', label: 'Analytics', icon: BarChart },
     ],
   },
   {
@@ -31,6 +33,7 @@ export const navGroups: NavGroup[] = [
       { path: '/documents', label: 'My Documents', icon: FileText },
       { path: '/test-results', label: 'Test Results', icon: TestTube2 },
       { path: '/medications', label: 'Medications', icon: Pill },
+      { path: '/health-report', label: 'Health Report', icon: Printer },
     ],
   },
   {
@@ -40,6 +43,7 @@ export const navGroups: NavGroup[] = [
       { path: '/symptoms', label: 'Symptom Log', icon: Activity },
       { path: '/food-journal', label: 'Food Journal', icon: Utensils },
       { path: '/health-trends', label: 'Health Trends', icon: LineChart },
+      { path: '/sleep', label: 'Sleep Tracker', icon: Moon },
       { path: '/growth-charts', label: 'Growth Charts', icon: Baby },
     ],
   },

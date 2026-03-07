@@ -51,6 +51,11 @@ import GrowthCharts from './pages/GrowthCharts';
 import Questionnaires from './pages/Questionnaires';
 import SymptomChecker from './pages/SymptomChecker';
 import AuthCallback from './pages/AuthCallback';
+import HealthReport from './pages/HealthReport';
+import Analytics from './pages/Analytics';
+import AppointmentPrep from './pages/AppointmentPrep';
+import SharedRecord from './pages/SharedRecord';
+import SleepTracker from './pages/SleepTracker';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -86,6 +91,7 @@ const AppRoutes = () => {
         <Route path="/emergency/:id" element={<EmergencyInfo />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/shared/:shareId" element={<SharedRecord />} />
 
         {/* Dashboard Protected Routes */}
         <Route
@@ -118,6 +124,10 @@ const AppRoutes = () => {
           <Route path="/growth-charts" element={<GrowthCharts />} />
           <Route path="/questionnaires" element={<Questionnaires />} />
           <Route path="/symptom-checker" element={<SymptomChecker />} />
+          <Route path="/health-report" element={<HealthReport />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/sleep" element={<SleepTracker />} />
+          <Route path="/appointments/:id/prep" element={<AppointmentPrep />} />
 
           {/* Mentibot Dashboard Routes */}
           <Route path="/dashboard/mentibot" element={<MentibotLanding />} />

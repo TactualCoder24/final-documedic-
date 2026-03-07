@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { SUPPORTED_LANGUAGES, getAppLanguage, setAppLanguage } from '../AutoTranslator';
 
 // ============================================================================
@@ -61,19 +62,20 @@ const stepVariants = {
 
 // Step 0: Welcome
 const StepWelcome: React.FC = () => {
+    const { t } = useTranslation();
     const currentLang = getAppLanguage();
     return (
         <div className="text-center space-y-6">
             <div className="text-7xl mb-4">👋</div>
             <h2 className="text-3xl font-bold font-heading">
-                Welcome to <span className="text-gradient">DocuMedic</span>
+                {t('onboarding.welcome.title_start', 'Welcome to')} <span className="text-gradient">DocuMedic</span>
             </h2>
             <p className="text-muted-foreground text-lg mx-auto leading-relaxed">
-                Let's customize your health dashboard in <strong>60 seconds</strong> before you even sign up.
+                {t('onboarding.welcome.subtitle_pre', "Let's customize your health dashboard in")} <strong>{t('onboarding.welcome.subtitle_bold', '60 seconds')}</strong> {t('onboarding.welcome.subtitle_post', 'before you even sign up.')}
             </p>
             <div className="flex flex-col items-center justify-center gap-4 pt-4">
                 <div className="flex flex-col items-center gap-2 w-full max-w-xs">
-                    <label className="text-sm font-semibold text-muted-foreground" data-notranslate>App Language</label>
+                    <label className="text-sm font-semibold text-muted-foreground" data-notranslate>{t('onboarding.welcome.language', 'App Language')}</label>
                     <select
                         className="p-3 rounded-xl border-2 border-primary/20 bg-background outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 w-full text-center font-bold text-foreground transition-all cursor-pointer"
                         value={currentLang}
@@ -84,10 +86,10 @@ const StepWelcome: React.FC = () => {
                 </div>
                 <div className="flex flex-wrap justify-center gap-4 mt-2">
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                        🔒 Private & Secure
+                        🔒 {t('onboarding.welcome.private', 'Private & Secure')}
                     </div>
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-600 text-sm font-medium">
-                        ⚡ Takes 60 seconds
+                        ⚡ {t('onboarding.welcome.fast', 'Takes 60 seconds')}
                     </div>
                 </div>
             </div>
@@ -99,80 +101,83 @@ const StepWelcome: React.FC = () => {
 const StepProfile: React.FC<{
     data: Record<string, string>;
     onChange: (key: string, val: string) => void;
-}> = ({ data, onChange }) => (
-    <div className="space-y-6">
-        <div className="text-center mb-2">
-            <div className="text-5xl mb-3">🏥</div>
-            <h2 className="text-2xl font-bold font-heading">Your Health Profile</h2>
-            <p className="text-muted-foreground mt-1">Basic info to personalize your experience</p>
-        </div>
-        <div className="space-y-4 text-left">
-            <div>
-                <label className="block text-sm font-medium mb-1.5">Your Age</label>
-                <input
-                    type="number"
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    placeholder="e.g., 28"
-                    value={data.age || ''}
-                    onChange={e => onChange('age', e.target.value)}
-                />
+}> = ({ data, onChange }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="space-y-6">
+            <div className="text-center mb-2">
+                <div className="text-5xl mb-3">🏥</div>
+                <h2 className="text-2xl font-bold font-heading">{t('onboarding.profile.title', 'Your Health Profile')}</h2>
+                <p className="text-muted-foreground mt-1">{t('onboarding.profile.subtitle', 'Basic info to personalize your experience')}</p>
             </div>
-            <div>
-                <label className="block text-sm font-medium mb-1.5">Blood Type</label>
-                <select
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    value={data.bloodType || ''}
-                    onChange={e => onChange('bloodType', e.target.value)}
-                >
-                    <option value="">Select blood type</option>
-                    {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bt => (
-                        <option key={bt} value={bt}>{bt}</option>
-                    ))}
-                </select>
-            </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label className="block text-sm font-medium mb-1.5">Blood Sugar (mg/dL)</label>
-                <input
-                    type="number"
-                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    placeholder="e.g., 100"
-                    value={data.sugar || ''}
-                    onChange={e => onChange('sugar', e.target.value)}
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-medium mb-1.5">Blood Pressure</label>
-                <div className="flex items-center gap-2">
+            <div className="space-y-4 text-left">
+                <div>
+                    <label className="block text-sm font-medium mb-1.5">{t('onboarding.profile.age', 'Your Age')}</label>
                     <input
                         type="number"
-                        className="w-full px-3 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-center"
-                        placeholder="120"
-                        value={data.systolic || ''}
-                        onChange={e => onChange('systolic', e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        placeholder="e.g., 28"
+                        value={data.age || ''}
+                        onChange={e => onChange('age', e.target.value)}
                     />
-                    <span className="text-muted-foreground font-medium">/</span>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1.5">{t('onboarding.profile.blood_type', 'Blood Type')}</label>
+                    <select
+                        className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        value={data.bloodType || ''}
+                        onChange={e => onChange('bloodType', e.target.value)}
+                    >
+                        <option value="">{t('onboarding.profile.blood_select', 'Select blood type')}</option>
+                        {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bt => (
+                            <option key={bt} value={bt}>{bt}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium mb-1.5">{t('onboarding.profile.blood_sugar', 'Blood Sugar (mg/dL)')}</label>
                     <input
                         type="number"
-                        className="w-full px-3 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-center"
-                        placeholder="80"
-                        value={data.diastolic || ''}
-                        onChange={e => onChange('diastolic', e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        placeholder="e.g., 100"
+                        value={data.sugar || ''}
+                        onChange={e => onChange('sugar', e.target.value)}
                     />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1.5">{t('onboarding.profile.blood_pressure', 'Blood Pressure')}</label>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="number"
+                            className="w-full px-3 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-center"
+                            placeholder="120"
+                            value={data.systolic || ''}
+                            onChange={e => onChange('systolic', e.target.value)}
+                        />
+                        <span className="text-muted-foreground font-medium">/</span>
+                        <input
+                            type="number"
+                            className="w-full px-3 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-center"
+                            placeholder="80"
+                            value={data.diastolic || ''}
+                            onChange={e => onChange('diastolic', e.target.value)}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-);
+    );
+}
 
-// Step 2: Medications
 const StepMedications: React.FC<{
     selectedMeds: string[];
     onToggle: (med: string) => void;
     customMed: string;
     onCustomMedChange: (val: string) => void;
 }> = ({ selectedMeds, onToggle, customMed, onCustomMedChange }) => {
+    const { t } = useTranslation();
     const commonMeds = [
         'Metformin', 'Amlodipine', 'Atorvastatin', 'Telmisartan',
         'Pantoprazole', 'Cetirizine', 'Paracetamol', 'Aspirin',
@@ -208,8 +213,8 @@ const StepMedications: React.FC<{
         <div className="space-y-6">
             <div className="text-center mb-2">
                 <div className="text-5xl mb-3">💊</div>
-                <h2 className="text-2xl font-bold font-heading">Your Medications</h2>
-                <p className="text-muted-foreground mt-1">Select any current medications (you can edit later)</p>
+                <h2 className="text-2xl font-bold font-heading">{t('onboarding.meds.title', 'Your Medications')}</h2>
+                <p className="text-muted-foreground mt-1">{t('onboarding.meds.subtitle', 'Select any current medications (you can edit later)')}</p>
             </div>
 
             <button
@@ -225,7 +230,7 @@ const StepMedications: React.FC<{
                     }`}
             >
                 {selectedMeds.includes('None') ? '✓ ' : ''}
-                <span className="whitespace-normal">None / Not Needed</span>
+                <span className="whitespace-normal">{t('onboarding.meds.none', 'None / Not Needed')}</span>
             </button>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1 opacity-100 transition-opacity" style={{ opacity: selectedMeds.includes('None') ? 0.3 : 1, pointerEvents: selectedMeds.includes('None') ? 'none' : 'auto' }}>
@@ -243,11 +248,11 @@ const StepMedications: React.FC<{
                 ))}
             </div>
             <div className="text-left" style={{ opacity: selectedMeds.includes('None') ? 0.3 : 1, pointerEvents: selectedMeds.includes('None') ? 'none' : 'auto' }}>
-                <label className="block text-sm font-medium mb-1.5">Add another</label>
+                <label className="block text-sm font-medium mb-1.5">{t('onboarding.meds.add', 'Add another')}</label>
                 <input
                     type="text"
                     className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    placeholder="Type a medication name..."
+                    placeholder={t('onboarding.meds.placeholder', 'Type a medication name...')}
                     value={customMed}
                     onChange={e => onCustomMedChange(e.target.value)}
                     onKeyDown={e => {
@@ -257,7 +262,7 @@ const StepMedications: React.FC<{
                         }
                     }}
                 />
-                <p className="text-xs text-muted-foreground mt-1">Press enter to add</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('onboarding.meds.press_enter', 'Press enter to add')}</p>
             </div>
         </div>
     );
@@ -270,6 +275,7 @@ const StepGoals: React.FC<{
     waterGoal: number;
     onWaterGoalChange: (val: number) => void;
 }> = ({ selectedGoals, onToggle, waterGoal, onWaterGoalChange }) => {
+    const { t } = useTranslation();
     const goals = [
         { id: 'lower_bp', label: 'Lower blood pressure', icon: '❤️' },
         { id: 'manage_sugar', label: 'Manage blood sugar', icon: '🩸' },
@@ -284,8 +290,8 @@ const StepGoals: React.FC<{
         <div className="space-y-6">
             <div className="text-center mb-2">
                 <div className="text-5xl mb-3">🎯</div>
-                <h2 className="text-2xl font-bold font-heading">Your Health Goals</h2>
-                <p className="text-muted-foreground mt-1">What would you like to achieve?</p>
+                <h2 className="text-2xl font-bold font-heading">{t('onboarding.goals.title', 'Your Health Goals')}</h2>
+                <p className="text-muted-foreground mt-1">{t('onboarding.goals.subtitle', 'What would you like to achieve?')}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
                 {goals.map(g => (
@@ -298,12 +304,12 @@ const StepGoals: React.FC<{
                             }`}
                     >
                         <span className="shrink-0">{g.icon}</span>
-                        <span className="text-left leading-snug whitespace-normal break-words">{g.label}</span>
+                        <span className="text-left leading-snug whitespace-normal break-words">{t(`onboarding.goals.items.${g.id}`, g.label)}</span>
                     </button>
                 ))}
             </div>
             <div className="text-left mt-6">
-                <label className="block text-sm font-medium mb-1.5">Daily Water Goal (glasses)</label>
+                <label className="block text-sm font-medium mb-1.5">{t('onboarding.goals.water_goal', 'Daily Water Goal (glasses)')}</label>
                 <div className="flex items-center gap-4">
                     <input
                         type="range"
@@ -320,22 +326,95 @@ const StepGoals: React.FC<{
     );
 };
 
-// Step 4: Completion
-const StepComplete: React.FC = () => (
-    <div className="text-center space-y-6">
-        <div className="text-7xl mb-4">🚀</div>
-        <h2 className="text-3xl font-bold font-heading">
-            Your Profile is Ready!
-        </h2>
-        <p className="text-muted-foreground text-lg leading-relaxed">
-            Create a free account to save your profile, access AI insights, and unlock the full DocuMedic experience.
-        </p>
-        <div className="bg-accent/10 rounded-xl p-4 flex flex-col items-center gap-3 border border-accent/20">
-            <span className="text-sm font-semibold text-accent">We've securely temporarily saved your choices.</span>
-            <span className="text-xs text-muted-foreground">Sign up now so you don't lose them!</span>
+// Step 4: Documents (NEW)
+const StepDocuments: React.FC<{
+    documents: { name: string, type: string, size: number, data: string }[];
+    onAddDocument: (doc: { name: string, type: string, size: number, data: string }) => void;
+    onRemoveDocument: (index: number) => void;
+}> = ({ documents, onAddDocument, onRemoveDocument }) => {
+    const { t } = useTranslation();
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            if (event.target?.result) {
+                onAddDocument({
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: event.target.result as string
+                });
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    return (
+        <div className="space-y-6 text-center">
+            <div className="text-5xl mb-3">📄</div>
+            <h2 className="text-2xl font-bold font-heading">{t('onboarding.docs.title', 'Upload Health Records')}</h2>
+            <p className="text-muted-foreground mt-1">
+                {t('onboarding.docs.subtitle', 'Upload past medical records, prescriptions, or test results. We will save them securely when you sign up.')}
+            </p>
+
+            <div className="mt-6 border-2 border-dashed border-border rounded-xl p-8 bg-muted/20 relative hover:bg-muted/40 transition-colors">
+                <input
+                    type="file"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={handleFileChange}
+                    accept=".pdf,.png,.jpg,.jpeg"
+                />
+                <div className="flex flex-col items-center pointer-events-none">
+                    <span className="text-4xl mb-2">☁️</span>
+                    <p className="font-semibold text-foreground">{t('onboarding.docs.upload_prompt', 'Tap to upload a document')}</p>
+                    <p className="text-xs text-muted-foreground mt-1 text-center max-w-[200px]">PDF, PNG, or JPG (max 5MB)</p>
+                </div>
+            </div>
+
+            {documents.length > 0 && (
+                <div className="mt-4 space-y-2 text-left">
+                    <h3 className="text-sm font-semibold mb-2">{t('onboarding.docs.uploaded_files', 'Uploaded Files')}</h3>
+                    {documents.map((doc, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-background border border-border rounded-lg shadow-sm">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                <span className="text-2xl shrink-0">📝</span>
+                                <div className="truncate">
+                                    <p className="text-sm font-medium truncate">{doc.name}</p>
+                                    <p className="text-xs text-muted-foreground">{(doc.size / 1024).toFixed(1)} KB</p>
+                                </div>
+                            </div>
+                            <button onClick={() => onRemoveDocument(i)} className="p-2 hover:bg-destructive/10 text-destructive rounded-full shrink-0">
+                                ❌
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
-    </div>
-);
+    );
+};
+
+// Step 5: Completion
+const StepComplete: React.FC = () => {
+    const { t } = useTranslation();
+    return (
+        <div className="text-center space-y-6">
+            <div className="text-7xl mb-4">🚀</div>
+            <h2 className="text-3xl font-bold font-heading">
+                {t('onboarding.complete.title', 'Your Profile is Ready!')}
+            </h2>
+            <p className="text-muted-foreground text-lg leading-relaxed">
+                {t('onboarding.complete.subtitle', 'Create a free account to save your profile, access AI insights, and unlock the full DocuMedic experience.')}
+            </p>
+            <div className="bg-accent/10 rounded-xl p-4 flex flex-col items-center gap-3 border border-accent/20">
+                <span className="text-sm font-semibold text-accent">{t('onboarding.complete.saved_msg', "We've securely temporarily saved your choices.")}</span>
+                <span className="text-xs text-muted-foreground">{t('onboarding.complete.signup_prompt', "Sign up now so you don't lose them!")}</span>
+            </div>
+        </div>
+    );
+}
 
 // ============================================================================
 // MAIN COMPONENT
@@ -345,6 +424,7 @@ export const PENDING_ONBOARDING_KEY = 'pending_onboarding_data';
 
 const LandingOnboardingWizard: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [isVisible, setIsVisible] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const [direction, setDirection] = useState(1);
@@ -355,8 +435,9 @@ const LandingOnboardingWizard: React.FC = () => {
     const [customMed, setCustomMed] = useState('');
     const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
     const [waterGoal, setWaterGoal] = useState(8);
+    const [documents, setDocuments] = useState<{ name: string, type: string, size: number, data: string }[]>([]);
 
-    const totalSteps = 5; // 0-4
+    const totalSteps = 6; // 0-5
 
     useEffect(() => {
         // Always show for unauthenticated users when landing page loads
@@ -420,7 +501,8 @@ const LandingOnboardingWizard: React.FC = () => {
                 systolic: profileData.systolic ? Number(profileData.systolic) : undefined,
                 diastolic: profileData.diastolic ? Number(profileData.diastolic) : undefined,
             },
-            medications: selectedMeds
+            medications: selectedMeds,
+            documents: documents
         };
         localStorage.setItem(PENDING_ONBOARDING_KEY, JSON.stringify(pendingData));
 
@@ -437,7 +519,8 @@ const LandingOnboardingWizard: React.FC = () => {
             case 1: return <StepProfile data={profileData} onChange={handleProfileChange} />;
             case 2: return <StepMedications selectedMeds={selectedMeds} onToggle={toggleMed} customMed={customMed} onCustomMedChange={setCustomMed} />;
             case 3: return <StepGoals selectedGoals={selectedGoals} onToggle={toggleGoal} waterGoal={waterGoal} onWaterGoalChange={setWaterGoal} />;
-            case 4: return <StepComplete />;
+            case 4: return <StepDocuments documents={documents} onAddDocument={(doc) => setDocuments(prev => [...prev, doc])} onRemoveDocument={(idx) => setDocuments(prev => prev.filter((_, i) => i !== idx))} />;
+            case 5: return <StepComplete />;
             default: return null;
         }
     };
@@ -479,30 +562,30 @@ const LandingOnboardingWizard: React.FC = () => {
                             onClick={handleSkip}
                             className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
                         >
-                            Skip Setup
+                            {t('onboarding.actions.skip', 'Skip Setup')}
                         </button>
                         <div className="flex gap-3">
-                            {currentStep > 0 && currentStep < 4 && (
+                            {currentStep > 0 && currentStep < 5 && (
                                 <button
                                     onClick={goBack}
                                     className="px-4 sm:px-5 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-all"
                                 >
-                                    ← Back
+                                    ← {t('onboarding.actions.back', 'Back')}
                                 </button>
                             )}
-                            {currentStep < 4 ? (
+                            {currentStep < 5 ? (
                                 <button
                                     onClick={goNext}
                                     className="px-5 sm:px-6 py-2.5 rounded-xl gradient-primary text-white text-sm font-semibold shadow-lg hover:shadow-primary/25 transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2 outline-none"
                                 >
-                                    Continue →
+                                    {t('onboarding.actions.continue', 'Continue')} →
                                 </button>
                             ) : (
                                 <button
                                     onClick={handleComplete}
                                     className="px-5 sm:px-6 py-2.5 rounded-xl gradient-primary text-white text-sm font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all flex items-center gap-2"
                                 >
-                                    <span>Sign Up / Log In</span>
+                                    <span>{t('onboarding.actions.signup', 'Sign Up / Log In')}</span>
                                     <span>→</span>
                                 </button>
                             )}

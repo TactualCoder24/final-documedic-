@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../co
 import Button from '../components/ui/Button';
 import { UploadCloud, FileText, Trash2, Download, Sparkles } from '../components/icons/Icons';
 import { MedicalRecord, DocumentAnalysis } from '../types';
+import { useTranslation } from 'react-i18next';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
@@ -24,6 +25,7 @@ type FilterType = 'All' | MedicalRecord['type'];
 
 const MedicalRecords: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const toast = useToast();
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,11 +105,11 @@ const MedicalRecords: React.FC = () => {
           } else {
             // Save without analysis if AI fails
             await addRecord(user.uid, { name, type, file });
-            setAnalysisError('AI analysis failed. The document has been saved without a summary.');
+            setAnalysisError(t('records.ai_fail', 'AI analysis failed. The document has been saved without a summary.'));
           }
         } catch (error) {
           await addRecord(user.uid, { name, type, file });
-          setAnalysisError('An error occurred during analysis. The document has been saved without a summary.');
+          setAnalysisError(t('records.ai_error', 'An error occurred during analysis. The document has been saved without a summary.'));
         } finally {
           setIsAnalyzing(false);
           setIsUploading(false);
@@ -127,7 +129,7 @@ const MedicalRecords: React.FC = () => {
 
   const handleExport = () => {
     if (records.length === 0) {
-      toast.warning("No records to export.");
+      toast.warning(t('records.no_records_export', "No records to export."));
       return;
     }
     const headers = ["ID", "Name", "Type", "Date"];
@@ -157,22 +159,22 @@ const MedicalRecords: React.FC = () => {
     <>
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold font-heading">My Documents</h1>
-          <p className="text-muted-foreground">Manage your health documents, reports, and prescriptions.</p>
+          <h1 className="text-3xl font-bold font-heading">{t('records.title', 'My Documents')}</h1>
+          <p className="text-muted-foreground">{t('records.subtitle', 'Manage your health documents, reports, and prescriptions.')}</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={handleExport} variant="outline" disabled={records.length === 0}>
-            <Download className="mr-2 h-4 w-4" /> Export Data
+            <Download className="mr-2 h-4 w-4" /> {t('records.export', 'Export Data')}
           </Button>
           <Button onClick={openUploadModal}>
-            <UploadCloud className="mr-2 h-4 w-4" /> Upload Document
+            <UploadCloud className="mr-2 h-4 w-4" /> {t('records.upload_button', 'Upload Document')}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Documents</CardTitle>
+          <CardTitle>{t('records.your_docs', 'Your Documents')}</CardTitle>
           <div className="border-b border-border -mx-6 px-2 sm:px-6">
             <nav className="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
               {filterTabs.map(tab => (
@@ -193,7 +195,7 @@ const MedicalRecords: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {isLoading ? (
-              <p className="text-muted-foreground text-center py-10">Loading documents...</p>
+              <p className="text-muted-foreground text-center py-10">{t('records.loading', 'Loading documents...')}</p>
             ) : filteredRecords.length > 0 ? (
               filteredRecords.map(record => (
                 <div key={record.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
@@ -207,11 +209,11 @@ const MedicalRecords: React.FC = () => {
                   <div className="flex items-center gap-2">
                     {record.analysis && (
                       <Button variant="outline" size="sm" onClick={() => setAnalysisResult(record.analysis!)}>
-                        <Sparkles className="mr-2 h-4 w-4" /> Analyze
+                        <Sparkles className="mr-2 h-4 w-4" /> {t('records.analyze', 'Analyze')}
                       </Button>
                     )}
                     <Button variant="outline" size="sm" asChild>
-                      <a href={record.fileUrl} target="_blank" rel="noopener noreferrer" download={record.name}>View</a>
+                      <a href={record.fileUrl} target="_blank" rel="noopener noreferrer" download={record.name}>{t('records.view', 'View')}</a>
                     </Button>
                     <Button
                       variant="ghost"
@@ -228,9 +230,9 @@ const MedicalRecords: React.FC = () => {
             ) : (
               <EmptyState
                 icon={FileText}
-                title="No documents found"
-                description="Upload your first medical report and let AI analyze it for you."
-                ctaText="Upload Document"
+                title={t('records.empty_title', 'No documents found')}
+                description={t('records.empty_desc', 'Upload your first medical report and let AI analyze it for you.')}
+                ctaText={t('records.upload_button', 'Upload Document')}
                 ctaAction={openUploadModal}
               />
             )}
@@ -238,14 +240,14 @@ const MedicalRecords: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Modal title="Upload New Document" isOpen={isModalOpen} onClose={handleModalClose}>
+      <Modal title={t('records.modals.upload_title', 'Upload New Document')} isOpen={isModalOpen} onClose={handleModalClose}>
         <form className="space-y-4" onSubmit={handleAddRecord}>
           <div>
-            <label htmlFor="doc-name" className="block text-sm font-medium text-foreground mb-1">Document Name</label>
-            <Input id="doc-name" name="doc-name" placeholder="e.g., Annual Check-up Results" required />
+            <label htmlFor="doc-name" className="block text-sm font-medium text-foreground mb-1">{t('records.modals.doc_name', 'Document Name')}</label>
+            <Input id="doc-name" name="doc-name" placeholder={t('records.modals.doc_name_placeholder', 'e.g., Annual Check-up Results')} required />
           </div>
           <div>
-            <label htmlFor="doc-type" className="block text-sm font-medium text-foreground mb-1">Document Type</label>
+            <label htmlFor="doc-type" className="block text-sm font-medium text-foreground mb-1">{t('records.modals.doc_type', 'Document Type')}</label>
             <select
               id="doc-type"
               name="doc-type"
@@ -262,7 +264,7 @@ const MedicalRecords: React.FC = () => {
             </select>
           </div>
           <div>
-            <label htmlFor="doc-file" className="block text-sm font-medium text-foreground mb-1">File</label>
+            <label htmlFor="doc-file" className="block text-sm font-medium text-foreground mb-1">{t('records.modals.file', 'File')}</label>
             <Input id="doc-file" name="doc-file" type="file" required accept="image/*,application/pdf" onChange={handleFileChange} />
           </div>
           <div>
@@ -274,28 +276,28 @@ const MedicalRecords: React.FC = () => {
                 className="rounded border-gray-300 text-primary focus:ring-primary disabled:opacity-50"
                 disabled={!!selectedFile && !selectedFile.type.startsWith('image/')}
               />
-              <label htmlFor="analyze-doc" className="text-sm font-medium text-foreground">Analyze with AI <span className="text-muted-foreground text-xs">(Image files only)</span></label>
+              <label htmlFor="analyze-doc" className="text-sm font-medium text-foreground">{t('records.modals.analyze_ai', 'Analyze with AI')} <span className="text-muted-foreground text-xs">{t('records.modals.image_only', '(Image files only)')}</span></label>
             </div>
             {selectedFile && !selectedFile.type.startsWith('image/') && (
               <p className="text-xs text-destructive mt-1">
-                The selected file is not an image. Please upload a JPG or PNG to enable AI analysis.
+                {t('records.modals.not_image_warn', 'The selected file is not an image. Please upload a JPG or PNG to enable AI analysis.')}
               </p>
             )}
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={handleModalClose} disabled={isUploading}>Cancel</Button>
+            <Button type="button" variant="ghost" onClick={handleModalClose} disabled={isUploading}>{t('records.modals.cancel', 'Cancel')}</Button>
             <Button type="submit" disabled={isUploading}>
-              {isUploading ? 'Uploading...' : 'Upload'}
+              {isUploading ? t('records.modals.uploading', 'Uploading...') : t('records.modals.upload', 'Upload')}
             </Button>
           </div>
         </form>
       </Modal>
 
-      <Modal title="AI Document Analysis" isOpen={isAnalyzing || !!analysisResult || !!analysisError} onClose={closeAnalysisModal}>
+      <Modal title={t('records.analysis.title', 'AI Document Analysis')} isOpen={isAnalyzing || !!analysisResult || !!analysisError} onClose={closeAnalysisModal}>
         {isAnalyzing ? (
           <div className="text-center p-8">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Analyzing your document... This may take a moment.</p>
+            <p className="text-muted-foreground">{t('records.analysis.analyzing', 'Analyzing your document... This may take a moment.')}</p>
           </div>
         ) : analysisError ? (
           <div>
@@ -307,12 +309,12 @@ const MedicalRecords: React.FC = () => {
         ) : analysisResult ? (
           <div className="space-y-4 max-h-[70vh] overflow-y-auto">
             <div>
-              <h3 className="font-bold text-lg font-heading">Summary</h3>
+              <h3 className="font-bold text-lg font-heading">{t('records.analysis.summary', 'Summary')}</h3>
               <p className="text-sm text-muted-foreground">{analysisResult.summary}</p>
             </div>
             {analysisResult.vitals && analysisResult.vitals.length > 0 && (
               <div>
-                <h3 className="font-bold text-lg font-heading">Key Vitals Extracted</h3>
+                <h3 className="font-bold text-lg font-heading">{t('records.analysis.key_vitals', 'Key Vitals Extracted')}</h3>
                 <ul className="list-disc list-inside space-y-1 mt-2">
                   {analysisResult.vitals.map(v => <li key={v.name} className="text-sm"><strong>{v.name}:</strong> {v.value} {v.unit}</li>)}
                 </ul>
@@ -320,14 +322,14 @@ const MedicalRecords: React.FC = () => {
             )}
             {analysisResult.definitions && analysisResult.definitions.length > 0 && (
               <div>
-                <h3 className="font-bold text-lg font-heading">Medical Term Definitions</h3>
+                <h3 className="font-bold text-lg font-heading">{t('records.analysis.medical_terms', 'Medical Term Definitions')}</h3>
                 <ul className="space-y-2 mt-2">
                   {analysisResult.definitions.map(d => <li key={d.term} className="text-sm"><strong className="text-primary">{d.term}:</strong> {d.definition}</li>)}
                 </ul>
               </div>
             )}
             <div className="flex justify-end pt-4">
-              <Button onClick={closeAnalysisModal}>Close</Button>
+              <Button onClick={closeAnalysisModal}>{t('records.analysis.close', 'Close')}</Button>
             </div>
           </div>
         ) : null}

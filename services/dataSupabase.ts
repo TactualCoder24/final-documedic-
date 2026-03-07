@@ -21,7 +21,8 @@ import {
     CarePlan,
     GrowthRecord,
     Questionnaire,
-    CommunityComment
+    CommunityComment,
+    SleepLog
 } from '../types';
 
 // ============================================================================
@@ -616,6 +617,63 @@ export const updateWaterIntake = async (userId: string, date: string, change: nu
     }
 };
 
+// ============================================================================
+// SLEEP LOGS
+// ============================================================================
+
+export const getSleepLogs = async (userId: string): Promise<SleepLog[]> => {
+    const { data, error } = await supabase
+        .from('sleep_logs')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching sleep logs:', error);
+        throw error;
+    }
+
+    return (data || []).map(s => ({
+        id: s.id,
+        date: s.date,
+        hours: s.hours,
+        quality: s.quality,
+        bedtime: s.bedtime,
+        wakeTime: s.wake_time,
+        notes: s.notes,
+    }));
+};
+
+export const addSleepLog = async (userId: string, log: Omit<SleepLog, 'id'>): Promise<void> => {
+    const { error } = await supabase.from('sleep_logs').insert({
+        user_id: userId,
+        date: log.date,
+        hours: log.hours,
+        quality: log.quality,
+        bedtime: log.bedtime,
+        wake_time: log.wakeTime,
+        notes: log.notes,
+    });
+
+    if (error) {
+        console.error('Error adding sleep log:', error);
+        throw error;
+    }
+};
+
+export const deleteSleepLog = async (userId: string, logId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('sleep_logs')
+        .delete()
+        .eq('id', logId)
+        .eq('user_id', userId);
+
+    if (error) {
+        console.error('Error deleting sleep log:', error);
+        throw error;
+    }
+};
+
 
 // ============================================================================
 // TEST RESULTS
@@ -641,6 +699,25 @@ export const getTestResults = async (userId: string): Promise<TestResult[]> => {
         provider: t.provider,
         details: t.details,
     }));
+};
+
+export const addTestResult = async (
+    userId: string,
+    result: Omit<TestResult, 'id'>
+): Promise<void> => {
+    const { error } = await supabase.from('test_results').insert({
+        user_id: userId,
+        name: result.name,
+        date: result.date,
+        status: result.status,
+        provider: result.provider,
+        details: result.details,
+    });
+
+    if (error) {
+        console.error('Error adding test result:', error);
+        throw error;
+    }
 };
 
 // ============================================================================
@@ -780,6 +857,47 @@ export const getPreventiveCare = async (userId: string): Promise<PreventiveCareI
     }));
 };
 
+export const updatePreventiveCareStatus = async (
+    userId: string,
+    itemId: string,
+    status: 'Due' | 'Overdue' | 'Up-to-date',
+    lastCompleted?: string
+): Promise<void> => {
+    const updateData: any = { status };
+    if (lastCompleted) updateData.last_completed = lastCompleted;
+    if (status === 'Up-to-date' && !lastCompleted) {
+        updateData.last_completed = new Date().toISOString().split('T')[0];
+    }
+
+    const { error } = await supabase
+        .from('preventive_care')
+        .update(updateData)
+        .eq('id', itemId)
+        .eq('user_id', userId);
+
+    if (error) {
+        console.error('Error updating preventive care:', error);
+        throw error;
+    }
+};
+
+export const addPreventiveCareItem = async (
+    userId: string,
+    item: { name: string; dueDate: string }
+): Promise<void> => {
+    const { error } = await supabase.from('preventive_care').insert({
+        user_id: userId,
+        name: item.name,
+        due_date: item.dueDate,
+        status: 'Due',
+    });
+
+    if (error) {
+        console.error('Error adding preventive care item:', error);
+        throw error;
+    }
+};
+
 // ============================================================================
 // CARE PLANS
 // ============================================================================
@@ -803,6 +921,55 @@ export const getCarePlans = async (userId: string): Promise<CarePlan[]> => {
         relatedTestResultIds: c.related_test_result_ids || [],
         goals: c.goals,
     }));
+};
+
+export const addCarePlan = async (
+    userId: string,
+    plan: { conditionName: string; relatedMedicationIds: string[]; relatedTestResultIds: string[]; goals: { id: string; description: string; isComplete: boolean }[] }
+): Promise<void> => {
+    const { error } = await supabase.from('care_plans').insert({
+        user_id: userId,
+        condition_name: plan.conditionName,
+        related_medication_ids: plan.relatedMedicationIds,
+        related_test_result_ids: plan.relatedTestResultIds,
+        goals: plan.goals,
+    });
+
+    if (error) {
+        console.error('Error adding care plan:', error);
+        throw error;
+    }
+};
+
+export const updateCarePlanGoal = async (
+    userId: string,
+    planId: string,
+    goalId: string,
+    isComplete: boolean
+): Promise<void> => {
+    const { data: plan, error: fetchError } = await supabase
+        .from('care_plans')
+        .select('goals')
+        .eq('id', planId)
+        .eq('user_id', userId)
+        .single();
+
+    if (fetchError || !plan) throw fetchError;
+
+    const updatedGoals = (plan.goals || []).map((g: any) =>
+        g.id === goalId ? { ...g, isComplete } : g
+    );
+
+    const { error } = await supabase
+        .from('care_plans')
+        .update({ goals: updatedGoals })
+        .eq('id', planId)
+        .eq('user_id', userId);
+
+    if (error) {
+        console.error('Error updating care plan goal:', error);
+        throw error;
+    }
 };
 
 // ============================================================================
@@ -854,6 +1021,18 @@ export const getQuestionnaires = async (userId: string): Promise<Questionnaire[]
     }));
 };
 
+export const updateQuestionnaireStatus = async (questionnaireId: string, status: 'Pending' | 'Completed'): Promise<void> => {
+    const { error } = await supabase
+        .from('questionnaires')
+        .update({ status })
+        .eq('id', questionnaireId);
+
+    if (error) {
+        console.error('Error updating questionnaire:', error);
+        throw error;
+    }
+};
+
 // ============================================================================
 // AFTER VISIT SUMMARIES
 // ============================================================================
@@ -880,6 +1059,25 @@ export const getAfterVisitSummary = async (userId: string, summaryId: string): P
         clinicalNotes: data.clinical_notes,
         followUpInstructions: data.follow_up_instructions,
     };
+};
+
+export const addAfterVisitSummary = async (
+    userId: string,
+    summary: { appointmentId: string; visitReason: string; clinicalNotes: string; followUpInstructions: string }
+): Promise<string> => {
+    const { data, error } = await supabase.from('after_visit_summaries').insert({
+        user_id: userId,
+        appointment_id: summary.appointmentId,
+        visit_reason: summary.visitReason,
+        clinical_notes: summary.clinicalNotes,
+        follow_up_instructions: summary.followUpInstructions,
+    }).select('id').single();
+
+    if (error) {
+        console.error('Error adding after visit summary:', error);
+        throw error;
+    }
+    return data.id;
 };
 
 // ============================================================================

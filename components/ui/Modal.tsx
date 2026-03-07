@@ -1,4 +1,4 @@
-import React, { FC, ReactNode, useEffect } from 'react';
+import React, { FC, ReactNode, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from '../icons/Icons';
 import Button from './Button';
@@ -13,23 +13,45 @@ interface ModalProps {
 }
 
 const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, variant = 'default' }) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  const handleFocusTrap = useCallback((event: KeyboardEvent) => {
+    if (event.key !== 'Tab' || !modalRef.current) return;
+    const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey) {
+      if (document.activeElement === first) { event.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
+      if (event.key === 'Escape') { onClose(); return; }
+      handleFocusTrap(event);
     };
 
     if (isOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
+      // Auto-focus the modal dialog
+      setTimeout(() => modalRef.current?.focus(), 50);
     }
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
+      // Restore previous focus on close
+      if (previousFocusRef.current) previousFocusRef.current.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, handleFocusTrap]);
 
   return (
     <AnimatePresence>
@@ -43,11 +65,13 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, variant = 'de
           onClick={onClose}
         >
           <motion.div
+            ref={modalRef}
+            tabIndex={-1}
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             transition={{ type: 'spring', duration: 0.3, bounce: 0.3 }}
-            className="w-full max-w-lg"
+            className="w-full max-w-lg outline-none"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"

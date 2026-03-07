@@ -649,3 +649,128 @@
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ============================================================================
+   ACCESSIBILITY
+   ============================================================================ */
+
+/* Skip to Content Link */
+.skip-to-content {
+    position: absolute;
+    top: -100%;
+    left: 16px;
+    z-index: 9999;
+    padding: 12px 24px;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-radius: 0 0 0.5rem 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: top 0.2s ease;
+}
+
+.skip-to-content:focus {
+    top: 0;
+    outline: 3px solid hsl(var(--ring));
+    outline-offset: 2px;
+}
+
+/* Enhanced Focus Visible */
+*:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.2);
+}
+
+/* Screen Reader Only (enhanced) */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+
+@media print {
+    /* Hide non-essential UI */
+    nav, .skip-to-content, button, .no-print,
+    header, aside, footer, .toast-container {
+        display: none !important;
+    }
+
+    /* Reset layout */
+    body {
+        background: white !important;
+        color: black !important;
+        font-size: 12pt;
+        line-height: 1.4;
+    }
+
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .md\:pl-64 {
+        padding-left: 0 !important;
+    }
+
+    /* Ensure content fits on page */
+    * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    a { text-decoration: underline; color: #000; }
+
+    h1, h2, h3 { page-break-after: avoid; }
+    table, figure, img { page-break-inside: avoid; }
+
+    /* Print-specific report styles */
+    .print-header {
+        text-align: center;
+        border-bottom: 2px solid #333;
+        padding-bottom: 16px;
+        margin-bottom: 24px;
+    }
+
+    .print-section {
+        margin-bottom: 20px;
+        page-break-inside: avoid;
+    }
+
+    .print-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .print-table th, .print-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .print-table th {
+        background-color: #f5f5f5;
+        font-weight: 600;
+    }
+}

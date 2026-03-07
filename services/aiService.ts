@@ -41,6 +41,91 @@ export const getHealthSummary = async (healthData: string): Promise<string> => {
   }
 };
 
+/**
+ * Enhanced AI Health Summary: cross-data correlation, anomaly detection.
+ */
+export const getEnhancedHealthSummary = async (healthData: string): Promise<string> => {
+  if (!ai) {
+    return "AI features are currently unavailable. Please ensure your API key is configured.";
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Analyze the following comprehensive health data and provide a detailed cross-correlated health analysis. Health Data:\n${healthData}`,
+      config: {
+        systemInstruction: `You are an advanced medical data analyst AI. Perform the following analysis on the patient's health data:
+
+## Your Analysis Should Include:
+
+### 1. Cross-Data Correlations
+- Correlate symptoms with medications (identify possible side effects)
+- Track how vitals respond to medication changes or additions
+- Link food journal entries to symptom patterns
+
+### 2. Anomaly Detection & Flags
+- Flag any sudden changes in vitals (e.g., "Your blood sugar spiked on X date")
+- Identify patterns like consistently elevated readings
+- Note medication adherence concerns
+
+### 3. Trend Analysis
+- Summarize trends in vitals over the recorded period
+- Highlight improvements or deteriorations
+
+### 4. Actionable Insights
+- Suggest topics to discuss with their doctor
+- Recommend areas for improvement in self-care
+
+Format your response with clear markdown headings (##) and bullet points. Be specific with dates and values. Use a professional but caring tone. Add a '⚠️' emoji before any important flags or warnings. Always include the disclaimer that this is AI-generated analysis and not medical advice.`,
+        temperature: 0.4,
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error("Error generating enhanced summary:", error);
+    return "Sorry, we couldn't generate the enhanced analysis at this time. Please try again later.";
+  }
+};
+
+/**
+ * AI-powered extraction of visit summary from clinical notes.
+ */
+export const extractVisitSummary = async (visitNotes: string): Promise<{ visitReason: string; clinicalNotes: string; followUpInstructions: string }> => {
+  if (!ai) {
+    return { visitReason: 'Visit', clinicalNotes: visitNotes, followUpInstructions: 'Please consult your provider.' };
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Extract and organize the following visit notes into structured sections. Visit Notes:\n"""${visitNotes}"""`,
+      config: {
+        systemInstruction: `You are a medical documentation assistant. Extract visit notes into three structured sections:
+1. visitReason - A brief 1-sentence reason for the visit
+2. clinicalNotes - The main clinical observations, diagnoses, and findings (formatted with bullet points)
+3. followUpInstructions - Clear follow-up instructions for the patient (formatted with bullet points)
+
+If a section can't be determined from the notes, provide a reasonable default. Be concise and professional.`,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            visitReason: { type: Type.STRING },
+            clinicalNotes: { type: Type.STRING },
+            followUpInstructions: { type: Type.STRING },
+          },
+          required: ['visitReason', 'clinicalNotes', 'followUpInstructions']
+        },
+        temperature: 0.2,
+      }
+    });
+    return JSON.parse(response.text);
+  } catch (error) {
+    console.error("Error extracting visit summary:", error);
+    return { visitReason: 'Visit', clinicalNotes: visitNotes, followUpInstructions: 'Please consult your provider for follow-up instructions.' };
+  }
+};
+
 export const getLifestyleTips = async (userInfo: string): Promise<string> => {
   // Gracefully handle the case where the AI client could not be initialized.
   if (!ai) {

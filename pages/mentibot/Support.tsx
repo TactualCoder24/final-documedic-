@@ -8,8 +8,10 @@ import {
 import Button from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const MentibotSupport: React.FC = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const [recommendations, setRecommendations] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -19,25 +21,25 @@ const MentibotSupport: React.FC = () => {
         setRecommendations([
             {
                 id: '1',
-                title: 'Mindfulness Break',
-                description: 'Your mood has been slightly low today. A 5-minute breathing exercise could help.',
-                type: 'Exercise',
+                title: t('support.rec1.title', 'Mindfulness Break'),
+                description: t('support.rec1.desc', 'Your mood has been slightly low today. A 5-minute breathing exercise could help.'),
+                type: t('support.type.exercise', 'Exercise'),
                 icon: Sparkles,
                 link: '/mentibot/exercises'
             },
             {
                 id: '2',
-                title: 'Calming Soundscape',
-                description: 'You mentioned feeling stressed. We recommend the "Peaceful Piano" playlist.',
-                type: 'Music',
+                title: t('support.rec2.title', 'Calming Soundscape'),
+                description: t('support.rec2.desc', 'You mentioned feeling stressed. We recommend the "Peaceful Piano" playlist.'),
+                type: t('support.type.music', 'Music'),
                 icon: Heart,
                 link: '/mentibot/music'
             },
             {
                 id: '3',
-                title: 'Journaling Prompt',
-                description: 'Reflect on one thing that went well today, no matter how small.',
-                type: 'Journal',
+                title: t('support.rec3.title', 'Journaling Prompt'),
+                description: t('support.rec3.desc', 'Reflect on one thing that went well today, no matter how small.'),
+                type: t('support.type.journal', 'Journal'),
                 icon: Book,
                 link: '/mentibot/journal'
             }
@@ -56,9 +58,9 @@ const MentibotSupport: React.FC = () => {
                 <div>
                     <h1 className="text-3xl font-bold font-heading flex items-center gap-2">
                         <Shield className="h-8 w-8 text-primary" />
-                        Personalized Support
+                        {t('support.title', 'Personalized Support')}
                     </h1>
-                    <p className="text-muted-foreground">AI-curated recommendations based on your unique wellness journey.</p>
+                    <p className="text-muted-foreground">{t('support.subtitle', 'AI-curated recommendations based on your unique wellness journey.')}</p>
                 </div>
             </div>
 
@@ -69,14 +71,14 @@ const MentibotSupport: React.FC = () => {
                             <Sparkles className="h-12 w-12 text-primary animate-pulse" />
                         </div>
                         <div className="text-center md:text-left space-y-2">
-                            <h2 className="text-2xl font-bold font-heading">Mental Wellness Insight</h2>
+                            <h2 className="text-2xl font-bold font-heading">{t('support.insight.title', 'Mental Wellness Insight')}</h2>
                             <p className="text-muted-foreground max-w-2xl leading-relaxed">
-                                Based on your recent interactions and mood logs, AI has identified that you're showing great resilience this week. Keep up the consistent self-care!
+                                {t('support.insight.desc', "Based on your recent interactions and mood logs, AI has identified that you're showing great resilience this week. Keep up the consistent self-care!")}
                             </p>
                         </div>
                         <Button variant="outline" className="shrink-0 gap-2">
                             <RefreshCw className="h-4 w-4" />
-                            Update Analysis
+                            {t('support.insight.update', 'Update Analysis')}
                         </Button>
                     </CardContent>
                 </Card>
@@ -104,7 +106,7 @@ const MentibotSupport: React.FC = () => {
                             <CardContent className="mt-auto">
                                 <Button variant="ghost" className="w-full justify-between group" asChild>
                                     <Link to={rec.link}>
-                                        Explore Now
+                                        {t('support.explore_now', 'Explore Now')}
                                         <CheckCircle2 className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </Link>
                                 </Button>
@@ -120,12 +122,12 @@ const MentibotSupport: React.FC = () => {
                     <div className="space-y-2">
                         <h3 className="text-xl font-bold font-heading flex items-center gap-2">
                             <Lightbulb className="h-5 w-5 text-amber-500" />
-                            Daily Wellness Tip
+                            {t('support.daily_tip.title', 'Daily Wellness Tip')}
                         </h3>
-                        <p className="text-muted-foreground italic">"Practice the 5-4-3-2-1 technique if you feel a surge of anxiety during your workday."</p>
+                        <p className="text-muted-foreground italic">{t('support.daily_tip.desc', '"Practice the 5-4-3-2-1 technique if you feel a surge of anxiety during your workday."')}</p>
                     </div>
                     <Button variant="gradient" className="rounded-full px-8 shrink-0">
-                        View All Tips
+                        {t('support.view_all_tips', 'View All Tips')}
                     </Button>
                 </CardContent>
             </Card>

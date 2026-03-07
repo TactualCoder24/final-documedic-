@@ -13,7 +13,8 @@ import OnboardingChecklist from './walkthrough/OnboardingChecklist';
 import FeatureHint from './walkthrough/FeatureHint';
 import { useOnboarding } from '../hooks/useOnboarding';
 import { PENDING_ONBOARDING_KEY } from './walkthrough/LandingOnboardingWizard';
-import { saveProfile, addMedication, addVital } from '../services/dataSupabase';
+import { saveProfile, addMedication, addVital, addRecord } from '../services/dataSupabase';
+import { useTranslation } from 'react-i18next';
 
 const COLLAPSED_KEY = 'sidebar-collapsed-groups';
 
@@ -35,6 +36,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(getInitialCollapsed);
 
   const handleSignOut = async () => {
@@ -79,7 +81,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
                     className="flex items-center justify-between w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors rounded-md"
                     aria-expanded={!isCollapsed}
                   >
-                    {group.label}
+                    {t(`nav.group.${group.label}`, group.label)}
                     <motion.svg
                       animate={{ rotate: isCollapsed ? -90 : 0 }}
                       transition={{ duration: 0.2 }}
@@ -114,7 +116,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
                               {...(tourDataMap[path] ? { 'data-tour': tourDataMap[path] } : {})}
                             >
                               <Icon className="mr-3 h-4 w-4" />
-                              {label}
+                              {t(`nav.item.${label}`, label)}
                             </NavLink>
                           ))}
                         </div>
@@ -133,7 +135,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
                 onClick={() => { if (isOpen) toggle() }}
               >
                 <Settings className="mr-3 h-4 w-4" />
-                Settings
+                {t('nav.item.Settings', 'Settings')}
               </NavLink>
             </div>
           </nav>
@@ -147,7 +149,7 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
             </div>
             <Button variant="ghost" className="w-full justify-start mt-2 text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
               <LogOut className="mr-3 h-5 w-5" />
-              Sign Out
+              {t('nav.item.Sign Out', 'Sign Out')}
             </Button>
           </div>
         </div>
@@ -216,6 +218,31 @@ const Layout: React.FC = () => {
               await addVital(user.uid, { sugar, systolic, diastolic });
             }
           }
+
+          if (pendingData.documents && Array.isArray(pendingData.documents)) {
+            await Promise.all(
+              pendingData.documents.map(async (doc: any) => {
+                try {
+                  const arr = doc.data.split(',');
+                  const bstr = atob(arr[1]);
+                  let n = bstr.length;
+                  const u8arr = new Uint8Array(n);
+                  while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                  }
+                  const file = new File([u8arr], doc.name, { type: doc.type });
+
+                  await addRecord(user.uid, {
+                    name: doc.name.split('.')[0] || doc.name,
+                    type: 'Lab Report',
+                    file: file
+                  });
+                } catch (err) {
+                  console.error("Error uploading pending document:", err);
+                }
+              })
+            );
+          }
         };
         saveData();
 
@@ -242,10 +269,11 @@ const Layout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-secondary/30 dark:bg-background">
+      <a href="#main-content" className="skip-to-content">Skip to main content</a>
       <Sidebar isOpen={sidebarOpen} toggle={toggleSidebar} />
       <div className="md:pl-64">
         <Header toggleSidebar={toggleSidebar} />
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main id="main-content" className="p-4 sm:p-6 lg:p-8" role="main" tabIndex={-1}>
           <Breadcrumbs />
           <motion.div
             initial={{ opacity: 0, y: 20 }}

@@ -2,24 +2,27 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { BrainCircuit, ThumbsUp, ThumbsDown } from '../components/icons/Icons';
-import { getHealthSummary } from '../services/aiService';
+import { BrainCircuit, ThumbsUp, ThumbsDown, Printer } from '../components/icons/Icons';
+import { getHealthSummary, getEnhancedHealthSummary } from '../services/aiService';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../hooks/useAuth';
 import { getFullUserData, getWaterIntake } from '../services/dataSupabase';
+import { useTranslation } from 'react-i18next';
 
 const SmartSummary: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [enhancedMode, setEnhancedMode] = useState(false);
 
   const handleGenerateSummary = async () => {
     if (!user) return;
 
     setLoading(true);
     setSummary('');
-    setStatusMessage('Compiling your data and generating AI health summary...');
+    setStatusMessage(t('smart_summary.msg_compiling', 'Compiling your data and generating AI health summary...'));
 
     const userData = await getFullUserData(user.uid);
     const today = new Date().toISOString().split('T')[0];
@@ -37,10 +40,12 @@ const SmartSummary: React.FC = () => {
 - Recent Records: ${userData.records.length > 0 ? userData.records.slice(0, 3).map(r => `${r.name} (${r.type} from ${r.date})`).join(', ') : 'No records available.'}
     `;
 
-    const result = await getHealthSummary(healthDataString);
+    const result = enhancedMode
+      ? await getEnhancedHealthSummary(healthDataString)
+      : await getHealthSummary(healthDataString);
     setSummary(result);
     setLoading(false);
-    setStatusMessage('Your health summary has been generated.');
+    setStatusMessage(t('smart_summary.msg_generated', 'Your health summary has been generated.'));
   };
 
   const handleDownloadSummary = () => {
@@ -78,18 +83,40 @@ const SmartSummary: React.FC = () => {
         {statusMessage}
       </div>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold font-heading">Smart Health Summary</h1>
-        <p className="text-muted-foreground">Get an AI-powered summary of your health profile, easy to read and share.</p>
+        <h1 className="text-3xl font-bold font-heading">{t('smart_summary.title', 'Smart Health Summary')}</h1>
+        <p className="text-muted-foreground">{t('smart_summary.subtitle', 'Get an AI-powered summary of your health profile, easy to read and share.')}</p>
+        <div className="flex flex-wrap items-center gap-3 mt-3">
+          <Button
+            variant={enhancedMode ? 'outline' : 'default'}
+            size="sm"
+            onClick={() => setEnhancedMode(false)}
+          >
+            {t('smart_summary.basic', 'Basic Summary')}
+          </Button>
+          <Button
+            variant={enhancedMode ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setEnhancedMode(true)}
+          >
+            {t('smart_summary.enhanced', '🔬 Enhanced Analysis')}
+          </Button>
+          <a href="#/health-report">
+            <Button variant="outline" size="sm">
+              <Printer className="mr-2 h-4 w-4" />
+              {t('smart_summary.report', 'Printable Report')}
+            </Button>
+          </a>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BrainCircuit className="h-6 w-6 text-primary" />
-            Your AI-Generated Summary
+            {t('smart_summary.card_title', 'Your AI-Generated Summary')}
           </CardTitle>
           <CardDescription>
-            This summary is generated based on your latest health data. It is for informational purposes only and is not a substitute for professional medical advice.
+            {t('smart_summary.card_desc', 'This summary is generated based on your latest health data. It is for informational purposes only and is not a substitute for professional medical advice.')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -111,7 +138,7 @@ const SmartSummary: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-10">
-              <p className="text-muted-foreground">Click the button below to generate your health summary.</p>
+              <p className="text-muted-foreground">{t('smart_summary.empty', 'Click the button below to generate your health summary.')}</p>
             </div>
           )}
         </CardContent>
@@ -121,22 +148,22 @@ const SmartSummary: React.FC = () => {
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Generating...
+                  {t('smart_summary.generating', 'Generating...')}
                 </>
-              ) : summary ? 'Regenerate Summary' : 'Generate Summary'}
+              ) : summary ? t('smart_summary.regenerate', 'Regenerate Summary') : t('smart_summary.generate', 'Generate Summary')}
             </Button>
             {summary && !loading && (
               <>
-                <Button onClick={handleDownloadSummary} variant="outline">Download Summary</Button>
-                <Button onClick={handleDownloadRecord} variant="outline">Download Full Record</Button>
+                <Button onClick={handleDownloadSummary} variant="outline">{t('smart_summary.download_summary', 'Download Summary')}</Button>
+                <Button onClick={handleDownloadRecord} variant="outline">{t('smart_summary.download_record', 'Download Full Record')}</Button>
               </>
             )}
           </div>
           {summary && !loading && (
             <div className="flex items-center gap-2 flex-shrink-0">
-              <p className="text-sm text-muted-foreground">Was this summary helpful?</p>
-              <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Helpful"><ThumbsUp className="h-4 w-4" /></Button>
-              <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Not helpful"><ThumbsDown className="h-4 w-4" /></Button>
+              <p className="text-sm text-muted-foreground">{t('smart_summary.helpful', 'Was this summary helpful?')}</p>
+              <Button variant="outline" size="icon" className="h-8 w-8" aria-label={t('smart_summary.aria_helpful', 'Helpful')}><ThumbsUp className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" aria-label={t('smart_summary.aria_not_helpful', 'Not helpful')}><ThumbsDown className="h-4 w-4" /></Button>
             </div>
           )}
         </CardFooter>

@@ -9,6 +9,7 @@ import {
 import Button from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const moods = [
     { score: 5, label: 'Excellent', icon: Laugh, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
@@ -18,8 +19,8 @@ const moods = [
     { score: 1, label: 'Stressed', icon: Angry, color: 'text-rose-500', bg: 'bg-rose-500/10' },
     { score: 0, label: 'Depressed', icon: CloudRain, color: 'text-slate-500', bg: 'bg-slate-500/10' }
 ];
-
 const MentibotMood: React.FC = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const [history, setHistory] = useState<MoodEntry[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -73,9 +74,9 @@ const MentibotMood: React.FC = () => {
                 <div>
                     <h1 className="text-3xl font-bold font-heading flex items-center gap-2">
                         <Activity className="h-8 w-8 text-primary" />
-                        Mood Tracker
+                        {t('mood.title', 'Mood Tracker')}
                     </h1>
-                    <p className="text-muted-foreground">Log your daily mood and track your emotional trends.</p>
+                    <p className="text-muted-foreground">{t('mood.subtitle', 'Log your daily mood and track your emotional trends.')}</p>
                 </div>
             </div>
 
@@ -83,8 +84,8 @@ const MentibotMood: React.FC = () => {
                 {/* Mood Logging */}
                 <Card variant="premium" className="border-primary/20">
                     <CardHeader>
-                        <CardTitle>How are you feeling right now?</CardTitle>
-                        <CardDescription>Select the emoji that best matches your state.</CardDescription>
+                        <CardTitle>{t('mood.log.title', 'How are you feeling right now?')}</CardTitle>
+                        <CardDescription>{t('mood.log.subtitle', 'Select the emoji that best matches your state.')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-8">
                         <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
@@ -104,11 +105,11 @@ const MentibotMood: React.FC = () => {
                         </div>
 
                         <div className="space-y-4">
-                            <label className="text-sm font-bold text-muted-foreground ml-1">Optional Notes</label>
+                            <label className="text-sm font-bold text-muted-foreground ml-1">{t('mood.optional_notes', 'Optional Notes')}</label>
                             <textarea
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
-                                placeholder="What's contributing to this feeling?"
+                                placeholder={t('mood.notes_placeholder', "What's contributing to this feeling?")}
                                 className="w-full h-32 p-4 rounded-2xl bg-muted border-none focus:ring-2 focus:ring-primary/30 resize-none text-sm"
                             />
                         </div>
@@ -119,7 +120,7 @@ const MentibotMood: React.FC = () => {
                             disabled={selectedMood === null || isLoading}
                             onClick={handleLogMood}
                         >
-                            Log Mood Entry
+                            {t('mood.log_btn', 'Log Mood Entry')}
                         </Button>
                     </CardContent>
                 </Card>
@@ -129,18 +130,18 @@ const MentibotMood: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold font-heading flex items-center gap-2">
                             <TrendingUp className="h-5 w-5 text-primary" />
-                            Recent Trends
+                            {t('mood.recent_trends', 'Recent Trends')}
                         </h2>
                         <Button variant="ghost" size="sm" className="gap-2">
                             <Calendar className="h-4 w-4" />
-                            Full History
+                            {t('mood.full_history', 'Full History')}
                         </Button>
                     </div>
 
                     {history.length === 0 ? (
                         <div className="h-64 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-3xl text-muted-foreground">
                             <Activity className="h-12 w-12 mb-4 opacity-20" />
-                            <p>No mood data yet. Start logging today!</p>
+                            <p>{t('mood.no_data', 'No mood data yet. Start logging today!')}</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -179,17 +180,17 @@ const MentibotMood: React.FC = () => {
                     <Card variant="premium" className="bg-primary/5 border-primary/10">
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-xs font-bold text-primary uppercase tracking-wider">7-DAY MOOD TREND</span>
+                                <span className="text-xs font-bold text-primary uppercase tracking-wider">{t('mood.7day_trend', '7-DAY MOOD TREND')}</span>
                                 {(() => {
-                                    if (history.length === 0) return <span className="text-xs text-muted-foreground">No data yet</span>;
+                                    if (history.length === 0) return <span className="text-xs text-muted-foreground">{t('mood.no_data_short', 'No data yet')}</span>;
                                     const last7 = history.slice(0, 7);
                                     const avg = last7.reduce((acc, curr) => acc + (curr.mood_score || 0), 0) / (last7.length || 1);
-                                    let avgLabel = "Neutral";
-                                    if (avg >= 4) avgLabel = "Good";
-                                    else if (avg >= 3) avgLabel = "Neutral";
-                                    else if (avg >= 2) avgLabel = "Down";
-                                    else avgLabel = "Stressed/Depressed";
-                                    return <span className="text-xs font-bold text-foreground">Avg: {avgLabel}</span>;
+                                    let avgLabel = t('mood.neutral', "Neutral");
+                                    if (avg >= 4) avgLabel = t('mood.good', "Good");
+                                    else if (avg >= 3) avgLabel = t('mood.neutral', "Neutral");
+                                    else if (avg >= 2) avgLabel = t('mood.down', "Down");
+                                    else avgLabel = t('mood.depressed', "Stressed/Depressed");
+                                    return <span className="text-xs font-bold text-foreground">{t('mood.avg', 'Avg:')} {avgLabel}</span>;
                                 })()}
                             </div>
 
@@ -227,16 +228,16 @@ const MentibotMood: React.FC = () => {
                             <div className="p-4 rounded-xl bg-background/50 border border-primary/20">
                                 <h3 className="text-sm font-bold flex items-center gap-2 mb-2 text-primary">
                                     <Sparkles className="h-4 w-4" />
-                                    AI Weekly Insight
+                                    {t('mood.ai_insight.title', 'AI Weekly Insight')}
                                 </h3>
                                 <p className="text-xs text-muted-foreground leading-relaxed italic">
                                     {(() => {
-                                        if (history.length < 3) return "Log a few more days of mood data to unlock personalized AI insights into your emotional patterns.";
+                                        if (history.length < 3) return t('mood.ai_insight.need_more_data', "Log a few more days of mood data to unlock personalized AI insights into your emotional patterns.");
                                         const recentScores = history.slice(0, 5).map(h => h.mood_score || 0);
                                         const avg = recentScores.reduce((a, b) => a + b, 0) / recentScores.length;
-                                        if (avg >= 4) return "You've been experiencing predominantly positive emotions recently. This is a great time to reflect on what habits or events are contributing to this well-being so you can sustain them.";
-                                        if (avg >= 2.5) return "Your mood has been fluctuating but remains mostly stable. Consider journaling on the days your mood dips to identify potential triggers.";
-                                        return "It looks like you've been going through a tougher emotional stretch. Remember to be gentle with yourself. Utilize the breathing exercises or reach out to your support network if things feel overwhelming.";
+                                        if (avg >= 4) return t('mood.ai_insight.positive', "You've been experiencing predominantly positive emotions recently. This is a great time to reflect on what habits or events are contributing to this well-being so you can sustain them.");
+                                        if (avg >= 2.5) return t('mood.ai_insight.neutral', "Your mood has been fluctuating but remains mostly stable. Consider journaling on the days your mood dips to identify potential triggers.");
+                                        return t('mood.ai_insight.negative', "It looks like you've been going through a tougher emotional stretch. Remember to be gentle with yourself. Utilize the breathing exercises or reach out to your support network if things feel overwhelming.");
                                     })()}
                                 </p>
                             </div>

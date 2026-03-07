@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -42,6 +42,7 @@ const Dashboard: React.FC = () => {
   const [isVitalsModalOpen, setIsVitalsModalOpen] = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const { t } = useTranslation();
 
   const todayStr = getTodayDateString();
 
@@ -182,35 +183,35 @@ const Dashboard: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary" />
-            Quick Actions
+            {t('dashboard.quick_actions', 'Quick Actions')}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Button variant="outline" className="flex-col h-28 hover:border-primary hover:bg-primary/5 transition-all group" onClick={() => navigate('/appointments')}>
             <CalendarDays className="h-8 w-8 mb-2 text-primary group-hover:scale-110 transition-transform" />
-            <span className="font-semibold">Schedule</span>
+            <span className="font-semibold">{t('dashboard.schedule', 'Schedule')}</span>
           </Button>
           <Button variant="outline" className="flex-col h-28 hover:border-accent hover:bg-accent/5 transition-all group" onClick={() => navigate('/find-care')}>
             <MapPin className="h-8 w-8 mb-2 text-accent group-hover:scale-110 transition-transform" />
-            <span className="font-semibold">Find Care</span>
+            <span className="font-semibold">{t('dashboard.find_care', 'Find Care')}</span>
           </Button>
           <Button variant="outline" className="flex-col h-28 hover:border-success hover:bg-success/5 transition-all group" onClick={() => setIsVitalsModalOpen(true)}>
             <ClipboardList className="h-8 w-8 mb-2 text-success group-hover:scale-110 transition-transform" />
-            <span className="font-semibold">Log Vitals</span>
+            <span className="font-semibold">{t('dashboard.log_vitals', 'Log Vitals')}</span>
           </Button>
         </CardContent>
       </Card>
 
       <Card variant="premium" hover className="bg-gradient-to-br from-card to-accent/10" data-tour="water-intake">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Water Intake</CardTitle>
+          <CardTitle className="text-sm font-medium">{t('dashboard.water_intake', 'Water Intake')}</CardTitle>
           <div className="p-2 rounded-lg bg-accent/10">
             <GlassWater className="h-5 w-5 text-accent" />
           </div>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center">
           <div className="text-5xl font-bold my-3 text-gradient">{waterIntake}<span className="text-2xl text-muted-foreground">/{waterGoal}</span></div>
-          <p className="text-xs text-muted-foreground mb-4 font-medium">glasses today</p>
+          <p className="text-xs text-muted-foreground mb-4 font-medium">{t('dashboard.glasses_today', 'glasses today')}</p>
           <div className="flex gap-3">
             <Button size="sm" variant="outline" onClick={() => handleWaterChange(-1)} disabled={waterIntake <= 0} className="hover:border-destructive hover:text-destructive">-1</Button>
             <Button size="sm" variant="gradient" onClick={() => handleWaterChange(1)}>+1</Button>
@@ -220,7 +221,7 @@ const Dashboard: React.FC = () => {
 
       <Card variant="premium" hover className="bg-gradient-to-br from-card to-destructive/10" data-tour="blood-pressure">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Blood Pressure</CardTitle>
+          <CardTitle className="text-sm font-medium">{t('dashboard.blood_pressure', 'Blood Pressure')}</CardTitle>
           <div className="p-2 rounded-lg bg-destructive/10">
             <HeartPulse className="h-5 w-5 text-destructive" />
           </div>
@@ -229,12 +230,12 @@ const Dashboard: React.FC = () => {
           {latestBPressure ? (
             <>
               <div className="text-3xl font-bold text-gradient">{latestBPressure.systolic}/{latestBPressure.diastolic}</div>
-              <p className="text-xs text-muted-foreground mt-1 font-medium">mmHg</p>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">{t('dashboard.mmHg', 'mmHg')}</p>
             </>
           ) : (
             <>
-              <div className="text-2xl font-bold text-muted-foreground">N/A</div>
-              <p className="text-xs text-muted-foreground mt-1">Log your BP to see it here.</p>
+              <div className="text-2xl font-bold text-muted-foreground">{t('dashboard.NA', 'N/A')}</div>
+              <p className="text-xs text-muted-foreground mt-1">{t('dashboard.log_bp_prompt', 'Log your BP to see it here.')}</p>
             </>
           )}
         </CardContent>
@@ -267,7 +268,7 @@ const Dashboard: React.FC = () => {
       <Card variant="premium" hover className="bg-gradient-to-br from-card to-primary/10">
         <Link to="/dashboard/mentibot/mood" className="block">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Latest Mood</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.latest_mood', 'Latest Mood')}</CardTitle>
             <div className="p-2 rounded-lg bg-primary/10">
               <BrainCircuit className="h-5 w-5 text-primary" />
             </div>
@@ -287,6 +288,31 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Link>
       </Card>
+
+      {records.length > 0 && (
+        <Card className="col-span-1 md:col-span-2 lg:col-span-3" data-tour="recent-uploads">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <div>
+              <CardTitle>{t('dashboard.recent_docs', 'Recent Documents')}</CardTitle>
+              <CardDescription>{t('dashboard.recent_docs_desc', 'Your recently uploaded health records.')}</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/records')}>{t('dashboard.view_all', 'View All')}</Button>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {records.slice(0, 3).map(record => (
+              <div key={record.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg hover:bg-secondary cursor-pointer transition-colors" onClick={() => navigate('/records')}>
+                <div className="bg-primary/10 p-2 rounded-lg shrink-0">
+                  <FileText className="h-5 w-5 text-primary" />
+                </div>
+                <div className="truncate">
+                  <p className="font-medium text-sm truncate">{record.name}</p>
+                  <p className="text-xs text-muted-foreground">{record.type} • {record.date}</p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {tests.length > 0 && (
         <Card className="col-span-1 md:col-span-2 lg:col-span-3">
@@ -396,9 +422,9 @@ const Dashboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div>
             <h1 className="text-4xl font-bold font-heading">
-              Welcome back, <span className="text-gradient">{user?.displayName?.split(' ')[0] || 'User'}</span>!
+              {t('dashboard.welcome_back', 'Welcome back,')} <span className="text-gradient">{user?.displayName?.split(' ')[0] || t('dashboard.user', 'User')}</span>!
             </h1>
-            <p className="text-muted-foreground text-lg mt-2">Here's a quick overview of your health profile.</p>
+            <p className="text-muted-foreground text-lg mt-2">{t('dashboard.overview_desc', "Here's a quick overview of your health profile.")}</p>
           </div>
           <div className="flex flex-wrap gap-3 justify-start sm:justify-end">
             <Button onClick={() => setIsProfileModalOpen(true)} variant="outline" className="w-full sm:w-auto hover:border-primary group">

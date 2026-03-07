@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Button from '../components/ui/Button';
@@ -217,6 +218,7 @@ const InteractiveDashboardMockup = () => {
 
 const Landing: React.FC = () => {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -299,14 +301,14 @@ const Landing: React.FC = () => {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" asChild>
-              <Link to="/community">Community</Link>
+              <Link to="/community">{t('nav.item.Community', 'Community')}</Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link to="/mentibot">Mentibot</Link>
+              <Link to="/mentibot">{t('nav.item.Mentibot', 'Mentibot')}</Link>
             </Button>
             <ThemeToggle />
             <Button asChild>
-              <Link to="/login">Get Started</Link>
+              <Link to="/login">{t('landing.get_started', 'Get Started')}</Link>
             </Button>
           </div>
           {/* Mobile Nav Button */}
@@ -330,13 +332,13 @@ const Landing: React.FC = () => {
           >
             <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
               <Button variant="ghost" asChild>
-                <Link to="/community" onClick={() => setIsMenuOpen(false)}>Community</Link>
+                <Link to="/community" onClick={() => setIsMenuOpen(false)}>{t('nav.item.Community', 'Community')}</Link>
               </Button>
               <Button variant="ghost" asChild>
-                <Link to="/mentibot" onClick={() => setIsMenuOpen(false)}>Mentibot</Link>
+                <Link to="/mentibot" onClick={() => setIsMenuOpen(false)}>{t('nav.item.Mentibot', 'Mentibot')}</Link>
               </Button>
               <Button asChild size="lg" className="w-full">
-                <Link to="/login" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
+                <Link to="/login" onClick={() => setIsMenuOpen(false)}>{t('landing.get_started', 'Get Started')}</Link>
               </Button>
             </nav>
           </motion.div>
@@ -368,24 +370,24 @@ const Landing: React.FC = () => {
                   <div className="flex flex-col gap-3 mb-6">
                     <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-primary/10 border border-primary/20 w-fit max-w-full">
                       <div className="w-2 h-2 rounded-full bg-primary animate-pulse flex-shrink-0" />
-                      <span className="text-xs sm:text-sm font-semibold text-primary">Trusted by many across India</span>
+                      <span className="text-xs sm:text-sm font-semibold text-primary">{t('landing.trusted_badge', 'Trusted by many across India')}</span>
                     </div>
                     <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 w-fit max-w-full">
                       <svg className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                       <span className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300 leading-tight">
-                        <span className="hidden sm:inline">₹1 Lakh Grant - Delhi Startup Yuva Festival by Govt. of Delhi NCT</span>
-                        <span className="sm:hidden">₹1L Grant - Delhi Startup Festival</span>
+                        <span className="hidden sm:inline">{t('landing.grant_badge_long', '₹1 Lakh Grant - Delhi Startup Yuva Festival by Govt. of Delhi NCT')}</span>
+                        <span className="sm:hidden">{t('landing.grant_badge_short', '₹1L Grant - Delhi Startup Festival')}</span>
                       </span>
                     </div>
                   </div>
 
                   <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-heading leading-[0.9] tracking-tight">
-                    Your Health,
+                    {t('landing.title_start', 'Your Health,')}
                     <br />
                     <span className="relative inline-block mt-2">
-                      <span className="text-gradient">Reimagined</span>
+                      <span className="text-gradient">{t('landing.title_end', 'Reimagined')}</span>
                       <svg className="absolute -bottom-2 left-0 w-full" height="12" viewBox="0 0 300 12" fill="none">
                         <path d="M2 10C50 5 100 2 150 5C200 8 250 10 298 5" stroke="url(#hero-underline-gradient)" strokeWidth="3" strokeLinecap="round" />
                         <defs>
@@ -405,7 +407,7 @@ const Landing: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.2 }}
                 >
-                  The <span className="font-bold text-foreground">all-in-one platform</span> that makes managing your health simple, secure, and intelligent.
+                  {t('landing.subtitle_start', 'The')} <span className="font-bold text-foreground">{t('landing.subtitle_bold', 'all-in-one platform')}</span> {t('landing.subtitle_rest', 'that makes managing your health simple, secure, and intelligent.')}
                 </motion.p>
 
                 <motion.div
@@ -416,14 +418,14 @@ const Landing: React.FC = () => {
                 >
                   <Button asChild size="lg" variant="gradient" className="text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 h-auto shadow-2xl hover:shadow-primary/50 group w-full sm:w-auto">
                     <Link to="/login" className="flex items-center justify-center gap-2">
-                      Get Started Free
+                      {t('landing.get_started_free', 'Get Started Free')}
                       <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </Link>
                   </Button>
                   <Button size="lg" variant="outline" onClick={() => setIsBetaModalOpen(true)} className="text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 h-auto border-2 hover:border-primary hover:bg-primary/5 w-full sm:w-auto">
-                    Register for Beta
+                    {t('landing.register_beta', 'Register for Beta')}
                   </Button>
                 </motion.div>
               </div>
@@ -479,7 +481,7 @@ const Landing: React.FC = () => {
                       <CalendarDays className="h-6 w-6 text-accent" />
                     </div>
                     <div className="text-sm text-muted-foreground mb-1">Upcoming</div>
-                    <div className="text-lg font-bold">Dr. Smith</div>
+                    <div className="text-lg font-bold">Dr. Gupta</div>
                     <div className="text-xs text-muted-foreground mt-2">Tomorrow • 10 AM</div>
                   </motion.div>
 
@@ -515,9 +517,9 @@ const Landing: React.FC = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-4xl sm:text-5xl font-bold font-heading">Your Health, <span className="text-gradient">Your Data</span>.</h2>
+              <h2 className="text-4xl sm:text-5xl font-bold font-heading">{t('landing.principles.title_start', 'Your Health,')} <span className="text-gradient">{t('landing.principles.title_end', 'Your Data')}</span>.</h2>
               <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground leading-relaxed">
-                We believe your sensitive health information deserves the highest level of privacy and control. Our platform is built on these core principles.
+                {t('landing.principles.subtitle', 'We believe your sensitive health information deserves the highest level of privacy and control. Our platform is built on these core principles.')}
               </p>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -531,8 +533,8 @@ const Landing: React.FC = () => {
                 <div className="flex items-center justify-center h-20 w-20 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Lock className="h-10 w-10" />
                 </div>
-                <h3 className="text-2xl font-bold font-heading mb-3">Complete Privacy</h3>
-                <p className="text-muted-foreground leading-relaxed">Your health data is yours alone. We use state-of-the-art encryption and will never share your information without your explicit consent.</p>
+                <h3 className="text-2xl font-bold font-heading mb-3">{t('landing.principles.privacy.title', 'Complete Privacy')}</h3>
+                <p className="text-muted-foreground leading-relaxed">{t('landing.principles.privacy.desc', 'Your health data is yours alone. We use state-of-the-art encryption and will never share your information without your explicit consent.')}</p>
               </motion.div>
               <motion.div
                 className="group p-8 bg-gradient-to-br from-card via-card to-accent/5 border border-border/60 rounded-2xl text-center hover:shadow-2xl hover:border-accent/50 transition-all duration-300 hover:-translate-y-2"
@@ -544,8 +546,8 @@ const Landing: React.FC = () => {
                 <div className="flex items-center justify-center h-20 w-20 mx-auto rounded-2xl bg-gradient-to-br from-accent/20 to-success/20 text-accent mb-6 group-hover:scale-110 transition-transform duration-300">
                   <KeyRound className="h-10 w-10" />
                 </div>
-                <h3 className="text-2xl font-bold font-heading mb-3">You're In Control</h3>
-                <p className="text-muted-foreground leading-relaxed">Manage what you share and with whom. Your emergency profile is only accessible via your unique, secure link that you control.</p>
+                <h3 className="text-2xl font-bold font-heading mb-3">{t('landing.principles.control.title', "You're In Control")}</h3>
+                <p className="text-muted-foreground leading-relaxed">{t('landing.principles.control.desc', 'Manage what you share and with whom. Your emergency profile is only accessible via your unique, secure link that you control.')}</p>
               </motion.div>
               <motion.div
                 className="group p-8 bg-gradient-to-br from-card via-card to-success/5 border border-border/60 rounded-2xl text-center hover:shadow-2xl hover:border-success/50 transition-all duration-300 hover:-translate-y-2"
@@ -557,8 +559,8 @@ const Landing: React.FC = () => {
                 <div className="flex items-center justify-center h-20 w-20 mx-auto rounded-2xl bg-gradient-to-br from-success/20 to-primary/20 text-success mb-6 group-hover:scale-110 transition-transform duration-300">
                   <ShieldCheck className="h-10 w-10" />
                 </div>
-                <h3 className="text-2xl font-bold font-heading mb-3">AI with Integrity</h3>
-                <p className="text-muted-foreground leading-relaxed">Our AI provides insights based on *your* data, for *your* benefit. It's designed for personalization, not for monetization.</p>
+                <h3 className="text-2xl font-bold font-heading mb-3">{t('landing.principles.ai.title', 'AI with Integrity')}</h3>
+                <p className="text-muted-foreground leading-relaxed">{t('landing.principles.ai.desc', "Our AI provides insights based on *your* data, for *your* benefit. It's designed for personalization, not for monetization.")}</p>
               </motion.div>
             </div>
           </div>
@@ -574,8 +576,8 @@ const Landing: React.FC = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-4xl sm:text-5xl font-bold font-heading">A <span className="text-gradient">Simpler Path</span> to Health Management</h2>
-              <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground leading-relaxed">In three simple steps, take full control of your health journey.</p>
+              <h2 className="text-4xl sm:text-5xl font-bold font-heading">{t('landing.how_it_works.title_start', 'A ')}<span className="text-gradient">{t('landing.how_it_works.title_gradient', 'Simpler Path')}</span> {t('landing.how_it_works.title_end', 'to Health Management')}</h2>
+              <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground leading-relaxed">{t('landing.how_it_works.subtitle', 'In three simple steps, take full control of your health journey.')}</p>
             </motion.div>
             <div className="mt-16 grid gap-8 md:grid-cols-3">
               {howItWorksSteps.map((item, i) => (
@@ -597,8 +599,8 @@ const Landing: React.FC = () => {
                       <div className="flex items-center justify-center h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary mb-6 mx-auto group-hover:scale-110 transition-transform duration-300">
                         <span className="font-black text-3xl font-heading">{item.step}</span>
                       </div>
-                      <h3 className="text-2xl font-bold font-heading mb-3">{item.title}</h3>
-                      <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                      <h3 className="text-2xl font-bold font-heading mb-3">{t(`landing.how_it_works.steps.${item.title}.title`, item.title)}</h3>
+                      <p className="text-muted-foreground leading-relaxed">{t(`landing.how_it_works.steps.${item.title}.desc`, item.description)}</p>
                     </div>
                   </Card>
                 </motion.div>
@@ -618,9 +620,9 @@ const Landing: React.FC = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
               >
-                <h2 className="text-4xl sm:text-5xl font-bold font-heading">Everything You Need for <span className="text-gradient">Better Health</span></h2>
+                <h2 className="text-4xl sm:text-5xl font-bold font-heading">{t('landing.features_section.title_start', 'Everything You Need for')} <span className="text-gradient">{t('landing.features_section.title_gradient', 'Better Health')}</span></h2>
                 <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-                  From secure record-keeping to intelligent reminders, DocuMedic empowers you to take control of your health journey.
+                  {t('landing.features_section.subtitle', 'From secure record-keeping to intelligent reminders, DocuMedic empowers you to take control of your health journey.')}
                 </p>
               </motion.div>
             </div>
@@ -637,8 +639,8 @@ const Landing: React.FC = () => {
                   <div className="flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary mb-6 group-hover:scale-110 transition-transform duration-300">
                     <feature.icon className="h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                  <h3 className="text-xl font-bold mb-3">{t(`landing.features.${feature.title}.title`, feature.title)}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{t(`landing.features.${feature.title}.desc`, feature.description)}</p>
                 </motion.div>
               ))}
             </div>
@@ -649,9 +651,9 @@ const Landing: React.FC = () => {
         <section id="personas" className="py-20 sm:py-24 bg-secondary/30 dark:bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center">
-              <h2 className="text-3xl font-bold font-heading">Built For Every Health Journey</h2>
+              <h2 className="text-3xl font-bold font-heading">{t('landing.personas.title', 'Built For Every Health Journey')}</h2>
               <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
-                Whether you're managing a condition, caring for a loved one, or simply staying proactive about your health.
+                {t('landing.personas.subtitle', "Whether you're managing a condition, caring for a loved one, or simply staying proactive about your health.")}
               </p>
             </div>
             <div className="mt-16 grid gap-8 md:grid-cols-3">
@@ -667,8 +669,8 @@ const Landing: React.FC = () => {
                   <div className="flex items-center justify-center h-16 w-16 mx-auto rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4">
                     <persona.icon className="h-8 w-8" />
                   </div>
-                  <h3 className="text-lg font-semibold">{persona.title}</h3>
-                  <p className="mt-2 text-muted-foreground">{persona.description}</p>
+                  <h3 className="text-lg font-semibold">{t(`landing.personas.${persona.title}.title`, persona.title)}</h3>
+                  <p className="mt-2 text-muted-foreground">{t(`landing.personas.${persona.title}.desc`, persona.description)}</p>
                 </motion.div>
               ))}
             </div>
@@ -700,12 +702,12 @@ const Landing: React.FC = () => {
                 viewport={{ once: true, amount: 0.5 }}
                 transition={{ duration: 0.5 }}
               >
-                <h2 className="text-3xl font-bold font-heading">Emergency Access, Instantly</h2>
-                <p className="mt-4 text-muted-foreground">In a critical situation, every second counts. Our secure QR code provides first responders with the vital information they need, right when they need it.</p>
+                <h2 className="text-3xl font-bold font-heading">{t('landing.qr.title', 'Emergency Access, Instantly')}</h2>
+                <p className="mt-4 text-muted-foreground">{t('landing.qr.subtitle', 'In a critical situation, every second counts. Our secure QR code provides first responders with the vital information they need, right when they need it.')}</p>
                 <ul className="mt-6 space-y-3">
-                  <li className="flex items-start"><HeartPulse className="h-5 w-5 text-primary mr-3 mt-1 shrink-0" /><span>Generate a unique, scannable code for your emergency profile.</span></li>
-                  <li className="flex items-start"><HeartPulse className="h-5 w-5 text-primary mr-3 mt-1 shrink-0" /><span>Share need-to-know details like allergies, conditions, and contacts.</span></li>
-                  <li className="flex items-start"><HeartPulse className="h-5 w-5 text-primary mr-3 mt-1 shrink-0" /><span>You control what information is shared for your privacy and peace of mind.</span></li>
+                  <li className="flex items-start"><HeartPulse className="h-5 w-5 text-primary mr-3 mt-1 shrink-0" /><span>{t('landing.qr.bullet_1', 'Generate a unique, scannable code for your emergency profile.')}</span></li>
+                  <li className="flex items-start"><HeartPulse className="h-5 w-5 text-primary mr-3 mt-1 shrink-0" /><span>{t('landing.qr.bullet_2', 'Share need-to-know details like allergies, conditions, and contacts.')}</span></li>
+                  <li className="flex items-start"><HeartPulse className="h-5 w-5 text-primary mr-3 mt-1 shrink-0" /><span>{t('landing.qr.bullet_3', 'You control what information is shared for your privacy and peace of mind.')}</span></li>
                 </ul>
               </motion.div>
             </div>
@@ -717,9 +719,9 @@ const Landing: React.FC = () => {
           <GradientBackground />
           <div className="container mx-auto px-4 relative z-10">
             <div className="text-center">
-              <h2 className="text-3xl font-bold font-heading">Trusted by Users Like You</h2>
+              <h2 className="text-3xl font-bold font-heading">{t('landing.testimonials.title', 'Trusted by Users Like You')}</h2>
               <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
-                Hear what our users have to say about managing their health with DocuMedic.
+                {t('landing.testimonials.subtitle', 'Hear what our users have to say about managing their health with DocuMedic.')}
               </p>
             </div>
             <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -803,9 +805,9 @@ const Landing: React.FC = () => {
         <section id="security" className="py-20 sm:py-24">
           <div className="container mx-auto px-4">
             <div className="text-center">
-              <h2 className="text-3xl font-bold font-heading">Your Privacy is Our Priority</h2>
+              <h2 className="text-3xl font-bold font-heading">{t('landing.security.title', 'Your Privacy is Our Priority')}</h2>
               <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
-                We're committed to the highest standards of security and data protection, so you can manage your health with confidence.
+                {t('landing.security.subtitle', "We're committed to the highest standards of security and data protection, so you can manage your health with confidence.")}
               </p>
             </div>
             <div className="mt-16 max-w-4xl mx-auto grid gap-8 md:grid-cols-3">
@@ -821,8 +823,8 @@ const Landing: React.FC = () => {
                   <div className="flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-primary/10 to-violet-500/10 text-primary mb-4 mx-auto">
                     <feature.icon className="h-8 w-8" />
                   </div>
-                  <h3 className="text-lg font-semibold">{feature.title}</h3>
-                  <p className="mt-2 text-muted-foreground">{feature.description}</p>
+                  <h3 className="text-lg font-semibold">{t(`landing.security.features.${feature.title}.title`, feature.title)}</h3>
+                  <p className="mt-2 text-muted-foreground">{t(`landing.security.features.${feature.title}.desc`, feature.description)}</p>
                 </motion.div>
               ))}
             </div>
@@ -841,13 +843,13 @@ const Landing: React.FC = () => {
                 viewport={{ once: true, amount: 0.5 }}
                 transition={{ duration: 0.5 }}
               >
-                <h2 className="text-4xl sm:text-5xl font-bold font-heading text-white mb-6">Ready to Take Control of Your Health?</h2>
+                <h2 className="text-4xl sm:text-5xl font-bold font-heading text-white mb-6">{t('landing.cta.title', 'Ready to Take Control of Your Health?')}</h2>
                 <p className="mt-6 max-w-2xl mx-auto text-xl text-white/90 leading-relaxed">
-                  Join thousands of others who are managing their health smarter and safer with DocuMedic. It's free to get started.
+                  {t('landing.cta.subtitle', "Join thousands of others who are managing their health smarter and safer with DocuMedic. It's free to get started.")}
                 </p>
                 <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
                   <Button asChild size="lg" variant="ghost" className="bg-white text-primary hover:bg-gray-100 dark:bg-white dark:text-violet-700 dark:hover:bg-gray-100 font-bold shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-lg px-10 py-6 h-auto">
-                    <Link to="/login">Get Started for Free →</Link>
+                    <Link to="/login">{t('landing.cta.button', 'Get Started for Free →')}</Link>
                   </Button>
                 </div>
               </motion.div>
@@ -868,34 +870,34 @@ const Landing: React.FC = () => {
                 <span className="text-xl font-bold font-heading">DocuMedic</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Empowering you to take control of your health journey with smart, secure, and simple tools.
+                {t('landing.footer.mission', 'Empowering you to take control of your health journey with smart, secure, and simple tools.')}
               </p>
               <p className="text-sm font-semibold text-foreground/90">
-                Made with ❤️ in Delhi for Bharat
+                {t('landing.footer.made_with_love', 'Made with ❤️ in Delhi for Bharat')}
               </p>
             </div>
 
             {/* Column 2: Quick Links */}
             <div>
-              <h3 className="font-bold font-heading mb-4">Quick Links</h3>
+              <h3 className="font-bold font-heading mb-4">{t('landing.footer.quick_links', 'Quick Links')}</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/#features" onClick={(e) => handleSmoothScroll(e, 'features')} className="text-muted-foreground hover:text-foreground transition-colors">Features</Link></li>
-                <li><Link to="/#personas" onClick={(e) => handleSmoothScroll(e, 'personas')} className="text-muted-foreground hover:text-foreground transition-colors">Who It's For</Link></li>
-                <li><Link to="/#security" onClick={(e) => handleSmoothScroll(e, 'security')} className="text-muted-foreground hover:text-foreground transition-colors">Security</Link></li>
+                <li><Link to="/#features" onClick={(e) => handleSmoothScroll(e, 'features')} className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.features', 'Features')}</Link></li>
+                <li><Link to="/#personas" onClick={(e) => handleSmoothScroll(e, 'personas')} className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.who_its_for', "Who It's For")}</Link></li>
+                <li><Link to="/#security" onClick={(e) => handleSmoothScroll(e, 'security')} className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.security', 'Security')}</Link></li>
               </ul>
             </div>
 
             {/* Column 3: Legal */}
             <div>
-              <h3 className="font-bold font-heading mb-4">Legal</h3>
+              <h3 className="font-bold font-heading mb-4">{t('landing.footer.legal', 'Legal')}</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms-of-service" className="text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link></li>
+                <li><Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.privacy', 'Privacy Policy')}</Link></li>
+                <li><Link to="/terms-of-service" className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.terms', 'Terms of Service')}</Link></li>
               </ul>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} DocuMedic. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} DocuMedic. {t('landing.footer.rights_reserved', 'All rights reserved.')}</p>
           </div>
         </div>
       </footer>

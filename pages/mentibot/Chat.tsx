@@ -11,6 +11,7 @@ import Button from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
     role: 'user' | 'model';
@@ -23,6 +24,7 @@ interface Message {
 const MentibotChat: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -84,7 +86,7 @@ const MentibotChat: React.FC = () => {
 
         } catch (err) {
             console.error(err);
-            setError('I encountered an error. Please try again or check your connection.');
+            setError(t('mentibot_chat.error', 'I encountered an error. Please try again or check your connection.'));
         } finally {
             setIsLoading(false);
         }
@@ -103,14 +105,14 @@ const MentibotChat: React.FC = () => {
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black font-heading uppercase italic tracking-tighter flex items-center gap-2">
                             <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                            AI Wellness Chat
+                            {t('mentibot_chat.title', 'AI Wellness Chat')}
                         </h1>
-                        <p className="text-muted-foreground text-[10px] sm:text-sm uppercase tracking-widest font-bold opacity-70">Empathetic Mental Health Support</p>
+                        <p className="text-muted-foreground text-[10px] sm:text-sm uppercase tracking-widest font-bold opacity-70">{t('mentibot_chat.subtitle', 'Empathetic Mental Health Support')}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">AI SECURE</span>
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{t('mentibot_chat.secure', 'AI SECURE')}</span>
                 </div>
             </div>
 
@@ -125,10 +127,9 @@ const MentibotChat: React.FC = () => {
                             <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center animate-bounce">
                                 <Brain className="h-10 w-10 text-primary" />
                             </div>
-                            <h2 className="text-xl font-bold font-heading">How are you feeling today?</h2>
+                            <h2 className="text-xl font-bold font-heading">{t('mentibot_chat.welcome_q', 'How are you feeling today?')}</h2>
                             <p className="text-muted-foreground text-sm">
-                                I'm here to listen, support, and help you navigate your thoughts.
-                                Everything shared here is secure and private.
+                                {t('mentibot_chat.welcome_msg', "I'm here to listen, support, and help you navigate your thoughts. Everything shared here is secure and private.")}
                             </p>
                         </div>
                     )}
@@ -154,7 +155,7 @@ const MentibotChat: React.FC = () => {
                                         {message.isCrisis && (
                                             <div className="flex items-center gap-2 text-destructive font-bold text-xs mb-2 uppercase">
                                                 <AlertTriangle className="h-3 w-3" />
-                                                Crisis Detected
+                                                {t('mentibot_chat.crisis_detected', 'Crisis Detected')}
                                             </div>
                                         )}
                                         <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">
@@ -162,7 +163,7 @@ const MentibotChat: React.FC = () => {
                                         </p>
                                     </div>
                                     <div className={`text-[10px] text-muted-foreground ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                        {message.role === 'model' ? 'DocuMedic AI' : 'You'} • {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {message.role === 'model' ? t('mentibot_chat.bot_name', 'DocuMedic AI') : t('mentibot_chat.user_name', 'You')} • {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </div>
                                 </div>
                             </motion.div>
@@ -173,7 +174,7 @@ const MentibotChat: React.FC = () => {
                         <div className="flex justify-start">
                             <div className="bg-muted p-4 rounded-2xl rounded-tl-none flex items-center gap-2">
                                 <RefreshCw className="h-4 w-4 animate-spin text-primary" />
-                                <span className="text-sm text-muted-foreground">AI is reflecting...</span>
+                                <span className="text-sm text-muted-foreground">{t('mentibot_chat.reflecting', 'AI is reflecting...')}</span>
                             </div>
                         </div>
                     )}
@@ -193,7 +194,7 @@ const MentibotChat: React.FC = () => {
                         <Input
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Tell me what's on your mind..."
+                            placeholder={t('mentibot_chat.placeholder', "Tell me what's on your mind...")}
                             className="flex-1 h-12 rounded-xl focus-visible:ring-primary/30"
                             disabled={isLoading}
                         />
@@ -208,8 +209,7 @@ const MentibotChat: React.FC = () => {
                         </Button>
                     </form>
                     <p className="text-[10px] text-center text-muted-foreground mt-2 px-4">
-                        DocuMedic AI is an AI companion, not a replacement for professional therapy.
-                        If you are in danger, please contact emergency services.
+                        {t('mentibot_chat.disclaimer', 'DocuMedic AI is an AI companion, not a replacement for professional therapy. If you are in danger, please contact emergency services.')}
                     </p>
                 </div>
             </Card>

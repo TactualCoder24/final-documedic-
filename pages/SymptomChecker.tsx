@@ -5,6 +5,7 @@ import { Bot, Lightbulb, Stethoscope, MapPin, Search } from '../components/icons
 import Input from '../components/ui/Input';
 import { chatWithSymptomChecker } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 type Step = 'start' | 'chat' | 'result';
 
@@ -15,6 +16,7 @@ interface ChatMessage {
 
 const SymptomChecker: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [step, setStep] = useState<Step>('start');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputValue, setInputValue] = useState('');
@@ -103,23 +105,23 @@ const SymptomChecker: React.FC = () => {
     return (
         <>
             <div className="mb-6">
-                <h1 className="text-3xl font-bold font-heading">Symptom Checker</h1>
-                <p className="text-muted-foreground">Answer questions to receive a recommendation for care.</p>
+                <h1 className="text-3xl font-bold font-heading">{t('symptom_checker.title', 'Symptom Checker')}</h1>
+                <p className="text-muted-foreground">{t('symptom_checker.subtitle', 'Answer questions to receive a recommendation for care.')}</p>
             </div>
 
             <Card className="max-w-2xl mx-auto h-[600px] flex flex-col">
                 <CardHeader className="text-center shrink-0">
                     <Bot className="h-10 w-10 mx-auto text-primary" />
-                    <CardTitle>AI-Powered Symptom Checker</CardTitle>
-                    <CardDescription>This tool does not provide a diagnosis. It is for informational purposes only.</CardDescription>
+                    <CardTitle>{t('symptom_checker.card_title', 'AI-Powered Symptom Checker')}</CardTitle>
+                    <CardDescription>{t('symptom_checker.card_desc', 'This tool does not provide a diagnosis. It is for informational purposes only.')}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-hidden flex flex-col relative">
                     {step === 'start' && (
                         <div className="flex-1 flex items-center justify-center">
                             <form onSubmit={handleStart} className="space-y-4 w-full max-w-md">
-                                <label htmlFor="symptom" className="font-semibold block text-center">What is your primary symptom?</label>
-                                <Input id="symptom" name="symptom" placeholder="e.g., Sore throat, headache, fever" required className="text-center" />
-                                <Button type="submit" className="w-full">Start Analysis</Button>
+                                <label htmlFor="symptom" className="font-semibold block text-center">{t('symptom_checker.start_prompt', 'What is your primary symptom?')}</label>
+                                <Input id="symptom" name="symptom" placeholder={t('symptom_checker.start_placeholder', 'e.g., Sore throat, headache, fever')} required className="text-center" />
+                                <Button type="submit" className="w-full">{t('symptom_checker.start_btn', 'Start Analysis')}</Button>
                             </form>
                         </div>
                     )}
@@ -137,7 +139,7 @@ const SymptomChecker: React.FC = () => {
                                 {isLoading && (
                                     <div className="flex justify-start">
                                         <div className="max-w-[80%] rounded-xl px-4 py-2 text-sm bg-muted text-muted-foreground rounded-tl-none animate-pulse">
-                                            Typing...
+                                            {t('symptom_checker.typing', 'Typing...')}
                                         </div>
                                     </div>
                                 )}
@@ -148,11 +150,11 @@ const SymptomChecker: React.FC = () => {
                                     <Input
                                         value={inputValue}
                                         onChange={(e) => setInputValue(e.target.value)}
-                                        placeholder="Type your answer..."
+                                        placeholder={t('symptom_checker.type_answer', 'Type your answer...')}
                                         disabled={isLoading}
                                         className="flex-1"
                                     />
-                                    <Button type="submit" disabled={isLoading || !inputValue.trim()}>Send</Button>
+                                    <Button type="submit" disabled={isLoading || !inputValue.trim()}>{t('symptom_checker.send', 'Send')}</Button>
                                 </form>
                             </div>
                         </>
@@ -165,18 +167,18 @@ const SymptomChecker: React.FC = () => {
                             </div>
                             <h3 className="text-xl font-bold">{result.title}</h3>
                             <div className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${result.triageLevel === 'Emergency' ? 'bg-destructive/10 text-destructive' :
-                                    result.triageLevel === 'Urgent' ? 'bg-orange-500/10 text-orange-600' :
-                                        result.triageLevel === 'Routine' ? 'bg-blue-500/10 text-blue-600' :
-                                            'bg-green-500/10 text-green-600'
+                                result.triageLevel === 'Urgent' ? 'bg-orange-500/10 text-orange-600' :
+                                    result.triageLevel === 'Routine' ? 'bg-blue-500/10 text-blue-600' :
+                                        'bg-green-500/10 text-green-600'
                                 }`}>
-                                {result.triageLevel} Triage
+                                {result.triageLevel} {t('symptom_checker.triage', 'Triage')}
                             </div>
                             <p className="text-muted-foreground max-w-md mx-auto">{result.recommendation}</p>
                             <div className="flex gap-4 justify-center pt-8">
-                                <Button onClick={handleReset} variant="outline">Start Over</Button>
-                                {result.action === 'FindER' && <Button variant="destructive" onClick={handleAction}>Find Nearest ER</Button>}
-                                {result.action === 'ScheduleAppointment' && <Button onClick={handleAction}>Schedule Appointment</Button>}
-                                {result.action === 'SelfCare' && <Button onClick={handleAction}>Explore Health Library</Button>}
+                                <Button onClick={handleReset} variant="outline">{t('symptom_checker.start_over', 'Start Over')}</Button>
+                                {result.action === 'FindER' && <Button variant="destructive" onClick={handleAction}>{t('symptom_checker.find_er', 'Find Nearest ER')}</Button>}
+                                {result.action === 'ScheduleAppointment' && <Button onClick={handleAction}>{t('symptom_checker.schedule', 'Schedule Appointment')}</Button>}
+                                {result.action === 'SelfCare' && <Button onClick={handleAction}>{t('symptom_checker.explore', 'Explore Health Library')}</Button>}
                             </div>
                         </div>
                     )}

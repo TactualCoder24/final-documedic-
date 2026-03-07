@@ -7,6 +7,7 @@ import {
 import Button from '../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface Exercise {
     id: string;
@@ -20,77 +21,78 @@ interface Exercise {
     audioUrl?: string;
 }
 
-const exercises: Exercise[] = [
-    {
-        id: 'box-breathing',
-        title: 'Box Breathing',
-        category: 'Stress',
-        description: 'A simple yet powerful technique to calm the nervous system and regain focus.',
-        duration: '5 min',
-        difficulty: 'Easy',
-        icon: Wind,
-        audioUrl: 'https://cdn.pixabay.com/download/audio/2022/10/05/audio_24a2ef6bbc.mp3?filename=box-breathing-meditation-122477.mp3', // Placeholder royalty free track
-        steps: [
-            'Inhale slowly through your nose for 4 seconds.',
-            'Hold your breath for 4 seconds.',
-            'Exhale slowly through your mouth for 4 seconds.',
-            'Hold empty for 4 seconds.',
-            'Repeat the cycle 4 times.'
-        ]
-    },
-    {
-        id: 'thought-challenging',
-        title: 'Thought Challenging',
-        category: 'CBT',
-        description: 'Identify and reframe negative thought patterns into more realistic ones.',
-        duration: '10 min',
-        difficulty: 'Medium',
-        icon: Brain,
-        steps: [
-            'Write down a negative thought you had recently.',
-            'Identify the cognitive distortion (e.g., Catastrophizing).',
-            'List evidence supporting this thought.',
-            'List evidence contradicting this thought.',
-            'Create a more balanced, realistic perspective.'
-        ]
-    },
-    {
-        id: 'body-scan',
-        title: 'Body Scan Meditation',
-        category: 'Mindfulness',
-        description: 'Progressively focus on and relax each part of your body to reduce tension.',
-        duration: '15 min',
-        difficulty: 'Easy',
-        icon: Activity,
-        audioUrl: 'https://cdn.pixabay.com/download/audio/2023/12/15/audio_ff12d9bed6.mp3?filename=deep-meditation-20531.mp3', // Placeholder royalty free track
-        steps: [
-            'Lie down or sit comfortably in a quiet space.',
-            'Bring awareness to your feet and toes, noticing any sensations.',
-            'Slowly move your attention up to your calves, knees, and thighs.',
-            'Continue through your torso, arms, neck, and head.',
-            'Consciously release tension as you move from section to section.'
-        ]
-    },
-    {
-        id: '54321-grounding',
-        title: '5-4-3-2-1 Grounding',
-        category: 'Anxiety',
-        description: 'A sensory technique to pull you out of anxiety and back into the present moment.',
-        duration: '3 min',
-        difficulty: 'Easy',
-        icon: Sparkles,
-        steps: [
-            'Acknowledge 5 things you can see around you.',
-            'Acknowledge 4 things you can touch.',
-            'Acknowledge 3 things you can hear.',
-            'Acknowledge 2 things you can smell.',
-            'Acknowledge 1 thing you can taste.'
-        ]
-    }
-];
-
 const MentibotExercises: React.FC = () => {
+    const { t } = useTranslation();
     const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+
+    const exercises: Exercise[] = [
+        {
+            id: 'box-breathing',
+            title: t('exercises.box_breathing.title', 'Box Breathing'),
+            category: 'Stress',
+            description: t('exercises.box_breathing.desc', 'A simple yet powerful technique to calm the nervous system and regain focus.'),
+            duration: '5 min',
+            difficulty: 'Easy',
+            icon: Wind,
+            // Audio removed — Pixabay download URLs require auth and often fail in production
+            steps: [
+                t('exercises.box_breathing.step1', 'Inhale slowly through your nose for 4 seconds.'),
+                t('exercises.box_breathing.step2', 'Hold your breath for 4 seconds.'),
+                t('exercises.box_breathing.step3', 'Exhale slowly through your mouth for 4 seconds.'),
+                t('exercises.box_breathing.step4', 'Hold empty for 4 seconds.'),
+                t('exercises.box_breathing.step5', 'Repeat the cycle 4 times.')
+            ]
+        },
+        {
+            id: 'thought-challenging',
+            title: t('exercises.thought_challenging.title', 'Thought Challenging'),
+            category: 'CBT',
+            description: t('exercises.thought_challenging.desc', 'Identify and reframe negative thought patterns into more realistic ones.'),
+            duration: '10 min',
+            difficulty: 'Medium',
+            icon: Brain,
+            steps: [
+                t('exercises.thought_challenging.step1', 'Write down a negative thought you had recently.'),
+                t('exercises.thought_challenging.step2', 'Identify the cognitive distortion (e.g., Catastrophizing).'),
+                t('exercises.thought_challenging.step3', 'List evidence supporting this thought.'),
+                t('exercises.thought_challenging.step4', 'List evidence contradicting this thought.'),
+                t('exercises.thought_challenging.step5', 'Create a more balanced, realistic perspective.')
+            ]
+        },
+        {
+            id: 'body-scan',
+            title: t('exercises.body_scan.title', 'Body Scan Meditation'),
+            category: 'Mindfulness',
+            description: t('exercises.body_scan.desc', 'Progressively focus on and relax each part of your body to reduce tension.'),
+            duration: '15 min',
+            difficulty: 'Easy',
+            icon: Activity,
+            // Audio removed — Pixabay download URLs require auth and often fail in production
+            steps: [
+                t('exercises.body_scan.step1', 'Lie down or sit comfortably in a quiet space.'),
+                t('exercises.body_scan.step2', 'Bring awareness to your feet and toes, noticing any sensations.'),
+                t('exercises.body_scan.step3', 'Slowly move your attention up to your calves, knees, and thighs.'),
+                t('exercises.body_scan.step4', 'Continue through your torso, arms, neck, and head.'),
+                t('exercises.body_scan.step5', 'Consciously release tension as you move from section to section.')
+            ]
+        },
+        {
+            id: '54321-grounding',
+            title: t('exercises.grounding.title', '5-4-3-2-1 Grounding'),
+            category: 'Anxiety',
+            description: t('exercises.grounding.desc', 'A sensory technique to pull you out of anxiety and back into the present moment.'),
+            duration: '3 min',
+            difficulty: 'Easy',
+            icon: Sparkles,
+            steps: [
+                t('exercises.grounding.step1', 'Acknowledge 5 things you can see around you.'),
+                t('exercises.grounding.step2', 'Acknowledge 4 things you can touch.'),
+                t('exercises.grounding.step3', 'Acknowledge 3 things you can hear.'),
+                t('exercises.grounding.step4', 'Acknowledge 2 things you can smell.'),
+                t('exercises.grounding.step5', 'Acknowledge 1 thing you can taste.')
+            ]
+        }
+    ];
 
     return (
         <div className="space-y-8 pb-12">
@@ -104,9 +106,9 @@ const MentibotExercises: React.FC = () => {
                 <div>
                     <h1 className="text-3xl font-bold font-heading flex items-center gap-2">
                         <Brain className="h-8 w-8 text-primary" />
-                        Therapeutic Exercises
+                        {t('exercises.title', 'Therapeutic Exercises')}
                     </h1>
-                    <p className="text-muted-foreground">Evidence-based activities for your mental wellness.</p>
+                    <p className="text-muted-foreground">{t('exercises.subtitle', 'Evidence-based activities for your mental wellness.')}</p>
                 </div>
             </div>
 
@@ -171,7 +173,7 @@ const MentibotExercises: React.FC = () => {
                                     onClick={() => setSelectedExercise(null)}
                                 >
                                     <ArrowLeft className="h-4 w-4 mr-2" />
-                                    Back
+                                    {t('common.back', 'Back')}
                                 </Button>
                                 <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                                     <selectedExercise.icon className="h-8 w-8 text-primary" />
@@ -182,14 +184,14 @@ const MentibotExercises: React.FC = () => {
                             <CardContent className="p-8">
                                 <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                                     <PlayCircle className="h-5 w-5 text-primary" />
-                                    Step-by-Step Guide
+                                    {t('exercises.step_guide', 'Step-by-Step Guide')}
                                 </h3>
 
                                 {selectedExercise.audioUrl && (
                                     <div className="mb-8 p-4 bg-primary/10 rounded-2xl border border-primary/20">
                                         <h4 className="text-sm font-bold text-primary mb-2 flex items-center gap-2">
                                             <Wind className="h-4 w-4" />
-                                            Guided Audio
+                                            {t('exercises.guided_audio', 'Guided Audio')}
                                         </h4>
                                         <audio
                                             controls
@@ -197,9 +199,9 @@ const MentibotExercises: React.FC = () => {
                                             controlsList="nodownload"
                                             src={selectedExercise.audioUrl}
                                         >
-                                            Your browser does not support the audio element.
+                                            {t('exercises.audio_notsupported', 'Your browser does not support the audio element.')}
                                         </audio>
-                                        <p className="text-xs text-muted-foreground mt-2 italic">Listen to the guided meditation while following the steps below.</p>
+                                        <p className="text-xs text-muted-foreground mt-2 italic">{t('exercises.audio_hint', 'Listen to the guided meditation while following the steps below.')}</p>
                                     </div>
                                 )}
 
@@ -223,7 +225,7 @@ const MentibotExercises: React.FC = () => {
                                         onClick={() => setSelectedExercise(null)}
                                     >
                                         <CheckCircle2 className="h-5 w-5 mr-2" />
-                                        Complete Exercise
+                                        {t('exercises.complete', 'Complete Exercise')}
                                     </Button>
                                 </div>
                             </CardContent>

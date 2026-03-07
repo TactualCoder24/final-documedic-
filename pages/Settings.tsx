@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { getFullUserData, importUserData, deleteUserData } from '../services/dataSupabase';
 import Modal from '../components/ui/Modal';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AccessLogEntry } from '../types';
 import Input from '../components/ui/Input';
 
@@ -25,6 +26,7 @@ const mockConnections = [
 const Settings: React.FC = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const toast = useToast();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
@@ -68,7 +70,7 @@ const Settings: React.FC = () => {
       const result = e.target?.result as string;
       if (result) {
         const success = await importUserData(user.uid, result);
-        if (success) { toast.success('Data imported successfully! The page will now reload.'); } else { toast.error('Import failed. The file may be invalid.'); }
+        if (success) { toast.success(t('settings.import_success', 'Data imported successfully! The page will now reload.')); } else { toast.error(t('settings.import_fail', 'Import failed. The file may be invalid.')); }
         if (success) window.location.reload();
       }
     };
@@ -78,9 +80,9 @@ const Settings: React.FC = () => {
   const handleCsvImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files?.[0]) return;
     const file = event.target.files[0];
-    toast.info(`Parsing ${file.name}...`);
+    toast.info(t('settings.parsing_csv', `Parsing ${file.name}...`));
     setTimeout(() => {
-      toast.success("Successfully imported 32 records from wearable CSV.");
+      toast.success(t('settings.csv_success', "Successfully imported 32 records from wearable CSV."));
     }, 1500);
     event.target.value = '';
   }
@@ -88,7 +90,7 @@ const Settings: React.FC = () => {
   const handleDeleteData = async () => {
     if (!user) return;
     await deleteUserData(user.uid);
-    toast.success('All your data has been deleted.');
+    toast.success(t('settings.delete_success', 'All your data has been deleted.'));
     await signOut();
     navigate('/login');
   };
@@ -102,7 +104,7 @@ const Settings: React.FC = () => {
   const copyShareLink = () => {
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(shareLink)
-        .then(() => toast.success('Link copied!'))
+        .then(() => toast.success(t('settings.link_copied', 'Link copied!')))
         .catch(() => fallbackCopyTextToClipboard(shareLink));
     } else {
       fallbackCopyTextToClipboard(shareLink);
@@ -119,12 +121,12 @@ const Settings: React.FC = () => {
     try {
       const successful = document.execCommand('copy');
       if (successful) {
-        toast.success('Link copied!');
+        toast.success(t('settings.link_copied', 'Link copied!'));
       } else {
-        toast.error('Failed to copy. Please select and copy the link manually.');
+        toast.error(t('settings.copy_fail', 'Failed to copy. Please select and copy the link manually.'));
       }
     } catch (err) {
-      toast.error('Failed to copy. Please select and copy the link manually.');
+      toast.error(t('settings.copy_fail', 'Failed to copy. Please select and copy the link manually.'));
     }
     document.body.removeChild(textArea);
   };
@@ -132,13 +134,13 @@ const Settings: React.FC = () => {
   const toggleConnection = async (id: string, name: string, fhirUrl: string, isCurrentlyConnected: boolean) => {
     if (isCurrentlyConnected) {
       setConnections(conns => conns.map(c => c.id === id ? { ...c, connected: false } : c));
-      toast.info(`Disconnected from ${name}`);
+      toast.info(t('settings.disconnected', `Disconnected from ${name}`));
       return;
     }
 
     setIsConnectingFhir(id);
     // Simulate FHIR API connection flow (OAuth + Fetching Patient Resource demo)
-    toast.info(`Initiating secure FHIR connection to ${fhirUrl}...`);
+    toast.info(t('settings.connecting_fhir', `Initiating secure FHIR connection to ${fhirUrl}...`));
 
     setTimeout(() => {
       setConnections(conns => conns.map(c => c.id === id ? { ...c, connected: true } : c));
@@ -157,37 +159,37 @@ const Settings: React.FC = () => {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold font-heading">Settings</h1>
-        <p className="text-muted-foreground">Manage your account, data, and sharing preferences.</p>
+        <h1 className="text-3xl font-bold font-heading">{t('settings.title', 'Settings')}</h1>
+        <p className="text-muted-foreground">{t('settings.subtitle', 'Manage your account, data, and sharing preferences.')}</p>
       </div>
 
       <div className="space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle>Sharing & Permissions</CardTitle>
-            <CardDescription>Control how your health information is shared with providers and services.</CardDescription>
+            <CardTitle>{t('settings.sharing.title', 'Sharing & Permissions')}</CardTitle>
+            <CardDescription>{t('settings.sharing.desc', 'Control how your health information is shared with providers and services.')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg hover:border-primary/50 transition-colors">
               <div>
-                <h4 className="font-semibold text-primary flex items-center gap-2"><LinkIcon className="h-4 w-4" /> Health Provider API Connections</h4>
-                <p className="text-sm text-muted-foreground mt-1">Connect to clinical FHIR/ABDM APIs to sync your hospital records.</p>
+                <h4 className="font-semibold text-primary flex items-center gap-2"><LinkIcon className="h-4 w-4" /> {t('settings.sharing.api.title', 'Health Provider API Connections')}</h4>
+                <p className="text-sm text-muted-foreground mt-1">{t('settings.sharing.api.desc', 'Connect to clinical FHIR/ABDM APIs to sync your hospital records.')}</p>
               </div>
-              <Button onClick={() => setIsConnectModalOpen(true)} className="mt-2 sm:mt-0 w-full sm:w-auto shadow-sm">Manage API Connections</Button>
+              <Button onClick={() => setIsConnectModalOpen(true)} className="mt-2 sm:mt-0 w-full sm:w-auto shadow-sm">{t('settings.sharing.api.button', 'Manage API Connections')}</Button>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg">
               <div>
-                <h4 className="font-semibold">Share My Record</h4>
-                <p className="text-sm text-muted-foreground mt-1">Generate a temporary link for any provider to view your record.</p>
+                <h4 className="font-semibold">{t('settings.sharing.record.title', 'Share My Record')}</h4>
+                <p className="text-sm text-muted-foreground mt-1">{t('settings.sharing.record.desc', 'Generate a temporary link for any provider to view your record.')}</p>
               </div>
-              <Button onClick={generateShareLink} variant="outline" className="mt-2 sm:mt-0 w-full sm:w-auto">Generate Link</Button>
+              <Button onClick={generateShareLink} variant="outline" className="mt-2 sm:mt-0 w-full sm:w-auto">{t('settings.sharing.record.button', 'Generate Link')}</Button>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg">
               <div>
-                <h4 className="font-semibold">Access History</h4>
-                <p className="text-sm text-muted-foreground mt-1">See a log of who has viewed your information.</p>
+                <h4 className="font-semibold">{t('settings.sharing.history.title', 'Access History')}</h4>
+                <p className="text-sm text-muted-foreground mt-1">{t('settings.sharing.history.desc', 'See a log of who has viewed your information.')}</p>
               </div>
-              <Button onClick={() => setIsAccessLogModalOpen(true)} variant="outline" className="mt-2 sm:mt-0 w-full sm:w-auto">View Log</Button>
+              <Button onClick={() => setIsAccessLogModalOpen(true)} variant="outline" className="mt-2 sm:mt-0 w-full sm:w-auto">{t('settings.sharing.history.button', 'View Log')}</Button>
             </div>
           </CardContent>
         </Card>
@@ -196,11 +198,11 @@ const Settings: React.FC = () => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle>Connected Devices & Wearables</CardTitle>
-                <CardDescription>Automatically record information from your personal devices.</CardDescription>
+                <CardTitle>{t('settings.devices.title', 'Connected Devices & Wearables')}</CardTitle>
+                <CardDescription>{t('settings.devices.desc', 'Automatically record information from your personal devices.')}</CardDescription>
               </div>
               <Button variant="secondary" onClick={handleCsvClick} size="sm">
-                <FileText className="mr-2 h-4 w-4" /> Import CSV Data
+                <FileText className="mr-2 h-4 w-4" /> {t('settings.devices.button', 'Import CSV Data')}
               </Button>
               <input type="file" ref={csvInputRef} className="hidden" accept=".csv" onChange={handleCsvImport} />
             </div>
@@ -219,22 +221,22 @@ const Settings: React.FC = () => {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Account Data</CardTitle><CardDescription>Export your data for backup or import to overwrite current data.</CardDescription></CardHeader>
+          <CardHeader><CardTitle>{t('settings.account.title', 'Account Data')}</CardTitle><CardDescription>{t('settings.account.desc', 'Export your data for backup or import to overwrite current data.')}</CardDescription></CardHeader>
           <CardContent className="grid sm:grid-cols-2 gap-4">
-            <Button onClick={handleExport} variant="outline"><Download className="mr-2 h-4 w-4" />Export My Data</Button>
-            <Button onClick={handleImportClick} variant="outline"><UploadCloud className="mr-2 h-4 w-4" />Import Data</Button>
+            <Button onClick={handleExport} variant="outline"><Download className="mr-2 h-4 w-4" />{t('settings.account.export', 'Export My Data')}</Button>
+            <Button onClick={handleImportClick} variant="outline"><UploadCloud className="mr-2 h-4 w-4" />{t('settings.account.import', 'Import Data')}</Button>
             <input type="file" ref={importInputRef} className="hidden" accept="application/json" onChange={handleFileChange} />
           </CardContent>
         </Card>
 
         <Card className="border-destructive">
-          <CardHeader><CardTitle className="text-destructive">Danger Zone</CardTitle><CardDescription>This is a permanent action and cannot be undone.</CardDescription></CardHeader>
-          <CardFooter><Button variant="destructive" onClick={() => setIsDeleteModalOpen(true)}><Trash2 className="mr-2 h-4 w-4" />Delete All My Data</Button></CardFooter>
+          <CardHeader><CardTitle className="text-destructive">{t('settings.danger.title', 'Danger Zone')}</CardTitle><CardDescription>{t('settings.danger.desc', 'This is a permanent action and cannot be undone.')}</CardDescription></CardHeader>
+          <CardFooter><Button variant="destructive" onClick={() => setIsDeleteModalOpen(true)}><Trash2 className="mr-2 h-4 w-4" />{t('settings.danger.button', 'Delete All My Data')}</Button></CardFooter>
         </Card>
       </div>
 
-      <Modal title="Manage FHIR Connections" isOpen={isConnectModalOpen} onClose={() => setIsConnectModalOpen(false)}>
-        <p className="text-sm text-muted-foreground mb-4">Connect your account securely to hospital systems that support FHIR or ABDM APIs.</p>
+      <Modal title={t('settings.modals.connect_fhir.title', 'Manage FHIR Connections')} isOpen={isConnectModalOpen} onClose={() => setIsConnectModalOpen(false)}>
+        <p className="text-sm text-muted-foreground mb-4">{t('settings.modals.connect_fhir.desc', 'Connect your account securely to hospital systems that support FHIR or ABDM APIs.')}</p>
         <div className="space-y-3">
           {connections.map(conn => (
             <div key={conn.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-secondary/30 border rounded-xl gap-4">
@@ -247,19 +249,19 @@ const Settings: React.FC = () => {
                 onClick={() => toggleConnection(conn.id, conn.name, conn.fhirUrl, conn.connected)}
                 disabled={isConnectingFhir === conn.id}
               >
-                {isConnectingFhir === conn.id ? 'Connecting...' : (conn.connected ? 'Disconnect' : 'Connect API')}
+                {isConnectingFhir === conn.id ? t('settings.modals.connect_fhir.connecting', 'Connecting...') : (conn.connected ? t('settings.modals.connect_fhir.disconnect', 'Disconnect') : t('settings.modals.connect_fhir.connect_api', 'Connect API'))}
               </Button>
             </div>
           ))}
         </div>
       </Modal>
 
-      <Modal title="Share Your Record" isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)}>
-        <p className="text-sm text-muted-foreground mb-4">Share this secure, temporary link. It will expire in 24 hours.</p>
-        <div className="flex items-center gap-2"><Input value={shareLink} readOnly /><Button onClick={copyShareLink}>Copy</Button></div>
+      <Modal title={t('settings.modals.share.title', 'Share Your Record')} isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)}>
+        <p className="text-sm text-muted-foreground mb-4">{t('settings.modals.share.desc', 'Share this secure, temporary link. It will expire in 24 hours.')}</p>
+        <div className="flex items-center gap-2"><Input value={shareLink} readOnly /><Button onClick={copyShareLink}>{t('settings.modals.share.copy', 'Copy')}</Button></div>
       </Modal>
 
-      <Modal title="Access History" isOpen={isAccessLogModalOpen} onClose={() => setIsAccessLogModalOpen(false)}>
+      <Modal title={t('settings.modals.history.title', 'Access History')} isOpen={isAccessLogModalOpen} onClose={() => setIsAccessLogModalOpen(false)}>
         <div className="space-y-4">
           {mockAccessLog.map(log => (
             <div key={log.id} className="flex items-start gap-4">
@@ -273,10 +275,10 @@ const Settings: React.FC = () => {
         </div>
       </Modal>
 
-      <Modal title="Confirm Data Deletion" isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
+      <Modal title={t('settings.modals.delete.title', 'Confirm Data Deletion')} isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">Are you sure? This action is irreversible.</p>
-          <div className="flex justify-end gap-2 pt-2"><Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button><Button variant="destructive" onClick={handleDeleteData}>Yes, Delete Everything</Button></div>
+          <p className="text-sm text-muted-foreground">{t('settings.modals.delete.desc', 'Are you sure? This action is irreversible.')}</p>
+          <div className="flex justify-end gap-2 pt-2"><Button variant="ghost" onClick={() => setIsDeleteModalOpen(false)}>{t('settings.modals.delete.cancel', 'Cancel')}</Button><Button variant="destructive" onClick={handleDeleteData}>{t('settings.modals.delete.confirm', 'Yes, Delete Everything')}</Button></div>
         </div>
       </Modal>
     </>

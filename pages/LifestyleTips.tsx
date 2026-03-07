@@ -6,6 +6,7 @@ import { getLifestyleTips } from '../services/aiService';
 import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../hooks/useAuth';
 import { getProfile, getSymptoms, getFoodLogs } from '../services/dataSupabase';
+import { useTranslation } from 'react-i18next';
 
 interface Tip {
   title: string;
@@ -13,6 +14,7 @@ interface Tip {
 }
 
 const LifestyleTips: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [tips, setTips] = useState<Tip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,8 +54,8 @@ const LifestyleTips: React.FC = () => {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold font-heading">Personalized Lifestyle Tips</h1>
-        <p className="text-muted-foreground">AI-powered suggestions to help you live a healthier life.</p>
+        <h1 className="text-3xl font-bold font-heading">{t('lifestyle.title', 'Personalized Lifestyle Tips')}</h1>
+        <p className="text-muted-foreground">{t('lifestyle.subtitle', 'AI-powered suggestions to help you live a healthier life.')}</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -90,7 +92,7 @@ const LifestyleTips: React.FC = () => {
         ) : (
           <Card className="md:col-span-2 lg:col-span-3">
             <CardContent className="pt-6 text-center">
-              <p className="text-muted-foreground">Could not load tips at this time. Please try again later, or ensure your profile is filled out on the Dashboard.</p>
+              <p className="text-muted-foreground">{t('lifestyle.error_loading', 'Could not load tips at this time. Please try again later, or ensure your profile is filled out on the Dashboard.')}</p>
             </CardContent>
           </Card>
         )}
@@ -101,9 +103,9 @@ const LifestyleTips: React.FC = () => {
           {loading ? (
             <>
               <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>
-              Refreshing...
+              {t('lifestyle.refreshing', 'Refreshing...')}
             </>
-          ) : 'Get New Tips'}
+          ) : t('lifestyle.get_new_tips', 'Get New Tips')}
         </Button>
       </div>
     </>

@@ -7,9 +7,11 @@ import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
 import { getFoodLogs, addFoodLog, deleteFoodLog } from '../services/dataSupabase';
+import { useTranslation } from 'react-i18next';
 
 const FoodJournal: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<FoodLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,25 +41,25 @@ const FoodJournal: React.FC = () => {
     if (!user) return;
     const formData = new FormData(e.currentTarget);
     const newLog = {
-        mealType: formData.get('meal-type') as FoodLog['mealType'],
-        description: formData.get('meal-description') as string,
-        date: new Date().toISOString(),
+      mealType: formData.get('meal-type') as FoodLog['mealType'],
+      description: formData.get('meal-description') as string,
+      date: new Date().toISOString(),
     };
     if (newLog.mealType && newLog.description) {
-        await addFoodLog(user.uid, newLog);
-        await refreshLogs();
-        setIsModalOpen(false);
+      await addFoodLog(user.uid, newLog);
+      await refreshLogs();
+      setIsModalOpen(false);
     }
   };
 
   const groupedLogs = useMemo(() => {
     return logs.reduce((acc, log) => {
-        const date = new Date(log.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        if (!acc[date]) {
-            acc[date] = [];
-        }
-        acc[date].push(log);
-        return acc;
+      const date = new Date(log.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(log);
+      return acc;
     }, {} as Record<string, FoodLog[]>);
   }, [logs]);
 
@@ -65,21 +67,21 @@ const FoodJournal: React.FC = () => {
     <>
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold font-heading">Food Journal</h1>
-          <p className="text-muted-foreground">Keep a diary of your meals to stay mindful of your eating habits.</p>
+          <h1 className="text-3xl font-bold font-heading">{t('food_journal.title', 'Food Journal')}</h1>
+          <p className="text-muted-foreground">{t('food_journal.subtitle', 'Keep a diary of your meals to stay mindful of your eating habits.')}</p>
         </div>
         <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Log Meal
+          <Plus className="mr-2 h-4 w-4" /> {t('food_journal.log_meal_btn', 'Log Meal')}
         </Button>
       </div>
 
       <div className="space-y-8">
         {isLoading ? (
-            <Card>
-                <CardContent className="pt-6 text-center py-20">
-                    <p className="text-muted-foreground">Loading your food journal...</p>
-                </CardContent>
-            </Card>
+          <Card>
+            <CardContent className="pt-6 text-center py-20">
+              <p className="text-muted-foreground">{t('food_journal.loading', 'Loading your food journal...')}</p>
+            </CardContent>
+          </Card>
         ) : Object.keys(groupedLogs).length > 0 ? (
           Object.entries(groupedLogs).map(([date, dateLogs]) => (
             <Card key={date}>
@@ -95,17 +97,17 @@ const FoodJournal: React.FC = () => {
                           <Utensils className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-semibold">{log.mealType}</p>
+                          <p className="font-semibold">{t(`food_journal.meal_${log.mealType.toLowerCase()}`, log.mealType)}</p>
                           <p className="text-sm text-muted-foreground">{new Date(log.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                           <p className="text-foreground mt-1">{log.description}</p>
                         </div>
                       </div>
-                      <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-9 w-9 text-muted-foreground hover:text-destructive flex-shrink-0" 
-                          onClick={() => handleDelete(log.id)}
-                          aria-label={`Delete ${log.mealType} log`}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-muted-foreground hover:text-destructive flex-shrink-0"
+                        onClick={() => handleDelete(log.id)}
+                        aria-label={t('food_journal.delete_aria', 'Delete {{meal}} log', { meal: log.mealType })}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -118,44 +120,44 @@ const FoodJournal: React.FC = () => {
         ) : (
           <Card>
             <CardContent className="pt-6 text-center py-20">
-              <p className="text-muted-foreground">No meals logged yet. Click 'Log Meal' to get started.</p>
+              <p className="text-muted-foreground">{t('food_journal.no_meals', "No meals logged yet. Click 'Log Meal' to get started.")}</p>
             </CardContent>
           </Card>
         )}
       </div>
 
-      <Modal title="Log a New Meal" isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-         <form className="space-y-4" onSubmit={handleAddLog}>
-            <div>
-              <label htmlFor="meal-type" className="block text-sm font-medium text-foreground mb-1">Meal Type</label>
-              <select 
-                id="meal-type" 
-                name="meal-type" 
-                required 
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="Breakfast">Breakfast</option>
-                <option value="Lunch">Lunch</option>
-                <option value="Dinner">Dinner</option>
-                <option value="Snack">Snack</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="meal-description" className="block text-sm font-medium text-foreground mb-1">Description</label>
-              <textarea
-                id="meal-description"
-                name="meal-description"
-                rows={3}
-                placeholder="e.g., Oatmeal with berries and nuts"
-                required
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-               <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-               <Button type="submit">Log Meal</Button>
-            </div>
-         </form>
+      <Modal title={t('food_journal.modal_title', 'Log a New Meal')} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <form className="space-y-4" onSubmit={handleAddLog}>
+          <div>
+            <label htmlFor="meal-type" className="block text-sm font-medium text-foreground mb-1">{t('food_journal.meal_type', 'Meal Type')}</label>
+            <select
+              id="meal-type"
+              name="meal-type"
+              required
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="Breakfast">{t('food_journal.meal_breakfast', 'Breakfast')}</option>
+              <option value="Lunch">{t('food_journal.meal_lunch', 'Lunch')}</option>
+              <option value="Dinner">{t('food_journal.meal_dinner', 'Dinner')}</option>
+              <option value="Snack">{t('food_journal.meal_snack', 'Snack')}</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="meal-description" className="block text-sm font-medium text-foreground mb-1">{t('food_journal.description', 'Description')}</label>
+            <textarea
+              id="meal-description"
+              name="meal-description"
+              rows={3}
+              placeholder={t('food_journal.desc_placeholder', 'e.g., Oatmeal with berries and nuts')}
+              required
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>{t('food_journal.cancel', 'Cancel')}</Button>
+            <Button type="submit">{t('food_journal.log_meal_btn', 'Log Meal')}</Button>
+          </div>
+        </form>
       </Modal>
     </>
   );

@@ -14,8 +14,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../..
 import Input from '../../components/ui/Input';
 import { useNavigate } from 'react-router-dom';
 import { sampleAccommodations } from '../../src/mockData';
+import { useTranslation } from 'react-i18next';
 
 const MentibotSearch: React.FC = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
@@ -44,8 +46,8 @@ const MentibotSearch: React.FC = () => {
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold font-heading">Find a Retreat</h1>
-                        <p className="text-muted-foreground">Discover peaceful stays near Santa Marta's healing nature.</p>
+                        <h1 className="text-3xl font-bold font-heading">{t('search.title', 'Find a Retreat')}</h1>
+                        <p className="text-muted-foreground">{t('search.subtitle', "Discover peaceful stays near Santa Marta's healing nature.")}</p>
                     </div>
                 </div>
 
@@ -53,7 +55,7 @@ const MentibotSearch: React.FC = () => {
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <Input
                         className="pl-10 h-11 rounded-xl"
-                        placeholder="Search by location, feature, or name..."
+                        placeholder={t('search.placeholder', 'Search by location, feature, or name...')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -68,7 +70,7 @@ const MentibotSearch: React.FC = () => {
                     className="rounded-full gap-2"
                 >
                     <Filter className="h-4 w-4" />
-                    Filters
+                    {t('common.filters', 'Filters')}
                 </Button>
 
                 {propertyTypes.map(type => (
@@ -79,7 +81,7 @@ const MentibotSearch: React.FC = () => {
                         onClick={() => setSelectedType(type)}
                         className="rounded-full capitalize"
                     >
-                        {type}
+                        {type === 'all' ? t('common.all', 'All') : t(`search.property_type.${type}`, type)}
                     </Button>
                 ))}
 
@@ -93,7 +95,7 @@ const MentibotSearch: React.FC = () => {
                         }}
                         className="text-destructive hover:text-destructive hover:bg-destructive/5"
                     >
-                        Clear All
+                        {t('common.clear_all', 'Clear All')}
                     </Button>
                 )}
             </div>
@@ -109,7 +111,7 @@ const MentibotSearch: React.FC = () => {
                         <Card className="bg-muted/30 border-border/50 p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
-                                    <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Price Range (Up to ${priceRange[1]})</label>
+                                    <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground">{t('search.price_range', 'Price Range (Up to ${{price}})', { price: priceRange[1] })}</label>
                                     <input
                                         type="range"
                                         min="0"
@@ -161,9 +163,9 @@ const MentibotSearch: React.FC = () => {
                                     <div className="flex items-center justify-between mt-2">
                                         <div>
                                             <span className="text-xl font-bold text-primary">${item.price}</span>
-                                            <span className="text-xs text-muted-foreground ml-1">/ night</span>
+                                            <span className="text-xs text-muted-foreground ml-1">/ {t('search.night', 'night')}</span>
                                         </div>
-                                        <Button variant="outline" size="sm" className="rounded-full">Details</Button>
+                                        <Button variant="outline" size="sm" className="rounded-full">{t('common.details', 'Details')}</Button>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -174,8 +176,8 @@ const MentibotSearch: React.FC = () => {
                         <div className="inline-flex p-6 rounded-full bg-muted">
                             <X className="h-10 w-10 text-muted-foreground" />
                         </div>
-                        <h3 className="text-xl font-bold">No Stays Found</h3>
-                        <p className="text-muted-foreground">Try adjusting your search or filters to find more results.</p>
+                        <h3 className="text-xl font-bold">{t('search.no_results', 'No Stays Found')}</h3>
+                        <p className="text-muted-foreground">{t('search.no_results_desc', 'Try adjusting your search or filters to find more results.')}</p>
                     </div>
                 )}
             </div>
