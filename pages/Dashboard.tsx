@@ -47,40 +47,59 @@ const Dashboard: React.FC = () => {
   const todayStr = getTodayDateString();
 
   const refreshData = React.useCallback(async () => {
+    console.log("Dashboard refreshData called. User:", !!user);
     if (user) {
       setIsLoading(true);
-      const [vitalsData, recordsData, medsData, remindersData, symptomsData, waterIntakeData, profileData, testsData, moodData] = await Promise.all([
-        getVitals(user.uid),
-        getRecords(user.uid),
-        getMedications(user.uid),
-        getReminders(user.uid),
-        getSymptoms(user.uid),
-        getWaterIntake(user.uid, todayStr),
-        getProfile(user.uid),
-        getTestsAndProcedures(user.uid),
-        getMoodHistory(user.uid)
-      ]);
+      try {
+        console.log("Starting Dashboard data fetch...");
+        const fetchPromise = Promise.all([
+          getVitals(user.uid).catch(e => { console.error('getVitals error:', e); return []; }),
+          getRecords(user.uid).catch(e => { console.error('getRecords error:', e); return []; }),
+          getMedications(user.uid).catch(e => { console.error('getMedications error:', e); return []; }),
+          getReminders(user.uid).catch(e => { console.error('getReminders error:', e); return []; }),
+          getSymptoms(user.uid).catch(e => { console.error('getSymptoms error:', e); return []; }),
+          getWaterIntake(user.uid, todayStr).catch(e => { console.error('getWaterIntake error:', e); return 0; }),
+          getProfile(user.uid).catch(e => { console.error('getProfile error:', e); return null; }),
+          getTestsAndProcedures(user.uid).catch(e => { console.error('getTestsAndProcedures error:', e); return []; }),
+          getMoodHistory(user.uid).catch(e => { console.error('getMoodHistory error:', e); return []; })
+        ]);
 
-      setVitals(vitalsData);
-      setRecords(recordsData);
-      setMedications(medsData);
-      setReminders(remindersData);
-      setSymptoms(symptomsData);
-      setTests(testsData);
-      setWaterIntake(waterIntakeData);
-      setProfile(profileData);
-      setMoodHistory(moodData);
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Dashboard data fetch timeout')), 10000));
 
-      const lastProfileSkipDate = localStorage.getItem('profileUpdateSkippedDate');
-      if (lastProfileSkipDate !== todayStr && profileData && !profileData.age && !profileData.conditions && !profileData.goals) {
-        setIsProfileModalOpen(true);
+        const result = await Promise.race([fetchPromise, timeoutPromise]) as any[];
+        const [vitalsData, recordsData, medsData, remindersData, symptomsData, waterIntakeData, profileData, testsData, moodData] = result;
+        console.log("Dashboard data fetched successfully", { vitalsData, profileData });
+
+        setVitals(vitalsData);
+        setRecords(recordsData);
+        setMedications(medsData);
+        setReminders(remindersData);
+        setSymptoms(symptomsData);
+        setTests(testsData);
+        setWaterIntake(waterIntakeData);
+        setProfile(profileData);
+        setMoodHistory(moodData);
+
+        const lastProfileSkipDate = localStorage.getItem('profileUpdateSkippedDate');
+        if (lastProfileSkipDate !== todayStr && profileData && !profileData.age && !profileData.conditions && !profileData.goals) {
+          setIsProfileModalOpen(true);
+        }
+      } catch (error) {
+        console.error("Dashboard data fetching error:", error);
+      } finally {
+        console.log("Dashboard setting isLoading to false");
+        setIsLoading(false);
       }
+    } else {
+      console.log("No user, setting isLoading to false");
       setIsLoading(false);
     }
   }, [user, todayStr]);
 
   React.useEffect(() => {
     refreshData();
+    window.addEventListener('onboarding-data-saved', refreshData);
+    return () => window.removeEventListener('onboarding-data-saved', refreshData);
   }, [refreshData]);
 
   const handleUpdateVitals = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -115,20 +134,27 @@ const Dashboard: React.FC = () => {
   const handleSaveProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
-    const formData = new FormData(e.currentTarget);
-    const newProfile: Profile = {
-      age: formData.get('age') as string,
-      conditions: formData.get('conditions') as string,
-      goals: formData.get('goals') as string,
-      bloodType: formData.get('bloodType') as string,
-      emergencyContactName: formData.get('contactName') as string,
-      emergencyContactPhone: formData.get('contactPhone') as string,
-      targetBloodSugar: formData.get('targetBloodSugar') as string,
-      waterGoal: Number(formData.get('waterGoal')) || 8,
-    };
-    await saveProfile(user.uid, newProfile);
-    setProfile(newProfile);
-    setIsProfileModalOpen(false);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const newProfile: Profile = {
+        age: formData.get('age') as string,
+        conditions: formData.get('conditions') as string,
+        goals: formData.get('goals') as string,
+        bloodType: formData.get('bloodType') as string,
+        emergencyContactName: formData.get('contactName') as string,
+        emergencyContactPhone: formData.get('contactPhone') as string,
+        targetBloodSugar: formData.get('targetBloodSugar') as string,
+        waterGoal: Number(formData.get('waterGoal')) || 8,
+      };
+      await saveProfile(user.uid, newProfile);
+      setProfile(newProfile);
+      setIsProfileModalOpen(false);
+      refreshData();
+      toast.success('Profile saved successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Failed to save profile. Please try again.');
+    }
   };
 
   const handleSkipProfileUpdate = () => {

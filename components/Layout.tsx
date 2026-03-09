@@ -202,46 +202,52 @@ const Layout: React.FC = () => {
 
         // 1. Save data async so we don't block the UI
         const saveData = async () => {
-          if (pendingData.profile) {
-            await saveProfile(user.uid, pendingData.profile);
-          }
-          if (pendingData.medications && Array.isArray(pendingData.medications)) {
-            await Promise.all(
-              pendingData.medications.map((med: string) =>
-                addMedication(user.uid, { name: med, dosage: 'As prescribed', frequency: 'Daily' })
-              )
-            );
-          }
-          if (pendingData.vitals) {
-            const { sugar, systolic, diastolic } = pendingData.vitals;
-            if (sugar || systolic || diastolic) {
-              await addVital(user.uid, { sugar, systolic, diastolic });
+          try {
+            if (pendingData.profile) {
+              await saveProfile(user.uid, pendingData.profile);
             }
-          }
+            if (pendingData.medications && Array.isArray(pendingData.medications)) {
+              await Promise.all(
+                pendingData.medications.map((med: string) => {
+                  if (med === 'None') return Promise.resolve();
+                  return addMedication(user.uid, { name: med, dosage: 'As prescribed', frequency: 'Daily' });
+                })
+              );
+            }
+            if (pendingData.vitals) {
+              const { sugar, systolic, diastolic } = pendingData.vitals;
+              if (sugar || systolic || diastolic) {
+                await addVital(user.uid, { sugar, systolic, diastolic });
+              }
+            }
 
-          if (pendingData.documents && Array.isArray(pendingData.documents)) {
-            await Promise.all(
-              pendingData.documents.map(async (doc: any) => {
-                try {
-                  const arr = doc.data.split(',');
-                  const bstr = atob(arr[1]);
-                  let n = bstr.length;
-                  const u8arr = new Uint8Array(n);
-                  while (n--) {
-                    u8arr[n] = bstr.charCodeAt(n);
+            if (pendingData.documents && Array.isArray(pendingData.documents)) {
+              await Promise.all(
+                pendingData.documents.map(async (doc: any) => {
+                  try {
+                    const arr = doc.data.split(',');
+                    const bstr = atob(arr[1]);
+                    let n = bstr.length;
+                    const u8arr = new Uint8Array(n);
+                    while (n--) {
+                      u8arr[n] = bstr.charCodeAt(n);
+                    }
+                    const file = new File([u8arr], doc.name, { type: doc.type });
+
+                    await addRecord(user.uid, {
+                      name: doc.name.split('.')[0] || doc.name,
+                      type: 'Lab Report',
+                      file: file
+                    });
+                  } catch (err) {
+                    console.error("Error uploading pending document:", err);
                   }
-                  const file = new File([u8arr], doc.name, { type: doc.type });
-
-                  await addRecord(user.uid, {
-                    name: doc.name.split('.')[0] || doc.name,
-                    type: 'Lab Report',
-                    file: file
-                  });
-                } catch (err) {
-                  console.error("Error uploading pending document:", err);
-                }
-              })
-            );
+                })
+              );
+            }
+          } finally {
+            // Notify other components (like Dashboard) that onboarding data is saved
+            window.dispatchEvent(new Event('onboarding-data-saved'));
           }
         };
         saveData();
