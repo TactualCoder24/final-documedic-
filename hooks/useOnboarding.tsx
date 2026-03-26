@@ -88,7 +88,7 @@ export const checklistTasks: ChecklistTask[] = [
     { id: 'add_medication', label: 'Add your medications', icon: '💊', route: '/medications' },
     { id: 'log_vitals', label: 'Log your first vital signs', icon: '❤️', route: '/dashboard' },
     { id: 'emergency_contact', label: 'Set up emergency contacts', icon: '🆘', route: '/dashboard' },
-    { id: 'ask_shakti', label: 'Try asking Shakti a question', icon: '🤖', route: '/dashboard' },
+    { id: 'ask_swasthya', label: 'Try asking Swasthya a question', icon: '🤖', route: '/dashboard' },
     { id: 'enable_reminders', label: 'Create a reminder', icon: '🔔', route: '/reminders' },
     // Bonus
     { id: 'invite_family', label: 'Invite a family member', icon: '👨‍👩‍👧', route: '/family-access', bonus: true },

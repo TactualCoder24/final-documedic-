@@ -4,17 +4,17 @@ import Button from './ui/Button';
 import { Sparkles, X, SendHorizonal } from './icons/Icons';
 import Input from './ui/Input';
 import { ChatMessage } from '../types';
-import { chatWithShakti } from '../services/aiService';
+import { chatWithSwasthya } from '../services/aiService';
 import Logo from './icons/Logo';
 
-const ShaktiAssistant: React.FC = () => {
+const SwasthyaAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'init',
       sender: 'ai',
-      text: "Hello! I'm Shakti, your AI health assistant. How can I help you with DocuMedic or your wellness questions today?",
+      text: "Hello! I'm Swasthya (स्वास्थ्य), your AI health assistant. How can I help you with DocuMedic or your wellness questions today?",
     },
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -60,7 +60,7 @@ const ShaktiAssistant: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const aiResponseText = await chatWithShakti(inputValue);
+      const aiResponseText = await chatWithSwasthya(inputValue);
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
@@ -105,7 +105,7 @@ const ShaktiAssistant: React.FC = () => {
                   <div className="p-1.5 bg-primary/10 rounded-full">
                     <Sparkles className="h-5 w-5 text-primary" />
                   </div>
-                  <h3 className="font-bold font-heading">Shakti</h3>
+                  <h3 className="font-bold font-heading">Swasthya (स्वास्थ्य)</h3>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsOpen(false)} aria-label="Close chat">
                   <X className="h-4 w-4" />
@@ -190,7 +190,7 @@ const ShaktiAssistant: React.FC = () => {
             size="lg"
             className="rounded-full w-16 h-16 shadow-lg shadow-primary/30"
             onClick={toggleChat}
-            aria-label={isOpen ? "Close Shakti" : "Open Shakti"}
+            aria-label={isOpen ? "Close Swasthya" : "Open Swasthya"}
           >
             <AnimatePresence initial={false} mode="wait">
               <motion.div
@@ -210,4 +210,4 @@ const ShaktiAssistant: React.FC = () => {
   );
 };
 
-export default ShaktiAssistant;
+export default SwasthyaAssistant;

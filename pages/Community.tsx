@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import EmptyState from '../components/ui/EmptyState';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card';
+import Skeleton from '../components/ui/Skeleton';
 import Button from '../components/ui/Button';
 import { Users, Plus, Trash2, Heart, MessageCircle, AlertTriangle, Search, Filter } from '../components/icons/Icons';
 import { CommunityPost } from '../types';
@@ -242,12 +243,9 @@ const Community: React.FC = () => {
           </div>
 
           {isLoading ? (
-            <Card>
-              <CardContent className="pt-6 text-center py-20">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-muted-foreground mt-4">{t('community.loading_posts', 'Loading community posts...')}</p>
-              </CardContent>
-            </Card>
+            <div className="py-20 w-full flex justify-center">
+              <Skeleton variant="dashboard" />
+            </div>
           ) : filteredPosts.length > 0 ? (
             <AnimatePresence>
               {filteredPosts.map((post, index) => (

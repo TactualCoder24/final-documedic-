@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
+import Skeleton from '../components/ui/Skeleton';
 import Button from '../components/ui/Button';
 import { Pill, FileText, BrainCircuit, ClipboardList, Search, Bell, Share2, Lightbulb, Activity, GlassWater, Utensils, Plus, HeartPulse, Stethoscope, MapPin, CalendarDays, Settings } from '../components/icons/Icons';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -657,9 +658,8 @@ const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
         ) : isLoading ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-4">
-            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">Loading your health data…</p>
+          <div className="min-h-screen soft-aurora flex pt-20 justify-center">
+            <Skeleton variant="dashboard" />
           </div>
         ) : (
           <DashboardContent />

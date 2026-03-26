@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Stethoscope, FileText, ClipboardList, BrainCircuit, Plus } from '../components/icons/Icons';
+import { FileText, Calendar, Plus, ExternalLink, Activity, Info, HelpCircle, BrainCircuit, Stethoscope, ClipboardList } from '../components/icons/Icons';
+import Skeleton from '../components/ui/Skeleton';
 import { AfterVisitSummary as AfterVisitSummaryType, Appointment } from '../types';
 import { getAfterVisitSummary, getAppointments, addAfterVisitSummary, updateAppointment } from '../services/dataSupabase';
 import { extractVisitSummary } from '../services/aiService';
@@ -80,8 +81,8 @@ const AfterVisitSummaryPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen soft-aurora flex pt-20 justify-center">
+        <Skeleton variant="dashboard" />
       </div>
     );
   }
@@ -126,7 +127,7 @@ const AfterVisitSummaryPage: React.FC = () => {
               <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>{t('common.cancel', 'Cancel')}</Button>
               <Button type="submit" disabled={isProcessing}>
                 {isProcessing ? (
-                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>{t('avs.processing', 'AI Processing...')}</>
+                  <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2"></div>{t('avs.processing', 'AI Processing...')}</>
                 ) : (
                   <><BrainCircuit className="mr-2 h-4 w-4" />{t('avs.extract_btn', 'Extract with AI')}</>
                 )}

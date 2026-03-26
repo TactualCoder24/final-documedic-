@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../hooks/useAuth';
 import Button from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
@@ -9,7 +10,7 @@ import Logo from '../components/icons/Logo';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
-import ShaktiAssistant from '../components/ShaktiAssistant';
+import SwasthyaAssistant from '../components/SwasthyaAssistant';
 import BetaRegistrationModal from '../components/BetaRegistrationModal';
 import LandingOnboardingWizard from '../components/walkthrough/LandingOnboardingWizard';
 
@@ -261,8 +262,8 @@ const Landing: React.FC = () => {
 
   if (loading || user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen soft-aurora flex pt-20 justify-center">
+         <Skeleton variant="dashboard" />
       </div>
     )
   }
@@ -822,7 +823,7 @@ const Landing: React.FC = () => {
         </div>
       </footer>
 
-      <ShaktiAssistant />
+      <SwasthyaAssistant />
       <BetaRegistrationModal isOpen={isBetaModalOpen} onClose={() => setIsBetaModalOpen(false)} />
     </div>
   );

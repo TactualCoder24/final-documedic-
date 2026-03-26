@@ -60,7 +60,7 @@ import HealthReport from './pages/HealthReport';
 import Analytics from './pages/Analytics';
 import AppointmentPrep from './pages/AppointmentPrep';
 import SharedRecord from './pages/SharedRecord';
-import SleepTracker from './pages/SleepTracker';
+import SleepTracker from './pages/SleepTracker';import Skeleton from './components/ui/Skeleton';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -69,8 +69,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen soft-aurora">
+        <Skeleton variant="dashboard" />
       </div>
     );
   }

@@ -61,7 +61,7 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, variant = 'de
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xl p-4"
           onClick={onClose}
         >
           <motion.div

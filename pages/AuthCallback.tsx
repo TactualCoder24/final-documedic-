@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+import Skeleton from '../components/ui/Skeleton';
 
 const AuthCallback: React.FC = () => {
     const navigate = useNavigate();
@@ -35,11 +36,8 @@ const AuthCallback: React.FC = () => {
     }, [navigate]);
 
     return (
-        <div className="flex items-center justify-center h-screen bg-background">
-            <div className="text-center">
-                <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Completing sign in...</p>
-            </div>
+        <div className="min-h-screen soft-aurora flex pt-20 justify-center">
+            <Skeleton variant="dashboard" />
         </div>
     );
 };

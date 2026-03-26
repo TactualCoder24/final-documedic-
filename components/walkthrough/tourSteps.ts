@@ -28,7 +28,7 @@ export const dashboardTourSteps: SpotlightStep[] = [
         target: '[data-tour="water-intake"]',
         title: 'Track Your Water',
         description: "Track your daily water intake here. Tap the + button to log each glass — we'll track your progress toward your daily goal.",
-        tip: 'You can also say "add 2 glasses of water" to Shakti!',
+        tip: 'You can also say "add 2 glasses of water" to Swasthya!',
         position: 'bottom',
     },
     {
@@ -47,7 +47,7 @@ export const dashboardTourSteps: SpotlightStep[] = [
         target: '[data-tour="tour-button"]',
         title: "You're All Set!",
         description: "That's the basics! You can replay this tour anytime from here. Explore each section at your own pace — we're here to help.",
-        tip: 'Try asking Shakti "show me around" for a conversational walkthrough!',
+        tip: 'Try asking Swasthya "show me around" for a conversational walkthrough!',
         position: 'bottom',
     },
 ];
@@ -171,7 +171,7 @@ export const emptyStateConfigs: Record<string, EmptyStateConfig> = {
             'Get AI-powered insights',
         ],
         ctaText: 'Log a Symptom',
-        secondaryCtaText: 'Or tell Shakti',
+        secondaryCtaText: 'Or tell Swasthya',
     },
     foodJournal: {
         icon: '🍽️',
