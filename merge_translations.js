@@ -21,7 +21,7 @@ const newTranslations = {
         subtitle_bold: { en: "all-in-one platform", hi: "ऑल-इन-वन प्लेटफ़ॉर्म", pa: "ਆਲ-ਇਨ-ਵਨ ਪਲੇਟਫਾਰਮ" },
         subtitle_rest: { en: "that makes managing your health simple.", hi: "जो आपके स्वास्थ्य के प्रबंधन को सरल बनाता है।", pa: "ਜੋ ਤੁਹਾਡੀ ਸਿਹਤ ਦੇ ਪ੍ਰਬੰਧਨ ਨੂੰ ਸਰਲ ਬਣਾਉਂਦਾ ਹੈ।" },
         get_started_free: { en: "Get Started Free", hi: "मुफ़्त शुरू करें", pa: "ਮੁਫ਼ਤ ਸ਼ੁਰੂ ਕਰੋ" },
-        register_beta: { en: "Register for Beta", hi: "बीटा के लिए पंजीकरण करें", pa: "ਬੀਟਾ ਲਈ ਰਜਿਸਟਰ ਕਰੋ" },
+        register_beta: { en: "Register for April", hi: "अप्रैल के लिए पंजीकरण करें", pa: "ਅਪ੍ਰੈਲ ਲਈ ਰਜਿਸਟਰ ਕਰੋ" },
         principles: {
             title_start: { en: "Your Health,", hi: "आपका स्वास्थ्य,", pa: "ਤੁਹਾਡੀ ਸਿਹਤ," },
             title_end: { en: "Your Data.", hi: "आपका डेटा।", pa: "ਤੁਹਾਡਾ ਡੇਟਾ।" },

@@ -11,8 +11,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
-    const storedTheme = localStorage.getItem('documedic-theme') as Theme | null;
-    return storedTheme || 'dark';
+    // Force light mode on initial load by ignoring stored dark mode for now
+    return 'light';
   });
 
   useEffect(() => {

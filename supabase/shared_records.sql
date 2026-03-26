@@ -27,13 +27,13 @@ CREATE POLICY "Public can read shared records"
 CREATE POLICY "Users can create their own shared records"
     ON public.shared_records
     FOR INSERT
-    WITH CHECK (auth.uid()::text = user_id OR true);
+    WITH CHECK (auth.uid()::text = user_id);
 
 -- Policy: Only the owner can delete their shared records
 CREATE POLICY "Users can delete their own shared records"
     ON public.shared_records
     FOR DELETE
-    USING (auth.uid()::text = user_id OR true);
+    USING (auth.uid()::text = user_id);
 
 -- Create an index for faster lookups by user_id
 CREATE INDEX IF NOT EXISTS idx_shared_records_user_id ON public.shared_records(user_id);

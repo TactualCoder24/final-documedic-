@@ -424,7 +424,7 @@ const Landing: React.FC = () => {
                       </svg>
                     </Link>
                   </Button>
-                  <Button size="lg" variant="outline" onClick={() => setIsBetaModalOpen(true)} className="text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 h-auto border-2 hover:border-primary hover:bg-primary/5 w-full sm:w-auto">
+                  <Button onClick={() => setIsBetaModalOpen(true)} variant="gradient" size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 h-auto shadow-xl hover:shadow-2xl transition-all w-full sm:w-auto">
                     {t('landing.register_beta', 'Register for Beta')}
                   </Button>
                 </motion.div>
@@ -714,92 +714,11 @@ const Landing: React.FC = () => {
           </div>
         </section>
 
-        {/* Testimonials Section */}
+        {/* Testimonials Section Hidden 
         <section className="py-20 sm:py-24 relative overflow-hidden">
-          <GradientBackground />
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold font-heading">{t('landing.testimonials.title', 'Trusted by Users Like You')}</h2>
-              <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
-                {t('landing.testimonials.subtitle', 'Hear what our users have to say about managing their health with DocuMedic.')}
-              </p>
-            </div>
-            <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              <Card className="bg-gradient-to-br from-card to-primary/5 h-full">
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground">"DocuMedic has been a game-changer for managing my family's medical records. Everything is organized and accessible. I feel so much more in control."</p>
-                  <div className="mt-4 flex items-center gap-3">
-                    <img src="https://randomuser.me/api/portraits/women/90.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
-                    <div>
-                      <p className="font-semibold">Ananya Sharma</p>
-                      <p className="text-sm text-muted-foreground">Parent & Caregiver</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-card to-primary/5 h-full">
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground">"As someone with a chronic condition, the medication tracker and smart summaries are invaluable. My doctor was impressed with the detailed logs I could share."</p>
-                  <div className="mt-4 flex items-center gap-3">
-                    <img src="https://randomuser.me/api/portraits/men/42.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
-                    <div>
-                      <p className="font-semibold">Vikram Singh</p>
-                      <p className="text-sm text-muted-foreground">Fitness Enthusiast</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-card to-primary/5 h-full">
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground">"The secure QR code for emergencies gives me peace of mind. It's a brilliant feature that makes critical information available when it matters most."</p>
-                  <div className="mt-4 flex items-center gap-3">
-                    <img src="https://randomuser.me/api/portraits/women/16.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
-                    <div>
-                      <p className="font-semibold">Meera Patel</p>
-                      <p className="text-sm text-muted-foreground">Frequent Traveler</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-card to-primary/5 h-full">
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground">"Managing my diabetes used to be a chore, but DocuMedic's vitals tracking and reminders have made it so much easier. The AI tips are surprisingly helpful too."</p>
-                  <div className="mt-4 flex items-center gap-3">
-                    <img src="https://randomuser.me/api/portraits/men/82.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
-                    <div>
-                      <p className="font-semibold">Rajesh Pandey</p>
-                      <p className="text-sm text-muted-foreground">Retiree</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-card to-primary/5 h-full">
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground">"I'm proactive about my health, and this app is perfect. Having a centralized place for all my check-ups and lab results helps me see the bigger picture of my wellness journey."</p>
-                  <div className="mt-4 flex items-center gap-3">
-                    <img src="https://randomuser.me/api/portraits/women/0.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
-                    <div>
-                      <p className="font-semibold">Priya Srinivasan</p>
-                      <p className="text-sm text-muted-foreground">Software Developer</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-card to-primary/5 h-full">
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground">"The Smart Summary feature is incredible. It puts complex lab reports into simple terms I can actually understand. It's like having a doctor explain things to you anytime."</p>
-                  <div className="mt-4 flex items-center gap-3">
-                    <img src="https://randomuser.me/api/portraits/women/23.jpg" alt="user" className="w-10 h-10 rounded-full object-cover" />
-                    <div>
-                      <p className="font-semibold">Sunita Desai</p>
-                      <p className="text-sm text-muted-foreground">Teacher</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+        ...
         </section>
+        */}
 
         {/* Security Section */}
         <section id="security" className="py-20 sm:py-24">
@@ -881,9 +800,10 @@ const Landing: React.FC = () => {
             <div>
               <h3 className="font-bold font-heading mb-4">{t('landing.footer.quick_links', 'Quick Links')}</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/#features" onClick={(e) => handleSmoothScroll(e, 'features')} className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.features', 'Features')}</Link></li>
-                <li><Link to="/#personas" onClick={(e) => handleSmoothScroll(e, 'personas')} className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.who_its_for', "Who It's For")}</Link></li>
-                <li><Link to="/#security" onClick={(e) => handleSmoothScroll(e, 'security')} className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.security', 'Security')}</Link></li>
+                <li><Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.features', 'Features')}</Link></li>
+                <li><Link to="/who-its-for" className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.who_its_for', "Who It's For")}</Link></li>
+                <li><Link to="/security" className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.security', 'Security')}</Link></li>
+                <li><Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">{t('landing.footer.faq', 'FAQ')}</Link></li>
               </ul>
             </div>
 

@@ -18,7 +18,6 @@ import { useTranslation } from 'react-i18next';
 
 const COLLAPSED_KEY = 'sidebar-collapsed-groups';
 
-// Map nav paths to tour data attribute names for spotlight targeting
 const tourDataMap: Record<string, string> = {
   '/dashboard': 'sidebar-dashboard',
 };
@@ -32,6 +31,29 @@ const getInitialCollapsed = (): Record<string, boolean> => {
   }
 };
 
+/* ── greeting helper ─────────────────────────────────────────────────── */
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+};
+
+const formatDate = () =>
+  new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+/* ── Type badge colors per nav group ─────────────────────────────────── */
+const groupColors: Record<string, string> = {
+  'Overview':         'text-blue-600 dark:text-blue-400',
+  'My Health Record': 'text-emerald-600 dark:text-emerald-400',
+  'Tools & Tracking': 'text-violet-600 dark:text-violet-400',
+  'Care Planning':    'text-orange-500 dark:text-orange-400',
+  'Connect':          'text-pink-500 dark:text-pink-400',
+};
+
+/* ════════════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════════════ */
 const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, toggle }) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -53,130 +75,204 @@ const Sidebar: React.FC<{ isOpen: boolean; toggle: () => void }> = ({ isOpen, to
   const isGroupActive = (items: { path: string }[]) =>
     items.some(item => location.pathname === item.path || location.pathname.startsWith(item.path + '/'));
 
-  const activeLinkClass = "bg-primary/10 text-primary dark:bg-primary/20";
-  const inactiveLinkClass = "text-muted-foreground hover:text-foreground hover:bg-muted/50";
-
   return (
     <>
-      <aside className={`fixed top-0 left-0 z-40 w-64 h-screen bg-card border-r border-border/60 transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-        <div className="flex items-center justify-between h-16 px-4 border-b border-border/60">
-          <NavLink to="/dashboard" className="flex items-center gap-2">
-            <Logo className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold font-heading">DocuMedic</span>
+      {/* Sidebar panel */}
+      <aside
+        className={`fixed top-0 left-0 z-40 w-64 h-screen flex flex-col
+          bg-white dark:bg-card
+          border-r border-slate-100 dark:border-border/50
+          shadow-[2px_0_16px_rgba(37,99,235,0.06)]
+          transition-transform duration-300
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+      >
+        {/* Logo */}
+        <div className="flex items-center justify-between h-16 px-5 border-b border-slate-100 dark:border-border/50 shrink-0">
+          <NavLink to="/dashboard" className="flex items-center gap-2.5 group">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 shadow-sm group-hover:shadow-blue-200 dark:group-hover:shadow-blue-900 transition-shadow">
+              <Logo className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-[1.1rem] font-bold font-heading text-slate-800 dark:text-foreground tracking-tight">
+              DocuMedic
+            </span>
           </NavLink>
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={toggle} aria-label="Close menu">
-            <X className="h-6 w-6" />
+          <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" onClick={toggle} aria-label="Close menu">
+            <X className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex flex-col h-[calc(100vh-4rem)]">
-          <nav className="flex-1 px-2 py-3 overflow-y-auto custom-scrollbar space-y-1">
-            {navGroups.map((group) => {
-              const isActive = isGroupActive(group.items);
-              const isCollapsed = collapsed[group.label] && !isActive;
 
-              return (
-                <div key={group.label}>
-                  <button
-                    onClick={() => toggleGroup(group.label)}
-                    className="flex items-center justify-between w-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors rounded-md"
-                    aria-expanded={!isCollapsed}
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto custom-scrollbar px-3 py-4 space-y-4">
+          {navGroups.map((group) => {
+            const isActive = isGroupActive(group.items);
+            const isCollapsed = collapsed[group.label] && !isActive;
+            const groupColor = groupColors[group.label] || 'text-muted-foreground';
+
+            return (
+              <div key={group.label}>
+                <button
+                  onClick={() => toggleGroup(group.label)}
+                  className={`flex items-center justify-between w-full px-2 py-1 mb-1 text-[10px] font-bold uppercase tracking-widest transition-colors rounded-md ${groupColor} opacity-70 hover:opacity-100`}
+                  aria-expanded={!isCollapsed}
+                >
+                  {t(`nav.group.${group.label}`, group.label)}
+                  <motion.svg
+                    animate={{ rotate: isCollapsed ? -90 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="h-2.5 w-2.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    {t(`nav.group.${group.label}`, group.label)}
-                    <motion.svg
-                      animate={{ rotate: isCollapsed ? -90 : 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="h-3 w-3 opacity-40"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </motion.svg>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {!isCollapsed && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2, ease: 'easeInOut' }}
-                        className="overflow-hidden"
-                      >
-                        <div className="space-y-0.5 pb-2">
-                          {group.items.map(({ path, label, icon: Icon }) => (
-                            <NavLink
-                              key={path}
-                              to={path}
-                              end={path === '/dashboard'}
-                              className={({ isActive: linkActive }) => `flex items-center px-3 py-1.5 text-sm font-semibold rounded-md transition-all ${linkActive ? activeLinkClass : inactiveLinkClass}`}
-                              onClick={() => { if (isOpen) toggle() }}
-                              {...(tourDataMap[path] ? { 'data-tour': tourDataMap[path] } : {})}
-                            >
-                              <Icon className="mr-3 h-4 w-4" />
-                              {t(`nav.item.${label}`, label)}
-                            </NavLink>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
+                    <polyline points="6 9 12 15 18 9" />
+                  </motion.svg>
+                </button>
 
-            {/* Settings — standalone at bottom of nav */}
-            <div className="pt-1 border-t border-border/40">
-              <NavLink
-                to="/settings"
-                className={({ isActive: linkActive }) => `flex items-center px-3 py-1.5 text-sm font-semibold rounded-md transition-all ${linkActive ? activeLinkClass : inactiveLinkClass}`}
-                onClick={() => { if (isOpen) toggle() }}
-              >
-                <Settings className="mr-3 h-4 w-4" />
-                {t('nav.item.Settings', 'Settings')}
-              </NavLink>
-            </div>
-          </nav>
-          <div className="px-4 py-4 border-t border-border/60">
-            <div className="flex items-center gap-3 px-3 py-2">
-              <img src={user?.photoURL || "https://i.pravatar.cc/150?u=priya-sharma"} alt="User" className="w-10 h-10 rounded-full" />
-              <div className="min-w-0">
-                <p className="font-semibold text-sm truncate">{user?.displayName}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                <AnimatePresence initial={false}>
+                  {!isCollapsed && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="space-y-0.5">
+                        {group.items.map(({ path, label, icon: Icon }) => (
+                          <NavLink
+                            key={path}
+                            to={path}
+                            end={path === '/dashboard'}
+                            className={({ isActive: linkActive }) =>
+                              `relative flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 group/nav
+                              ${linkActive
+                                ? 'bg-blue-50 dark:bg-primary/15 text-blue-700 dark:text-primary font-semibold'
+                                : 'text-slate-600 dark:text-muted-foreground hover:bg-slate-50 dark:hover:bg-secondary/60 hover:text-slate-900 dark:hover:text-foreground'
+                              }`
+                            }
+                            onClick={() => { if (isOpen) toggle(); }}
+                            {...(tourDataMap[path] ? { 'data-tour': tourDataMap[path] } : {})}
+                          >
+                            {({ isActive: linkActive }) => (
+                              <>
+                                {linkActive && (
+                                  <span className="nav-active-bar" aria-hidden="true" />
+                                )}
+                                <Icon className={`mr-2.5 h-4 w-4 shrink-0 transition-colors
+                                  ${linkActive ? 'text-blue-600 dark:text-primary' : 'text-slate-400 dark:text-muted-foreground group-hover/nav:text-slate-600 dark:group-hover/nav:text-foreground'}`}
+                                />
+                                {t(`nav.item.${label}`, label)}
+                              </>
+                            )}
+                          </NavLink>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </div>
-            <Button variant="ghost" className="w-full justify-start mt-2 text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
-              <LogOut className="mr-3 h-5 w-5" />
-              {t('nav.item.Sign Out', 'Sign Out')}
-            </Button>
+            );
+          })}
+
+          {/* Settings — standalone */}
+          <div className="pt-2 border-t border-slate-100 dark:border-border/40">
+            <NavLink
+              to="/settings"
+              className={({ isActive: linkActive }) =>
+                `relative flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150 group/nav
+                ${linkActive
+                  ? 'bg-blue-50 dark:bg-primary/15 text-blue-700 dark:text-primary font-semibold'
+                  : 'text-slate-600 dark:text-muted-foreground hover:bg-slate-50 dark:hover:bg-secondary/60 hover:text-slate-900 dark:hover:text-foreground'
+                }`
+              }
+              onClick={() => { if (isOpen) toggle(); }}
+            >
+              {({ isActive: linkActive }) => (
+                <>
+                  {linkActive && <span className="nav-active-bar" aria-hidden="true" />}
+                  <Settings className={`mr-2.5 h-4 w-4 shrink-0 ${linkActive ? 'text-blue-600 dark:text-primary' : 'text-slate-400 dark:text-muted-foreground'}`} />
+                  {t('nav.item.Settings', 'Settings')}
+                </>
+              )}
+            </NavLink>
           </div>
+        </nav>
+
+        {/* User profile footer */}
+        <div className="shrink-0 px-4 py-4 border-t border-slate-100 dark:border-border/50 bg-slate-50/60 dark:bg-card">
+          <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white dark:hover:bg-secondary/40 transition-colors cursor-default">
+            <div className="relative shrink-0">
+              <img
+                src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'U')}&background=2563eb&color=fff&bold=true&size=80`}
+                alt={user?.displayName || 'User'}
+                className="w-9 h-9 rounded-full object-cover ring-2 ring-blue-100 dark:ring-primary/20"
+              />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white dark:border-card rounded-full" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-sm text-slate-800 dark:text-foreground truncate leading-tight">{user?.displayName || 'User'}</p>
+              <p className="text-[11px] text-slate-500 dark:text-muted-foreground truncate leading-tight mt-0.5">{user?.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-2.5 mt-2 px-3 py-2 text-sm font-medium text-slate-500 dark:text-muted-foreground rounded-lg hover:bg-red-50 dark:hover:bg-destructive/10 hover:text-red-600 dark:hover:text-destructive transition-all duration-150"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            {t('nav.item.Sign Out', 'Sign Out')}
+          </button>
         </div>
       </aside>
-      {isOpen && <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={toggle}></div>}
+
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm md:hidden"
+          onClick={toggle}
+        />
+      )}
     </>
   );
 };
 
+/* ════════════════════════════════════════════════
+   HEADER
+════════════════════════════════════════════════ */
 const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
   const { startTour, state } = useOnboarding();
+  const { user } = useAuth();
+
+  const firstName = user?.displayName?.split(' ')[0] || 'there';
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 bg-background/80 backdrop-blur-sm border-b border-border/60 md:justify-end">
-      <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar} aria-label="Open menu">
-        <Menu className="h-6 w-6" />
-      </Button>
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-30 flex items-center h-16 px-4 md:px-6 bg-white/80 dark:bg-background/80 backdrop-blur-md border-b border-slate-100 dark:border-border/50 shadow-[0_1px_8px_rgba(37,99,235,0.06)]">
+      {/* Mobile menu + greeting (left) */}
+      <div className="flex items-center gap-3 flex-1">
+        <Button variant="ghost" size="icon" className="md:hidden h-9 w-9 text-slate-500" onClick={toggleSidebar} aria-label="Open menu">
+          <Menu className="h-5 w-5" />
+        </Button>
+        <div className="hidden md:block">
+          <p className="text-sm font-semibold text-slate-800 dark:text-foreground leading-tight">
+            {getGreeting()}, <span className="text-primary">{firstName}</span> 👋
+          </p>
+          <p className="text-xs text-slate-400 dark:text-muted-foreground leading-tight">{formatDate()}</p>
+        </div>
+      </div>
+
+      {/* Right controls */}
+      <div className="flex items-center gap-2">
         {state.welcomeCompleted && (
           <button
             data-tour="tour-button"
             onClick={startTour}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 dark:text-muted-foreground hover:text-primary hover:bg-blue-50 dark:hover:bg-primary/8 transition-all"
             title="Take a Tour"
           >
             <span>❓</span>
-            <span className="hidden sm:inline">Take a Tour</span>
+            <span className="hidden sm:inline">Tour</span>
           </button>
         )}
         <ThemeToggle />
@@ -185,13 +281,15 @@ const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
   );
 };
 
+/* ════════════════════════════════════════════════
+   LAYOUT ROOT
+════════════════════════════════════════════════ */
 const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const { user } = useAuth();
   const { startTour, completeWelcome, state } = useOnboarding();
 
-  // Process pending onboarding data from the Landing page wizard
   React.useEffect(() => {
     if (!user) return;
 
@@ -200,7 +298,6 @@ const Layout: React.FC = () => {
       try {
         const pendingData = JSON.parse(pendingDataStr);
 
-        // 1. Save data async so we don't block the UI
         const saveData = async () => {
           try {
             if (pendingData.profile) {
@@ -220,7 +317,6 @@ const Layout: React.FC = () => {
                 await addVital(user.uid, { sugar, systolic, diastolic });
               }
             }
-
             if (pendingData.documents && Array.isArray(pendingData.documents)) {
               await Promise.all(
                 pendingData.documents.map(async (doc: any) => {
@@ -229,52 +325,35 @@ const Layout: React.FC = () => {
                     const bstr = atob(arr[1]);
                     let n = bstr.length;
                     const u8arr = new Uint8Array(n);
-                    while (n--) {
-                      u8arr[n] = bstr.charCodeAt(n);
-                    }
+                    while (n--) { u8arr[n] = bstr.charCodeAt(n); }
                     const file = new File([u8arr], doc.name, { type: doc.type });
-
-                    await addRecord(user.uid, {
-                      name: doc.name.split('.')[0] || doc.name,
-                      type: 'Lab Report',
-                      file: file
-                    });
+                    await addRecord(user.uid, { name: doc.name.split('.')[0] || doc.name, type: 'Lab Report', file });
                   } catch (err) {
-                    console.error("Error uploading pending document:", err);
+                    console.error('Error uploading pending document:', err);
                   }
                 })
               );
             }
           } finally {
-            // Notify other components (like Dashboard) that onboarding data is saved
             window.dispatchEvent(new Event('onboarding-data-saved'));
           }
         };
         saveData();
-
-        // 2. Clean up local storage
         localStorage.removeItem(PENDING_ONBOARDING_KEY);
-
-        // 3. Mark welcome as complete and start the tour
         completeWelcome();
-        // Slight delay to ensure dashboard is mounted before spotlight targets are pinged
-        setTimeout(() => {
-          startTour();
-        }, 500);
-
+        setTimeout(() => { startTour(); }, 500);
       } catch (e) {
-        console.error("Failed to process pending onboarding data:", e);
+        console.error('Failed to process pending onboarding data:', e);
         localStorage.removeItem(PENDING_ONBOARDING_KEY);
       }
     } else if (!state.welcomeCompleted && !state.tourCompleted) {
-      // Fallback: If they skipped landing page directly to login, just start tour
       completeWelcome();
       setTimeout(() => startTour(), 500);
     }
   }, [user, completeWelcome, startTour, state.welcomeCompleted, state.tourCompleted]);
 
   return (
-    <div className="min-h-screen bg-secondary/30 dark:bg-background">
+    <div className="min-h-screen bg-slate-50 dark:bg-background">
       <a href="#main-content" className="skip-to-content">Skip to main content</a>
       <Sidebar isOpen={sidebarOpen} toggle={toggleSidebar} />
       <div className="md:pl-64">
@@ -282,17 +361,16 @@ const Layout: React.FC = () => {
         <main id="main-content" className="p-4 sm:p-6 lg:p-8" role="main" tabIndex={-1}>
           <Breadcrumbs />
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.25 }}
           >
             <Outlet />
           </motion.div>
         </main>
       </div>
 
-      {/* Walkthrough System Layers */}
       <SpotlightTour />
       <OnboardingChecklist />
       <FeatureHint />

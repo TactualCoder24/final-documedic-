@@ -22,6 +22,10 @@ import Landing from './pages/Landing';
 import { AnimatePresence } from 'framer-motion';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import FAQPage from './pages/FAQPage';
+import FeaturesPage from './pages/FeaturesPage';
+import WhoItsForPage from './pages/WhoItsForPage';
+import SecurityPage from './pages/SecurityPage';
 import Settings from './pages/Settings';
 import AppointmentManager from './pages/AppointmentManager';
 import SymptomLog from './pages/SymptomLog';
@@ -40,6 +44,7 @@ import MentibotSupport from './pages/mentibot/Support';
 import MentibotJournal from './pages/mentibot/Journal';
 import MentibotSearch from './pages/mentibot/MentibotSearch';
 import MentibotSearchAdmin from './pages/mentibot/MentibotSearchAdmin';
+import ScrollToTop from './components/ScrollToTop';
 
 // New page imports
 import TestResults from './pages/TestResults';
@@ -83,7 +88,8 @@ const AppRoutes = () => {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location}>
+      {/* @ts-ignore */}
+      <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
@@ -91,6 +97,10 @@ const AppRoutes = () => {
         <Route path="/emergency/:id" element={<EmergencyInfo />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/who-its-for" element={<WhoItsForPage />} />
+        <Route path="/security" element={<SecurityPage />} />
         <Route path="/shared/:shareId" element={<SharedRecord />} />
 
         {/* Dashboard Protected Routes */}
@@ -183,11 +193,12 @@ const AppRoutes = () => {
 function App() {
   return (
     <ThemeProvider>
-      <AutoTranslator />
       <AuthProvider>
         <OnboardingProvider>
           <ToastProvider>
             <HashRouter>
+              <ScrollToTop />
+              <AutoTranslator />
               <AppRoutes />
             </HashRouter>
             <ToastContainer />
