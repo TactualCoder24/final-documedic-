@@ -347,163 +347,206 @@ const Landing: React.FC = () => {
       </AnimatePresence>
 
       <main>
-        {/* Hero Section - Completely Redesigned */}
-        <section className="relative pt-20 pb-12 overflow-hidden">
-          {/* Animated Mesh Gradient Background */}
-          <div className="absolute inset-0 -z-10">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-success/5" />
-            <div className="absolute top-0 left-0 w-full h-full">
-              <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/30 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[100px] opacity-70 animate-blob" />
-              <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-accent/30 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[100px] opacity-70 animate-blob" style={{ animationDelay: '2s' }} />
-              <div className="absolute bottom-1/4 left-1/2 w-[500px] h-[500px] bg-success/30 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[100px] opacity-70 animate-blob" style={{ animationDelay: '4s' }} />
-            </div>
-          </div>
+        {/* ================================================================
+            HERO SECTION — Aurora Glassmorphism (production-grade rewrite)
+            Root cause fixes:
+            1. mix-blend-multiply on dark bg renders blobs invisible → pure CSS aurora blobs
+            2. Zero font hierarchy contrast → Manrope 900 display + shimmer gradient text
+            3. Flat bento cards → true glassmorphism with backdrop-filter + inner glow
+            4. No orchestrated entrance → staggered CSS animation-delay reveals
+            5. Generic CTA buttons → luminous glow-pulse gradient buttons
+            6. Missing live status dots → pulsing ring indicator on status badges
+        ================================================================ */}
+        <section className="hero-aurora-bg min-h-screen flex flex-col justify-center pt-20 pb-16">
+          {/* Aurora blob orbs — CSS-only, no JS needed */}
+          <div className="hero-blob-1" aria-hidden="true" />
+          <div className="hero-blob-2" aria-hidden="true" />
+          <div className="hero-blob-3" aria-hidden="true" />
+          {/* Dot grid texture */}
+          <div className="hero-grid-texture" aria-hidden="true" />
 
-          <div className="container mx-auto px-4 py-12 relative z-10">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Left Column - Content */}
-              <div className="space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8 }}
-                >
-                  <div className="flex flex-col gap-3 mb-6">
-                    <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-primary/10 border border-primary/20 w-fit max-w-full">
-                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse flex-shrink-0" />
-                      <span className="text-xs sm:text-sm font-semibold text-primary">{t('landing.trusted_badge', 'Trusted by many across India')}</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 w-fit max-w-full">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <span className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300 leading-tight">
-                        <span className="hidden sm:inline">{t('landing.grant_badge_long', '₹1 Lakh Grant - Delhi Startup Yuva Festival by Govt. of Delhi NCT')}</span>
-                        <span className="sm:hidden">{t('landing.grant_badge_short', '₹1L Grant - Delhi Startup Festival')}</span>
-                      </span>
-                    </div>
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center">
+
+              {/* ── LEFT COLUMN ── */}
+              <div className="space-y-8">
+
+                {/* Trust badges — pop-in stagger */}
+                <div className="flex flex-col gap-3 hero-reveal-1">
+                  {/* Badge 1: Trusted */}
+                  <div className="hero-badge-1 flex items-center gap-2.5 px-4 py-2 rounded-full w-fit"
+                    style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)' }}>
+                    <span className="hero-pulse-ring relative flex-shrink-0" style={{ color: '#a78bfa' }}>
+                      <span className="block w-2 h-2 rounded-full bg-current" />
+                    </span>
+                    <span className="text-xs sm:text-sm font-semibold" style={{ color: '#c4b5fd' }}>
+                      {t('landing.trusted_badge', 'Trusted by many across India')}
+                    </span>
                   </div>
 
-                  <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-heading leading-[0.9] tracking-tight">
+                  {/* Badge 2: Grant award */}
+                  <div className="hero-badge-2 flex items-center gap-2.5 px-4 py-2 rounded-full w-fit max-w-full"
+                    style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.12) 0%, rgba(245,158,11,0.12) 100%)', border: '1px solid rgba(251,191,36,0.28)' }}>
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="#fbbf24" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    <span className="text-xs sm:text-sm font-semibold leading-tight" style={{ color: '#fcd34d' }}>
+                      <span className="hidden sm:inline">{t('landing.grant_badge_long', '₹1 Lakh Grant — Delhi Startup Yuva Festival × Govt. of NCT Delhi')}</span>
+                      <span className="sm:hidden">{t('landing.grant_badge_short', '₹1L Grant — Delhi Startup Festival')}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Headline — stagger reveal 2 */}
+                <div className="hero-reveal-2">
+                  <h1 className="font-black leading-[0.88] tracking-tight"
+                    style={{ fontSize: 'clamp(2.75rem, 6vw, 5.5rem)', fontFamily: 'Manrope, var(--font-heading), sans-serif', color: '#f0e6ff' }}>
                     {t('landing.title_start', 'Your Health,')}
                     <br />
                     <span className="relative inline-block mt-2">
-                      <span className="text-gradient">{t('landing.title_end', 'Reimagined')}</span>
-                      <svg className="absolute -bottom-2 left-0 w-full" height="12" viewBox="0 0 300 12" fill="none">
-                        <path d="M2 10C50 5 100 2 150 5C200 8 250 10 298 5" stroke="url(#hero-underline-gradient)" strokeWidth="3" strokeLinecap="round" />
+                      {/* Animated shimmer gradient text — fixes the static gradient bug */}
+                      <span className="hero-gradient-text">
+                        {t('landing.title_end', 'Reimagined')}
+                      </span>
+                      {/* Decorative underline */}
+                      <svg className="absolute -bottom-3 left-0 w-full" height="10" viewBox="0 0 300 10" fill="none" aria-hidden="true">
+                        <path d="M2 8C60 3 120 1 150 4C180 7 240 9 298 4"
+                          stroke="url(#hero-ul-grad)" strokeWidth="2.5" strokeLinecap="round" />
                         <defs>
-                          <linearGradient id="hero-underline-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="hsl(var(--primary))" />
-                            <stop offset="100%" stopColor="hsl(var(--accent))" />
+                          <linearGradient id="hero-ul-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#8b5cf6" />
+                            <stop offset="100%" stopColor="#06b6d4" />
                           </linearGradient>
                         </defs>
                       </svg>
                     </span>
                   </h1>
-                </motion.div>
+                </div>
 
-                <motion.p
-                  className="text-base sm:text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-xl"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                >
-                  {t('landing.subtitle_start', 'The')} <span className="font-bold text-foreground">{t('landing.subtitle_bold', 'all-in-one platform')}</span> {t('landing.subtitle_rest', 'that makes managing your health simple, secure, and intelligent.')}
-                </motion.p>
+                {/* Subtitle — stagger reveal 3 */}
+                <p className="hero-reveal-3 leading-relaxed max-w-lg"
+                  style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)', color: 'rgba(192,170,232,0.85)' }}>
+                  {t('landing.subtitle_start', 'The')}{' '}
+                  <span style={{ color: '#e2d9f3', fontWeight: 700 }}>{t('landing.subtitle_bold', 'all-in-one platform')}</span>{' '}
+                  {t('landing.subtitle_rest', 'that makes managing your health simple, secure, and intelligent.')}
+                </p>
 
-                <motion.div
-                  className="flex flex-col sm:flex-row gap-4"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.4 }}
-                >
-                  <Button asChild size="lg" variant="gradient" className="text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 h-auto shadow-2xl hover:shadow-primary/50 group w-full sm:w-auto">
-                    <Link to="/login" className="flex items-center justify-center gap-2">
-                      {t('landing.get_started_free', 'Get Started Free')}
-                      <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </Link>
-                  </Button>
-                  <Button onClick={() => setIsBetaModalOpen(true)} variant="gradient" size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-6 sm:py-7 h-auto shadow-xl hover:shadow-2xl transition-all w-full sm:w-auto">
+                {/* CTA buttons — stagger reveal 4 + luminous glow */}
+                <div className="hero-reveal-4 flex flex-col sm:flex-row gap-4">
+                  <Link
+                    to="/login"
+                    id="hero-cta-primary"
+                    className="hero-cta-primary inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl text-base font-bold group"
+                  >
+                    {t('landing.get_started_free', 'Get Started Free')}
+                    <svg className="w-5 h-5 transition-transform duration-200 group-hover:translate-x-1"
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </Link>
+                  <button
+                    onClick={() => setIsBetaModalOpen(true)}
+                    id="hero-cta-beta"
+                    className="hero-cta-secondary inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-base"
+                  >
                     {t('landing.register_beta', 'Register for Beta')}
-                  </Button>
-                </motion.div>
+                  </button>
+                </div>
+
               </div>
 
-              {/* Right Column - 3D Bento Grid */}
-              <div className="hidden lg:block">
-                <motion.div
-                  className="grid grid-cols-2 gap-4"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.8, delay: 0.3 }}
-                >
-                  {/* Card 1 - Health Metrics */}
-                  <motion.div
-                    className="col-span-2 p-6 rounded-2xl bg-gradient-to-br from-card to-primary/10 border border-border/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 rounded-xl bg-primary/20">
-                        <HeartPulse className="h-6 w-6 text-primary" />
+              {/* ── RIGHT COLUMN — Glassmorphic Bento Grid ── */}
+              <div className="hidden lg:block hero-reveal-right">
+                <div className="grid grid-cols-2 gap-4">
+
+                  {/* Card 1 — Blood Pressure (full width) */}
+                  <div className="col-span-2 hero-glass-card hero-float-a p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl" style={{ background: 'rgba(139,92,246,0.2)' }}>
+                          <HeartPulse className="h-5 w-5" style={{ color: '#c084fc' }} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium" style={{ color: 'rgba(192,170,232,0.7)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Blood Pressure</p>
+                          <p className="text-2xl font-black" style={{ color: '#f0e6ff', fontFamily: 'Manrope, sans-serif', letterSpacing: '-0.02em' }}>120/80 <span className="text-xs font-medium" style={{ color: 'rgba(192,170,232,0.6)' }}>mmHg</span></p>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Blood Pressure</div>
-                        <div className="text-2xl font-bold">120/80</div>
-                      </div>
+                      <span className="hero-status-normal">Normal</span>
                     </div>
-                    <div className="h-20 bg-gradient-to-r from-primary/20 to-accent/20 rounded-lg flex items-end gap-1 p-2">
-                      {[40, 60, 45, 70, 55, 75, 60].map((height, i) => (
-                        <div key={i} className="flex-1 bg-primary/60 rounded-sm" style={{ height: `${height}%` }} />
+                    {/* Animated sparkline */}
+                    <div className="flex items-end gap-1.5 h-16 px-1" aria-label="Blood pressure trend chart" role="img">
+                      {[45, 65, 48, 72, 58, 80, 62].map((h, i) => (
+                        <div key={i} className="hero-bar flex-1 rounded-t-sm"
+                          style={{ height: `${h}%`, background: `linear-gradient(to top, rgba(99,102,241,0.8), rgba(139,92,246,0.5))` }} />
                       ))}
                     </div>
-                  </motion.div>
+                  </div>
 
-                  {/* Card 2 - Medication */}
-                  <motion.div
-                    className="p-6 rounded-2xl bg-gradient-to-br from-card to-success/10 border border-border/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <div className="p-3 rounded-xl bg-success/20 w-fit mb-3">
-                      <Pill className="h-6 w-6 text-success" />
+                  {/* Card 2 — Medication */}
+                  <div className="hero-glass-card hero-float-b p-5">
+                    <div className="p-2.5 rounded-xl w-fit mb-3" style={{ background: 'rgba(16,185,129,0.18)' }}>
+                      <Pill className="h-5 w-5" style={{ color: '#6ee7b7' }} />
                     </div>
-                    <div className="text-sm text-muted-foreground mb-1">Next Dose</div>
-                    <div className="text-lg font-bold">Aspirin</div>
-                    <div className="text-xs text-muted-foreground mt-2">100mg • 2:00 PM</div>
-                  </motion.div>
-
-                  {/* Card 3 - Appointments */}
-                  <motion.div
-                    className="p-6 rounded-2xl bg-gradient-to-br from-card to-accent/10 border border-border/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <div className="p-3 rounded-xl bg-accent/20 w-fit mb-3">
-                      <CalendarDays className="h-6 w-6 text-accent" />
-                    </div>
-                    <div className="text-sm text-muted-foreground mb-1">Upcoming</div>
-                    <div className="text-lg font-bold">Dr. Gupta</div>
-                    <div className="text-xs text-muted-foreground mt-2">Tomorrow • 10 AM</div>
-                  </motion.div>
-
-                  {/* Card 4 - AI Assistant */}
-                  <motion.div
-                    className="col-span-2 p-6 rounded-2xl bg-gradient-to-br from-card to-warning/10 border border-border/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-warning/10 rounded-full blur-2xl" />
-                    <div className="flex items-center gap-3 relative">
-                      <div className="p-3 rounded-xl bg-warning/20">
-                        <BrainCircuit className="h-6 w-6 text-warning" />
+                    <p className="text-xs font-medium mb-1" style={{ color: 'rgba(192,170,232,0.65)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Next Dose</p>
+                    <p className="font-bold text-lg" style={{ color: '#f0e6ff', fontFamily: 'Manrope, sans-serif' }}>Aspirin</p>
+                    <p className="text-xs mt-1.5" style={{ color: 'rgba(192,170,232,0.6)' }}>100mg · 2:00 PM</p>
+                    {/* Progress ring */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                        <div className="h-full rounded-full" style={{ width: '68%', background: 'linear-gradient(90deg, #6ee7b7, #34d399)' }} />
                       </div>
-                      <div className="flex-1">
-                        <div className="text-sm text-muted-foreground mb-1">AI Health Assistant</div>
-                        <div className="text-sm">"Your vitals look great! Keep up the good work."</div>
+                      <span className="text-xs font-semibold" style={{ color: '#6ee7b7' }}>68%</span>
+                    </div>
+                  </div>
+
+                  {/* Card 3 — Appointment */}
+                  <div className="hero-glass-card hero-float-a p-5" style={{ animationDelay: '2s' }}>
+                    <div className="p-2.5 rounded-xl w-fit mb-3" style={{ background: 'rgba(6,182,212,0.18)' }}>
+                      <CalendarDays className="h-5 w-5" style={{ color: '#67e8f9' }} />
+                    </div>
+                    <p className="text-xs font-medium mb-1" style={{ color: 'rgba(192,170,232,0.65)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Upcoming</p>
+                    <p className="font-bold text-lg" style={{ color: '#f0e6ff', fontFamily: 'Manrope, sans-serif' }}>Dr. Gupta</p>
+                    <p className="text-xs mt-1.5" style={{ color: 'rgba(192,170,232,0.6)' }}>Tomorrow · 10 AM</p>
+                    {/* Avatar row */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white' }}>G</div>
+                      <span className="text-xs" style={{ color: 'rgba(192,170,232,0.5)' }}>Confirmed</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-auto" />
+                    </div>
+                  </div>
+
+                  {/* Card 4 — Swasthya AI (full width) */}
+                  <div className="col-span-2 hero-glass-card p-5 relative overflow-hidden">
+                    {/* decorative amber glow */}
+                    <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full"
+                      style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%)', filter: 'blur(16px)' }}
+                      aria-hidden="true" />
+                    <div className="flex items-start gap-3 relative">
+                      <div className="p-2.5 rounded-xl flex-shrink-0" style={{ background: 'rgba(251,191,36,0.18)' }}>
+                        <BrainCircuit className="h-5 w-5" style={{ color: '#fcd34d' }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold mb-2" style={{ color: '#fcd34d', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Swasthya AI</p>
+                        {/* Chat bubble */}
+                        <div className="rounded-xl px-4 py-3 text-sm leading-relaxed"
+                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(240,230,255,0.9)' }}>
+                          "Your vitals look great! Keep up the consistent routine 🎯"
+                        </div>
+                        {/* Typing indicator */}
+                        <div className="flex items-center gap-1.5 mt-2 px-1">
+                          <span className="hero-typing-dot" />
+                          <span className="hero-typing-dot" />
+                          <span className="hero-typing-dot" />
+                          <span className="text-xs ml-1" style={{ color: 'rgba(192,170,232,0.4)' }}>Swasthya is thinking…</span>
+                        </div>
                       </div>
                     </div>
-                  </motion.div>
-                </motion.div>
+                  </div>
+
+                </div>
               </div>
+
             </div>
           </div>
         </section>

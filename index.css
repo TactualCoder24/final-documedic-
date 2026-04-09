@@ -811,6 +811,289 @@ textarea:focus-visible {
 }
 
 /* ============================================================================
+   HERO SECTION — AURORA GLASSMORPHISM (production-grade)
+   ============================================================================ */
+
+/* Aurora background blobs */
+@keyframes aurora-blob {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(30px, -20px) scale(1.05); }
+    66%       { transform: translate(-20px, 15px) scale(0.97); }
+}
+
+@keyframes aurora-blob-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(-25px, 20px) scale(1.03); }
+    66%       { transform: translate(20px, -15px) scale(0.98); }
+}
+
+@keyframes aurora-blob-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%       { transform: translate(15px, -25px) scale(1.06); }
+}
+
+@keyframes hero-stagger-in {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-slide-right {
+    from { opacity: 0; transform: translateX(32px) scale(0.96); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes badge-pop {
+    from { opacity: 0; transform: scale(0.85) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes pulse-ring {
+    0%   { transform: scale(1); opacity: 1; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes card-float-a {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50%       { transform: translateY(-8px) rotate(0.3deg); }
+}
+
+@keyframes card-float-b {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50%       { transform: translateY(-5px) rotate(-0.2deg); }
+}
+
+@keyframes gradient-text-shimmer {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes cta-glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.4), 0 4px 24px rgba(99, 102, 241, 0.3); }
+    50%       { box-shadow: 0 0 35px rgba(139, 92, 246, 0.65), 0 8px 36px rgba(99, 102, 241, 0.5); }
+}
+
+@keyframes typing-dot {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30%            { transform: translateY(-4px); opacity: 1; }
+}
+
+@keyframes bar-rise {
+    from { transform: scaleY(0); }
+    to   { transform: scaleY(1); }
+}
+
+/* Hero container: deep-space dark background */
+.hero-aurora-bg {
+    background: #0a0118;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-aurora-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(ellipse 80% 60% at 20% 30%, rgba(139, 92, 246, 0.18) 0%, transparent 60%),
+                      radial-gradient(ellipse 70% 55% at 80% 70%, rgba(6, 182, 212, 0.14) 0%, transparent 55%),
+                      radial-gradient(ellipse 50% 40% at 50% 5%,  rgba(168, 85, 247, 0.10) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Animated aurora blob orbs */
+.hero-blob-1 {
+    position: absolute;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, rgba(99, 102, 241, 0.08) 50%, transparent 70%);
+    filter: blur(60px);
+    animation: aurora-blob 18s ease-in-out infinite;
+    top: -100px;
+    left: -80px;
+    pointer-events: none;
+}
+
+.hero-blob-2 {
+    position: absolute;
+    width: 480px;
+    height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.20) 0%, rgba(20, 184, 166, 0.07) 50%, transparent 70%);
+    filter: blur(70px);
+    animation: aurora-blob-2 22s ease-in-out infinite;
+    bottom: -80px;
+    right: -60px;
+    pointer-events: none;
+}
+
+.hero-blob-3 {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.12) 0%, transparent 70%);
+    filter: blur(50px);
+    animation: aurora-blob-3 14s ease-in-out infinite;
+    top: 40%;
+    left: 40%;
+    pointer-events: none;
+}
+
+/* Grid dot texture overlay */
+.hero-grid-texture {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Glassmorphic bento cards */
+.hero-glass-card {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s ease,
+                border-color 0.3s ease;
+}
+
+.hero-glass-card:hover {
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(139, 92, 246, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transform: translateY(-3px);
+}
+
+/* Float animations for bento grid */
+.hero-float-a { animation: card-float-a 6s ease-in-out infinite; }
+.hero-float-b { animation: card-float-b 8s ease-in-out infinite 1s; }
+
+/* Hero stagger reveals */
+.hero-reveal-1 { animation: hero-stagger-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both; }
+.hero-reveal-2 { animation: hero-stagger-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; }
+.hero-reveal-3 { animation: hero-stagger-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both; }
+.hero-reveal-4 { animation: hero-stagger-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both; }
+.hero-reveal-right { animation: hero-slide-right 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both; }
+
+/* Badge pop-in */
+.hero-badge-1 { animation: badge-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both; }
+.hero-badge-2 { animation: badge-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.18s both; }
+
+/* Pulsing live indicator ring */
+.hero-pulse-ring {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.hero-pulse-ring::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.4;
+    animation: pulse-ring 1.8s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+/* Gradient text — animated shimmer variant */
+.hero-gradient-text {
+    background: linear-gradient(135deg, #c084fc 0%, #818cf8 40%, #38bdf8 80%, #c084fc 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-text-shimmer 6s ease infinite;
+}
+
+/* CTA primary button */
+.hero-cta-primary {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #06b6d4 100%);
+    background-size: 200% 200%;
+    border: none;
+    color: white;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.2s ease,
+                background-position 0.4s ease;
+    animation: cta-glow-pulse 3s ease-in-out infinite;
+}
+
+.hero-cta-primary:hover {
+    transform: translateY(-2px) scale(1.02);
+    background-position: right center;
+    animation: none;
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.7), 0 8px 32px rgba(99, 102, 241, 0.5);
+}
+
+/* CTA secondary (ghost) button */
+.hero-cta-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 0.2s ease,
+                border-color 0.2s ease;
+}
+
+.hero-cta-secondary:hover {
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(139, 92, 246, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Status indicator badges on glass cards */
+.hero-status-normal {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #6ee7b7;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 9999px;
+}
+
+/* Mini sparkline bar animation */
+.hero-bar {
+    transform-origin: bottom;
+    animation: bar-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hero-bar:nth-child(1) { animation-delay: 0.6s; }
+.hero-bar:nth-child(2) { animation-delay: 0.68s; }
+.hero-bar:nth-child(3) { animation-delay: 0.76s; }
+.hero-bar:nth-child(4) { animation-delay: 0.84s; }
+.hero-bar:nth-child(5) { animation-delay: 0.92s; }
+.hero-bar:nth-child(6) { animation-delay: 1.0s; }
+.hero-bar:nth-child(7) { animation-delay: 1.08s; }
+
+/* Typing dots */
+.hero-typing-dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.8);
+    animation: typing-dot 1.4s ease-in-out infinite;
+}
+.hero-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.hero-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ============================================================================
    PRINT STYLES
    ============================================================================ */
 

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 317 360" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;">
+    <g transform="matrix(1,0,0,1,-11762.056667,-1016.423333)">
+        <g transform="matrix(4.166667,0,0,4.166667,11512.3125,0)">
+            <g transform="matrix(1,0,0,1,63.7912,243.9416)">
+                <path d="M0,72.181L36.091,72.181C56.023,72.181 72.181,56.023 72.181,36.09C72.181,16.158 56.023,0 36.091,0L7.394,0C3.31,0 0,3.31 0,7.393L0,72.181Z" style="fill:rgb(33,66,142);fill-rule:nonzero;"/>
+            </g>
+        </g>
+        <g transform="matrix(4.166667,0,0,4.166667,11512.3125,0)">
+            <g transform="matrix(1,0,0,1,75.1523,255.3025)">
+                <path d="M0,49.459L24.73,49.459C38.387,49.459 49.459,38.387 49.459,24.73L49.459,24.729C49.459,11.072 38.387,0 24.73,0L2.4,0C1.075,0 0,1.074 0,2.4L0,49.459Z" style="fill:rgb(34,179,116);fill-rule:nonzero;"/>
+            </g>
+        </g>
+        <g transform="matrix(4.166667,0,0,4.166667,11512.3125,0)">
+            <g transform="matrix(0.707107,-0.707107,-0.707107,-0.707107,80.9101,326.525959)">
+                <path d="M-8.065,19.471L47.008,19.471" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:3px;"/>
+            </g>
+        </g>
+        <g transform="matrix(4.166667,0,0,4.166667,11512.3125,0)">
+            <g transform="matrix(0.707107,-0.707107,-0.707107,-0.707107,89.095,329.183809)">
+                <path d="M-8.521,20.573L49.666,20.573" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:3px;"/>
+            </g>
+        </g>
+        <g transform="matrix(4.166667,0,0,4.166667,11512.3125,0)">
+            <g transform="matrix(0.707107,-0.707107,-0.707107,-0.707107,89.6475,336.800387)">
+                <path d="M-8.194,19.783L47.76,19.783" style="fill:none;fill-rule:nonzero;stroke:white;stroke-width:3px;"/>
+            </g>
+        </g>
+    </g>
+</svg>
