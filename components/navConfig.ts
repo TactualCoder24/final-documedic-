@@ -21,7 +21,7 @@ export const navGroups: NavGroup[] = [
   {
     label: 'Overview',
     items: [
-      { path: '/dashboard', label: 'Dashboard', icon: HeartPulse },
+      { path: '/dashboard', label: 'My Dashboard', icon: HeartPulse },
       { path: '/summary', label: 'Smart Summary', icon: BrainCircuit },
       { path: '/analytics', label: 'Analytics', icon: BarChart },
     ],

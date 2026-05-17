@@ -126,6 +126,7 @@ export interface Profile {
   personalHistory?: string;
   familyHistory?: string;
   language?: string;
+  role?: 'patient' | 'doctor' | 'clinic';
 }
 
 // Defines the structure for a chat message with the AI assistant.

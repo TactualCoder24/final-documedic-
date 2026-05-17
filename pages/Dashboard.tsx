@@ -620,12 +620,16 @@ const Dashboard: React.FC = () => {
         {/* Page header */}
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
           <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary/70 mb-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse inline-block" />
+              Patient Dashboard
+            </p>
             <h1 className="text-3xl font-bold font-heading text-foreground leading-tight">
               {t('dashboard.welcome_back', 'Welcome back,')}{' '}
               <span className="text-gradient">{user?.displayName?.split(' ')[0] || 'User'}</span>!
             </h1>
             <p className="text-muted-foreground mt-1">
-              {t('dashboard.overview_desc', "Here's a quick overview of your health profile.")}
+              {t('dashboard.overview_desc', "Here's your personal health overview for today.")}
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5">

@@ -135,7 +135,7 @@ const BetaRegistrationModal: React.FC<BetaRegistrationModalProps> = ({ isOpen, o
                             </form>
 
                             <p className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-6">
-                                Launching APRIL 2026 • Mobile App
+                                Launching JUNE 2026 • Mobile App
                             </p>
                         </motion.div>
                     ) : (

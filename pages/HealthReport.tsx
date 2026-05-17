@@ -76,7 +76,7 @@ const HealthReport: React.FC = () => {
             hs.components.forEach(c => addRow(`${c.icon} ${c.label}:`, `${c.score}% (${c.earnedPoints}/${c.maxPoints} pts)`));
         }
         // Profile
-        addSection('Patient Profile');
+        addSection('My Profile');
         if (data?.profile) {
             addRow('Age:', data.profile.age || 'N/A');
             addRow('Blood Type:', data.profile.bloodType || 'N/A');
@@ -152,7 +152,7 @@ const HealthReport: React.FC = () => {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <FileText className="h-5 w-5 text-primary no-print" />
-                            {t('report.profile', 'Patient Profile')}
+                            {t('report.profile', 'My Profile')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>

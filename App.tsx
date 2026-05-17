@@ -60,7 +60,10 @@ import HealthReport from './pages/HealthReport';
 import Analytics from './pages/Analytics';
 import AppointmentPrep from './pages/AppointmentPrep';
 import SharedRecord from './pages/SharedRecord';
-import SleepTracker from './pages/SleepTracker';import Skeleton from './components/ui/Skeleton';
+import SleepTracker from './pages/SleepTracker';
+import Skeleton from './components/ui/Skeleton';
+import DoctorDashboard from './pages/DoctorDashboard';
+import ClinicDashboard from './pages/ClinicDashboard';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -102,6 +105,8 @@ const AppRoutes = () => {
         <Route path="/who-its-for" element={<WhoItsForPage />} />
         <Route path="/security" element={<SecurityPage />} />
         <Route path="/shared/:shareId" element={<SharedRecord />} />
+        <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+        <Route path="/clinic-dashboard" element={<ClinicDashboard />} />
 
         {/* Dashboard Protected Routes */}
         <Route

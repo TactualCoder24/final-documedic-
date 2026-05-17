@@ -551,6 +551,115 @@ const Landing: React.FC = () => {
           </div>
         </section>
 
+        {/* ── CHOOSE YOUR DASHBOARD ──────────────────────────────── */}
+        <section className="py-20 sm:py-24 bg-secondary/30 dark:bg-background" id="dashboards">
+          <div className="container mx-auto px-4">
+            <motion.div
+              className="text-center mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">One Platform, Every Role</p>
+              <h2 className="text-4xl sm:text-5xl font-bold font-heading">
+                Choose Your <span className="text-gradient">Dashboard</span>
+              </h2>
+              <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
+                DocuMedic is built for every stakeholder in the healthcare ecosystem — patients, doctors, and institutions.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+
+              {/* Patient Dashboard — LIVE */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <Link
+                  to="/login"
+                  className="group block p-8 rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/5 to-violet-500/5 hover:border-primary hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 h-full text-center relative overflow-hidden"
+                >
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live Now
+                  </div>
+                  <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span className="text-4xl">🧑‍💊</span>
+                  </div>
+                  <h3 className="text-2xl font-bold font-heading mb-2">Patient</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    Manage your records, track vitals, chat with AI, get health scores, and stay on top of your care plan.
+                  </p>
+                  <div className="mt-6 inline-flex items-center gap-2 text-primary font-semibold text-sm group-hover:gap-3 transition-all">
+                    Get Started <span>→</span>
+                  </div>
+                </Link>
+              </motion.div>
+
+              {/* Doctor Dashboard — COMING SOON */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Link
+                  to="/doctor-dashboard"
+                  className="group block p-8 rounded-2xl border-2 border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 hover:border-blue-500/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 h-full text-center relative overflow-hidden"
+                >
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-bold uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                    June 2026
+                  </div>
+                  <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span className="text-4xl">👨‍⚕️</span>
+                  </div>
+                  <h3 className="text-2xl font-bold font-heading mb-2">Doctor</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    Access patient histories, review AI-parsed lab results, manage appointments, and collaborate with care teams.
+                  </p>
+                  <div className="mt-6 inline-flex items-center gap-2 text-blue-500 font-semibold text-sm">
+                    Coming Soon →
+                  </div>
+                </Link>
+              </motion.div>
+
+              {/* Clinic / Hospital — COMING SOON */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <Link
+                  to="/clinic-dashboard"
+                  className="group block p-8 rounded-2xl border-2 border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 hover:border-emerald-500/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 h-full text-center relative overflow-hidden"
+                >
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    June 2026
+                  </div>
+                  <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span className="text-4xl">🏥</span>
+                  </div>
+                  <h3 className="text-2xl font-bold font-heading mb-2">Clinic / Hospital</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    Enterprise portal for managing patient populations, OPD queues, billing workflows, and department analytics.
+                  </p>
+                  <div className="mt-6 inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
+                    Coming Soon →
+                  </div>
+                </Link>
+              </motion.div>
+
+            </div>
+          </div>
+        </section>
+
         {/* Principles Section */}
         <section className="py-20 sm:py-24 bg-secondary/30 dark:bg-background">
           <div className="container mx-auto px-4">
