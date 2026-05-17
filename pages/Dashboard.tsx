@@ -13,6 +13,7 @@ import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { getVitals, getRecords, getMedications, getReminders, getProfile, saveProfile, addVital, getSymptoms, getWaterIntake, updateWaterIntake, getTestsAndProcedures } from '../services/dataSupabase';
 import { getMoodHistory, MoodEntry } from '../services/mentibotSupabase';
+import { calculateHealthScore } from '../services/healthScore';
 
 const categoryInfo = {
   record:     { title: 'Medical Records', icon: FileText,  color: 'text-blue-500' },
@@ -259,7 +260,7 @@ const Dashboard: React.FC = () => {
 
   // Search
   const searchableData = [
-    ...records.map(item    => ({ ...item, type: 'record',     name: item.name,  path: '/records' })),
+    ...records.map(item    => ({ ...item, type: 'record',     name: item.name,  path: '/documents' })),
     ...medications.map(item => ({ ...item, type: 'medication', name: item.name,  path: '/medications' })),
     ...reminders.map(item   => ({ ...item, type: 'reminder',   name: item.title, path: '/reminders' })),
   ];
@@ -288,7 +289,7 @@ const Dashboard: React.FC = () => {
       type: 'record' as const,
       title: r.name,
       sub: r.type,
-      link: '/records',
+      link: '/documents',
       analysis: r.analysis,
     })),
     ...vitals.slice(-5).map(v => ({
@@ -324,7 +325,7 @@ const Dashboard: React.FC = () => {
         Upload your first document, log vitals, or add medications to get a personalized view of your health.
       </p>
       <div className="flex flex-wrap gap-3 mt-8 justify-center">
-        <Button onClick={() => navigate('/records')} className="gap-2">
+        <Button onClick={() => navigate('/documents')} className="gap-2">
           <FileText className="h-4 w-4" />
           Upload a Document
         </Button>
@@ -340,8 +341,40 @@ const Dashboard: React.FC = () => {
   const DashboardContent = () => {
     if (!hasAnyData) return <EmptyDashboard />;
 
+    const healthScore = calculateHealthScore(vitals, medications, symptoms, waterIntake, profile?.waterGoal || 8);
+
     return (
       <div className="space-y-8">
+
+        {/* ── HEALTH SCORE ──────────────────────────────────────── */}
+        <div className={`p-5 rounded-2xl border ${healthScore.bgColor} border-transparent`} data-tour="health-score">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Your Health Score</p>
+              <div className="flex items-end gap-3">
+                <span className={`text-6xl font-black font-heading ${healthScore.color} leading-none`}>{healthScore.total}</span>
+                <div className="mb-1">
+                  <span className={`text-2xl font-bold ${healthScore.color}`}>/100</span>
+                  <p className={`text-sm font-bold ${healthScore.color}`}>{healthScore.label}</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {healthScore.components.map(c => (
+                <div key={c.label} className="text-center min-w-[72px]">
+                  <div className="text-xl mb-0.5">{c.icon}</div>
+                  <div className="relative w-full h-1.5 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className={`absolute left-0 top-0 h-full rounded-full transition-all duration-700 ${healthScore.total >= 70 ? 'bg-emerald-500' : healthScore.total >= 55 ? 'bg-amber-500' : 'bg-red-500'}`}
+                      style={{ width: `${c.score}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1 font-medium leading-tight">{c.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* ── QUICK ACTIONS ─────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-3" data-tour="quick-actions">
@@ -415,7 +448,7 @@ const Dashboard: React.FC = () => {
               <span className="w-1.5 h-5 rounded-full bg-indigo-500 inline-block" />
               Health Feed
             </h2>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/records')} className="text-xs text-primary hover:bg-blue-50 dark:hover:bg-primary/10">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/documents')} className="text-xs text-primary hover:bg-blue-50 dark:hover:bg-primary/10">
               View all →
             </Button>
           </div>

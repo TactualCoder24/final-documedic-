@@ -113,6 +113,7 @@ const AppRoutes = () => {
         >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/documents" element={<MedicalRecords />} />
+          <Route path="/records" element={<Navigate to="/documents" replace />} />
           <Route path="/medications" element={<MedicationTracker />} />
           <Route path="/symptoms" element={<SymptomLog />} />
           <Route path="/food-journal" element={<FoodJournal />} />
