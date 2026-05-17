@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Bot, Lightbulb, Stethoscope, MapPin, Search } from '../components/icons/Icons';
@@ -6,6 +6,8 @@ import Input from '../components/ui/Input';
 import { chatWithSymptomChecker } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../hooks/useAuth';
+import { getProfile, getMedications } from '../services/dataSupabase';
 
 type Step = 'start' | 'chat' | 'result';
 
@@ -17,12 +19,36 @@ interface ChatMessage {
 const SymptomChecker: React.FC = () => {
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const { user } = useAuth();
     const [step, setStep] = useState<Step>('start');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [result, setResult] = useState({ title: '', recommendation: '', triageLevel: '', action: '', icon: Stethoscope });
     const [isLoading, setIsLoading] = useState(false);
+    const [realProfile, setRealProfile] = useState<string>('Adult patient, no known conditions.');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const loadUserContext = useCallback(async () => {
+      if (!user) return;
+      try {
+        const [profile, medications] = await Promise.all([
+          getProfile(user.uid),
+          getMedications(user.uid),
+        ]);
+        const activeMeds = medications.filter(m => m.isActive).map(m => `${m.name} (${m.dosage}, ${m.frequency})`).join(', ');
+        const contextString = [
+          profile.age ? `Age: ${profile.age}` : null,
+          profile.conditions ? `Conditions: ${profile.conditions}` : null,
+          activeMeds ? `Current Medications: ${activeMeds}` : null,
+          profile.bloodType ? `Blood Type: ${profile.bloodType}` : null,
+        ].filter(Boolean).join('. ');
+        setRealProfile(contextString || 'Adult patient, no known conditions on file.');
+      } catch (e) {
+        console.error('Failed to load user context for symptom checker', e);
+      }
+    }, [user]);
+
+    useEffect(() => { loadUserContext(); }, [loadUserContext]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -50,9 +76,8 @@ const SymptomChecker: React.FC = () => {
         setIsLoading(true);
         try {
             const conversationText = currentMessages.map(m => `${m.role === 'user' ? 'Patient' : 'Assistant'}: ${m.content}`).join('\n');
-            const mockProfile = "User is an adult, no known major conditions. (Mock Profile)";
 
-            const responseText = await chatWithSymptomChecker(conversationText, mockProfile);
+            const responseText = await chatWithSymptomChecker(conversationText, realProfile);
             const data = JSON.parse(responseText);
 
             if (data.type === 'question') {

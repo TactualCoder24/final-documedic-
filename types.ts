@@ -14,10 +14,23 @@ export interface ExtractedVital {
   unit?: string;
 }
 
+export interface LabResult {
+  testName: string;
+  value: string;
+  unit: string;
+  referenceRange: string;
+  interpretation: 'Normal' | 'High' | 'Low' | 'Critical' | 'Unknown';
+}
+
 export interface DocumentAnalysis {
+  classification?: 'Lab Report' | 'Prescription' | 'Imaging' | 'Consultation Note' | 'Visit Summary' | 'Other';
+  pii?: { patientName?: string; age?: string; gender?: string; dob?: string };
+  triage?: { urgency: 'Routine' | 'Urgent' | 'Emergency'; recommendedSpecialist?: string; reason?: string };
   summary: string;
   definitions?: { term: string; definition: string }[];
   vitals?: ExtractedVital[];
+  labResults?: LabResult[];
+  medications?: { name: string; dosage: string; frequency: string; times?: string[] }[];
 }
 
 // Defines the structure for a medical record entry.

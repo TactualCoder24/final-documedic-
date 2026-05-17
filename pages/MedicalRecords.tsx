@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getRecords, addRecord, deleteRecord } from '../services/dataSupabase';
+import { getRecords, addRecord, deleteRecord, addVital, addTestResult, addMedication } from '../services/dataSupabase';
 import { analyzeMedicalDocument } from '../services/aiService';
 import EmptyState from '../components/ui/EmptyState';
 
@@ -108,7 +108,7 @@ const MedicalRecords: React.FC = () => {
 
     if (name && type && file) {
       setIsUploading(true);
-      if (shouldAnalyze && file.type.startsWith('image/')) {
+      if (shouldAnalyze && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
         setIsAnalyzing(true);
         setAnalysisError(null);
         handleModalClose();
@@ -116,8 +116,89 @@ const MedicalRecords: React.FC = () => {
           const base64Image = await fileToBase64(file);
           const result = await analyzeMedicalDocument(base64Image, file.type);
           if (result) {
-            await addRecord(user.uid, { name, type, file }, result);
+            const finalType = (result.classification && result.classification !== 'Other') ? result.classification as MedicalRecord['type'] : type;
+            await addRecord(user.uid, { name, type: finalType, file }, result);
             setAnalysisResult(result);
+            
+            // Auto-sync extracted vitals to DB
+            if (result.vitals && result.vitals.length > 0) {
+              let updatedVitals = false;
+              const newVitalsObj: { sugar?: number; systolic?: number; diastolic?: number } = {};
+              
+              result.vitals.forEach(v => {
+                 const lowerName = v.name.toLowerCase();
+                 const strVal = String(v.value);
+                 const numValue = parseFloat(strVal);
+                 
+                 if (lowerName.includes('sugar') || lowerName.includes('glucose')) {
+                    if (!isNaN(numValue)) {
+                      newVitalsObj.sugar = numValue;
+                      updatedVitals = true;
+                    }
+                 } else if (lowerName.includes('blood pressure') || lowerName === 'bp' || lowerName.includes('pressure')) {
+                    if (strVal.includes('/')) {
+                       const parts = strVal.split('/');
+                       newVitalsObj.systolic = parseFloat(parts[0]);
+                       newVitalsObj.diastolic = parseFloat(parts[1]);
+                       updatedVitals = true;
+                    }
+                 } else if (lowerName.includes('systolic')) {
+                    if (!isNaN(numValue)) {
+                      newVitalsObj.systolic = numValue;
+                      updatedVitals = true;
+                    }
+                 } else if (lowerName.includes('diastolic')) {
+                    if (!isNaN(numValue)) {
+                      newVitalsObj.diastolic = numValue;
+                      updatedVitals = true;
+                    }
+                 }
+              });
+
+              if (updatedVitals) {
+                 try {
+                   await addVital(user.uid, newVitalsObj);
+                   toast.success(t('records.vitals_synced', 'Vitals extracted and synced to your dashboard!'));
+                 } catch (err) {
+                   console.error("Failed to auto-sync vitals", err);
+                 }
+              }
+            }
+
+            // Auto-sync extracted lab results to Test Records DB
+            if (result.labResults && result.labResults.length > 0) {
+              try {
+                const details = result.labResults.map(lab => ({
+                  name: lab.testName,
+                  value: `${lab.value} ${lab.unit}`.trim(),
+                  referenceRange: lab.referenceRange,
+                  isAbnormal: lab.interpretation !== 'Normal' && lab.interpretation !== 'Unknown'
+                }));
+                
+                await addTestResult(user.uid, {
+                  name: name || 'AI Parsed Lab Report',
+                  date: new Date().toISOString(),
+                  status: 'Final',
+                  provider: 'AI Parsed',
+                  details
+                });
+                toast.success('Detailed lab results synced to Test Records!');
+              } catch (err) {
+                console.error("Failed to auto-sync lab results", err);
+              }
+            }
+
+            // Auto-sync extracted medications to Medications DB
+            if (result.medications && result.medications.length > 0) {
+              try {
+                for (const med of result.medications) {
+                  await addMedication(user.uid, med);
+                }
+                toast.success('Medications extracted and synced to your tracker!');
+              } catch (err) {
+                console.error("Failed to auto-sync medications", err);
+              }
+            }
           } else {
             await addRecord(user.uid, { name, type, file });
             setAnalysisError(t('records.ai_fail', 'AI analysis failed. Document saved without a summary.'));
@@ -351,7 +432,7 @@ const MedicalRecords: React.FC = () => {
               id="analyze-doc"
               name="analyze-doc"
               className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary disabled:opacity-50"
-              disabled={!!selectedFile && !selectedFile.type.startsWith('image/')}
+              disabled={!!selectedFile && !(selectedFile.type.startsWith('image/') || selectedFile.type === 'application/pdf')}
             />
             <div>
               <label htmlFor="analyze-doc" className="text-sm font-semibold text-foreground cursor-pointer">
@@ -359,9 +440,9 @@ const MedicalRecords: React.FC = () => {
                 {t('records.modals.analyze_ai', 'Analyze with AI')}
               </label>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {selectedFile && !selectedFile.type.startsWith('image/')
-                  ? t('records.modals.not_image_warn', 'Upload a JPG or PNG to enable AI analysis.')
-                  : t('records.modals.image_only', 'Extracts vitals & medical terms (image files only)')}
+                {selectedFile && !(selectedFile.type.startsWith('image/') || selectedFile.type === 'application/pdf')
+                  ? t('records.modals.not_image_warn', 'Upload a JPG, PNG, or PDF to enable AI analysis.')
+                  : t('records.modals.image_only', 'Extracts lab results, vitals & medical terms')}
               </p>
             </div>
           </div>
@@ -396,6 +477,43 @@ const MedicalRecords: React.FC = () => {
           </div>
         ) : analysisResult ? (
           <div className="space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            {/* Triage Assessment */}
+            {analysisResult.triage && (
+              <div className={`p-4 rounded-xl border ${
+                analysisResult.triage.urgency === 'Emergency' ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' :
+                analysisResult.triage.urgency === 'Urgent' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800' :
+                'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
+              }`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">
+                    {analysisResult.triage.urgency === 'Emergency' ? '🚨' : analysisResult.triage.urgency === 'Urgent' ? '⚠️' : '✅'}
+                  </span>
+                  <h3 className={`font-bold text-sm font-heading ${
+                    analysisResult.triage.urgency === 'Emergency' ? 'text-red-700 dark:text-red-400' :
+                    analysisResult.triage.urgency === 'Urgent' ? 'text-orange-700 dark:text-orange-400' :
+                    'text-green-700 dark:text-green-400'
+                  }`}>
+                    Triage Assessment: {analysisResult.triage.urgency}
+                  </h3>
+                </div>
+                {analysisResult.triage.reason && <p className="text-sm text-foreground/80 mt-1">{analysisResult.triage.reason}</p>}
+                {analysisResult.triage.recommendedSpecialist && (
+                  <p className="text-xs font-medium text-foreground/70 mt-2">Recommended Specialist: {analysisResult.triage.recommendedSpecialist}</p>
+                )}
+              </div>
+            )}
+
+            {/* PII / Patient Info */}
+            {analysisResult.pii && Object.keys(analysisResult.pii).length > 0 && (
+              <div className="flex flex-wrap gap-x-4 gap-y-2 p-3 bg-slate-50 dark:bg-secondary rounded-lg border border-border/50 text-sm">
+                <span className="font-semibold text-muted-foreground w-full mb-1">Extracted Patient Info:</span>
+                {analysisResult.pii.patientName && <div><span className="text-muted-foreground">Name:</span> <span className="font-medium text-foreground">{analysisResult.pii.patientName}</span></div>}
+                {analysisResult.pii.age && <div><span className="text-muted-foreground">Age:</span> <span className="font-medium text-foreground">{analysisResult.pii.age}</span></div>}
+                {analysisResult.pii.gender && <div><span className="text-muted-foreground">Gender:</span> <span className="font-medium text-foreground">{analysisResult.pii.gender}</span></div>}
+                {analysisResult.pii.dob && <div><span className="text-muted-foreground">DOB:</span> <span className="font-medium text-foreground">{analysisResult.pii.dob}</span></div>}
+              </div>
+            )}
+
             {/* Summary */}
             <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/15 border border-blue-100 dark:border-blue-800/30">
               <h3 className="font-bold text-sm font-heading text-blue-700 dark:text-blue-400 mb-1.5">
@@ -421,6 +539,67 @@ const MedicalRecords: React.FC = () => {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* Detailed Lab Results Table */}
+            {analysisResult.labResults && analysisResult.labResults.length > 0 && (
+              <div>
+                <h3 className="font-bold text-sm font-heading text-foreground mb-3">
+                  🧪 {t('records.analysis.lab_results', 'Detailed Lab Results')}
+                </h3>
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-border/50">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className="bg-slate-50 dark:bg-secondary text-foreground">
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Test Name</th>
+                        <th className="px-4 py-3 font-semibold">Result</th>
+                        <th className="px-4 py-3 font-semibold">Reference Range</th>
+                        <th className="px-4 py-3 font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-border/40 bg-white dark:bg-card">
+                      {analysisResult.labResults.map((lab, i) => (
+                        <tr key={i} className="hover:bg-slate-50 dark:hover:bg-secondary/30 transition-colors">
+                          <td className="px-4 py-3 font-medium text-foreground">{lab.testName}</td>
+                          <td className="px-4 py-3 font-bold text-foreground">
+                            {lab.value} <span className="text-xs font-normal text-muted-foreground">{lab.unit}</span>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">{lab.referenceRange}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold
+                              ${lab.interpretation === 'Normal' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              lab.interpretation === 'High' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                              lab.interpretation === 'Critical' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                              lab.interpretation === 'Low' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                              'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
+                              {lab.interpretation}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Extracted Medications */}
+            {analysisResult.medications && analysisResult.medications.length > 0 && (
+              <div>
+                <h3 className="font-bold text-sm font-heading text-foreground mb-3">
+                  💊 {t('records.analysis.medications', 'Extracted Medications')}
+                </h3>
+                <div className="space-y-2">
+                  {analysisResult.medications.map((med, i) => (
+                    <div key={i} className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30">
+                      <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{med.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {med.dosage} • {med.frequency}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

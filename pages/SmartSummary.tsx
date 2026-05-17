@@ -84,7 +84,11 @@ const SmartSummary: React.FC = () => {
       </div>
       <div className="mb-6">
         <h1 className="text-3xl font-bold font-heading">{t('smart_summary.title', 'Smart Health Summary')}</h1>
-        <p className="text-muted-foreground">{t('smart_summary.subtitle', 'Get an AI-powered summary of your health profile, easy to read and share.')}</p>
+        <p className="text-muted-foreground">
+          {enhancedMode 
+            ? t('smart_summary.subtitle_enhanced', 'Deep diagnostic mode. The AI cross-correlates your vitals, symptoms, and medications to detect anomalies and flag patterns.') 
+            : t('smart_summary.subtitle_basic', 'Friendly daily overview. The AI provides a quick, encouraging summary of your recent health status.')}
+        </p>
         <div className="flex flex-wrap items-center gap-3 mt-3">
           <Button
             variant={enhancedMode ? 'outline' : 'default'}
@@ -130,10 +134,25 @@ const SmartSummary: React.FC = () => {
           ) : summary ? (
             <div className="prose prose-sm dark:prose-invert max-w-none prose-p:text-foreground prose-headings:text-foreground">
               {summary.split('\n').map((line, index) => {
-                if (line.startsWith('##')) return <h2 key={index} className="font-heading text-lg font-semibold mt-4 mb-2">{line.replace('##', '').trim()}</h2>;
-                if (line.startsWith('#')) return <h1 key={index} className="font-heading text-xl font-bold mt-4 mb-2">{line.replace('#', '').trim()}</h1>;
-                if (line.trim().startsWith('-')) return <p key={index} className="pl-4">{line.trim()}</p>;
-                return <p key={index}>{line}</p>;
+                const trimmedLine = line.trim();
+                if (trimmedLine.startsWith('###')) return <h3 key={index} className="font-heading text-md font-semibold mt-3 mb-1 text-foreground">{trimmedLine.replace(/^###\s*/, '')}</h3>;
+                if (trimmedLine.startsWith('##')) return <h2 key={index} className="font-heading text-lg font-bold mt-4 mb-2 text-foreground">{trimmedLine.replace(/^##\s*/, '')}</h2>;
+                if (trimmedLine.startsWith('#')) return <h1 key={index} className="font-heading text-xl font-extrabold mt-5 mb-3 text-foreground">{trimmedLine.replace(/^#\s*/, '')}</h1>;
+                if (trimmedLine.startsWith('-') || trimmedLine.startsWith('*')) return <li key={index} className="ml-6 list-disc my-1 text-foreground/90 leading-relaxed">{trimmedLine.substring(1).trim()}</li>;
+                if (trimmedLine === '') return <div key={index} className="h-2"></div>;
+                
+                // Handle bold text inline
+                const parts = trimmedLine.split(/(\*\*.*?\*\*)/g);
+                return (
+                  <p key={index} className="my-2 text-foreground/90 leading-relaxed">
+                    {parts.map((part, i) => {
+                      if (part.startsWith('**') && part.endsWith('**')) {
+                        return <strong key={i} className="font-bold text-foreground">{part.slice(2, -2)}</strong>;
+                      }
+                      return part;
+                    })}
+                  </p>
+                );
               })}
             </div>
           ) : (

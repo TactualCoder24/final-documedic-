@@ -165,41 +165,51 @@ export const getLifestyleTips = async (userInfo: string): Promise<string> => {
   }
 };
 
-export const analyzeMedicalDocument = async (base64Image: string, mimeType: string): Promise<DocumentAnalysis | null> => {
+export const analyzeMedicalDocument = async (base64Data: string, mimeType: string): Promise<DocumentAnalysis | null> => {
   if (!ai) return null;
 
   try {
-    const imagePart = {
-      inlineData: { data: base64Image, mimeType },
+    const documentPart = {
+      inlineData: { data: base64Data, mimeType },
     };
     const textPart = {
-      text: "Extract all text from this medical document. Be as accurate as possible.",
+      text: "Extract all text and structured data from this medical document. Be highly accurate, especially with numbers, reference ranges, and test names.",
     };
 
-    // Step 1: Extract text from image
-    const visionResponse = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: { parts: [imagePart, textPart] },
-    });
-
-    const extractedText = visionResponse.text;
-    if (!extractedText || extractedText.trim().length < 10) { // Basic check for meaningful text
-      throw new Error("Could not extract sufficient text from the document.");
-    }
-
-    // Step 2: Analyze extracted text
     const analysisResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Analyze the following medical text. Provide a simple summary for the patient, define any complex medical terms, and extract key vital signs. The text: """${extractedText}"""`,
+      contents: { parts: [documentPart, textPart] },
       config: {
+        systemInstruction: "You are an expert medical data extractor. Your job is to parse lab reports, prescriptions, and medical records into highly structured JSON data. You must classify the document, extract Personally Identifiable Information (PII) if present, assess the clinical urgency (triage), extract test results, and extract any prescribed medications.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
+            classification: { type: Type.STRING, description: 'Classify the document type.', enum: ['Lab Report', 'Prescription', 'Imaging', 'Consultation Note', 'Visit Summary', 'Other'] },
+            pii: {
+              type: Type.OBJECT,
+              description: 'Personally Identifiable Information found in the document header.',
+              properties: {
+                patientName: { type: Type.STRING },
+                age: { type: Type.STRING },
+                gender: { type: Type.STRING },
+                dob: { type: Type.STRING }
+              }
+            },
+            triage: {
+              type: Type.OBJECT,
+              description: 'Medical triaging assessment based on the document contents.',
+              properties: {
+                urgency: { type: Type.STRING, enum: ['Routine', 'Urgent', 'Emergency'] },
+                recommendedSpecialist: { type: Type.STRING, description: 'E.g., Cardiologist, Endocrinologist' },
+                reason: { type: Type.STRING, description: 'Brief reason for the urgency score' }
+              },
+              required: ['urgency']
+            },
             summary: { type: Type.STRING, description: 'A simple, easy-to-understand summary of the document for a patient.' },
             definitions: {
               type: Type.ARRAY,
-              description: 'An array of objects, where each object defines a complex medical term found in the text.',
+              description: 'An array of objects defining complex medical terms found in the text.',
               items: {
                 type: Type.OBJECT,
                 properties: { term: { type: Type.STRING }, definition: { type: Type.STRING } },
@@ -208,11 +218,39 @@ export const analyzeMedicalDocument = async (base64Image: string, mimeType: stri
             },
             vitals: {
               type: Type.ARRAY,
-              description: 'An array of objects, where each object represents a key vital sign or lab result found in the text.',
+              description: 'Key vital signs (Blood Pressure, Heart Rate, Temperature, Blood Sugar, etc) for quick syncing.',
               items: {
                 type: Type.OBJECT,
                 properties: { name: { type: Type.STRING }, value: { type: Type.STRING }, unit: { type: Type.STRING } },
                 required: ['name', 'value']
+              }
+            },
+            labResults: {
+              type: Type.ARRAY,
+              description: 'Detailed array of all lab test results extracted from the document.',
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  testName: { type: Type.STRING },
+                  value: { type: Type.STRING },
+                  unit: { type: Type.STRING },
+                  referenceRange: { type: Type.STRING },
+                  interpretation: { type: Type.STRING, enum: ['Normal', 'High', 'Low', 'Critical', 'Unknown'] }
+                },
+                required: ['testName', 'value', 'interpretation']
+              }
+            },
+            medications: {
+              type: Type.ARRAY,
+              description: 'Array of medications prescribed or mentioned in the document, especially if the document is a prescription.',
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING, description: 'Name of the medication' },
+                  dosage: { type: Type.STRING, description: 'Dosage amount (e.g., 500mg)' },
+                  frequency: { type: Type.STRING, description: 'How often to take it (e.g., Twice daily)' }
+                },
+                required: ['name', 'dosage', 'frequency']
               }
             }
           },
