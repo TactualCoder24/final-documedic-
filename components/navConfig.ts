@@ -3,7 +3,7 @@ import {
   HeartPulse, FileText, Pill, BrainCircuit, Bell, Lightbulb, Settings,
   CalendarDays, Activity, Utensils, Users, MessageCircle, TestTube2,
   ClipboardCheck, Target, Syringe, LineChart, Baby, MessageSquareQuestion, Bot, Brain, MapPin,
-  Printer, BarChart, Moon
+  Printer, BarChart, Moon, Stethoscope, Building2
 } from './icons/Icons';
 
 export interface NavItem {
@@ -19,11 +19,11 @@ export interface NavGroup {
 
 export const navGroups: NavGroup[] = [
   {
-    label: 'Overview',
+    label: 'Dashboard',
     items: [
-      { path: '/dashboard', label: 'My Dashboard', icon: HeartPulse },
-      { path: '/summary', label: 'Smart Summary', icon: BrainCircuit },
-      { path: '/analytics', label: 'Analytics', icon: BarChart },
+      { path: '/dashboard', label: 'Patient Dashboard', icon: HeartPulse },
+      { path: '/doctor-dashboard', label: 'Doctor Dashboard', icon: Stethoscope },
+      { path: '/clinic-dashboard', label: 'Clinic Portal', icon: Building2 },
     ],
   },
   {
@@ -34,6 +34,13 @@ export const navGroups: NavGroup[] = [
       { path: '/test-results', label: 'Test Results', icon: TestTube2 },
       { path: '/medications', label: 'Medications', icon: Pill },
       { path: '/health-report', label: 'Health Report', icon: Printer },
+    ],
+  },
+  {
+    label: 'Overview',
+    items: [
+      { path: '/summary', label: 'Smart Summary', icon: BrainCircuit },
+      { path: '/analytics', label: 'Analytics', icon: BarChart },
     ],
   },
   {

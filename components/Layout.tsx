@@ -44,8 +44,9 @@ const formatDate = () =>
 
 /* ── Type badge colors per nav group ─────────────────────────────────── */
 const groupColors: Record<string, string> = {
-  'Overview':         'text-blue-600 dark:text-blue-400',
+  'Dashboard':        'text-blue-600 dark:text-blue-400',
   'My Health Record': 'text-emerald-600 dark:text-emerald-400',
+  'Overview':         'text-sky-600 dark:text-sky-400',
   'Tools & Tracking': 'text-violet-600 dark:text-violet-400',
   'Care Planning':    'text-orange-500 dark:text-orange-400',
   'Connect':          'text-pink-500 dark:text-pink-400',

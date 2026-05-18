@@ -72,6 +72,8 @@ export const saveProfile = async (userId: string, profile: Profile): Promise<voi
             water_goal: profile.waterGoal,
             personal_history: profile.personalHistory,
             family_history: profile.familyHistory,
+            language: profile.language,
+            role: profile.role,
         });
 
     if (error) {

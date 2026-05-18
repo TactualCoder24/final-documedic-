@@ -4,13 +4,17 @@ import { auth } from '../services/auth';
 import { getProfile, saveProfile } from '../services/dataSupabase';
 import { getAppLanguage, setAppLanguage } from '../components/AutoTranslator';
 
+type UserRole = 'patient' | 'doctor' | 'clinic' | null;
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  userRole: UserRole;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmailPassword: (email: string, password: string) => Promise<void>;
   signInWithEmailPassword: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  setUserRole: (role: 'patient' | 'doctor' | 'clinic') => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,25 +22,47 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRoleState] = useState<UserRole>(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        // Sync Language on Login
-        getProfile(firebaseUser.uid).then(profile => {
+        try {
+          const profile = await getProfile(firebaseUser.uid);
+          // Set role from profile
+          if (profile?.role) {
+            setUserRoleState(profile.role as UserRole);
+          }
+          // Sync Language on Login
           const storedLang = getAppLanguage();
           if (profile?.language && profile.language !== storedLang) {
             setAppLanguage(profile.language);
           } else if (profile && storedLang !== 'English' && !profile.language) {
             saveProfile(firebaseUser.uid, { ...profile, language: storedLang });
           }
-        }).catch(err => console.error(err));
+        } catch (err) {
+          console.error(err);
+        }
+      } else {
+        setUserRoleState(null);
       }
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
+
+  const setUserRole = useCallback(async (role: 'patient' | 'doctor' | 'clinic') => {
+    if (!user) return;
+    try {
+      const profile = await getProfile(user.uid);
+      await saveProfile(user.uid, { ...profile, role });
+      setUserRoleState(role);
+    } catch (err) {
+      console.error('Error saving role:', err);
+      throw err;
+    }
+  }, [user]);
 
   const signInWithGoogle = useCallback(async () => {
     setLoading(true);
@@ -74,12 +100,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = useCallback(async () => {
     try {
       await auth.signOut();
+      setUserRoleState(null);
     } catch (error) {
       console.error("Error signing out", error);
     }
   }, []);
 
-  const value = { user, loading, signInWithGoogle, signUpWithEmailPassword, signInWithEmailPassword, signOut };
+  const value = { user, loading, userRole, signInWithGoogle, signUpWithEmailPassword, signInWithEmailPassword, signOut, setUserRole };
 
   return (
     <AuthContext.Provider value={value}>

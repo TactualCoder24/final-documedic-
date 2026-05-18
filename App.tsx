@@ -45,6 +45,7 @@ import MentibotJournal from './pages/mentibot/Journal';
 import MentibotSearch from './pages/mentibot/MentibotSearch';
 import MentibotSearchAdmin from './pages/mentibot/MentibotSearchAdmin';
 import ScrollToTop from './components/ScrollToTop';
+import Skeleton from './components/ui/Skeleton';
 
 // New page imports
 import TestResults from './pages/TestResults';
@@ -61,11 +62,11 @@ import Analytics from './pages/Analytics';
 import AppointmentPrep from './pages/AppointmentPrep';
 import SharedRecord from './pages/SharedRecord';
 import SleepTracker from './pages/SleepTracker';
-import Skeleton from './components/ui/Skeleton';
 import DoctorDashboard from './pages/DoctorDashboard';
 import ClinicDashboard from './pages/ClinicDashboard';
 
 
+// ── Protected route: requires auth ────────────────────────────────────────
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -79,7 +80,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
 
   if (!user) {
-    // Save the intended path to sessionStorage for a more reliable redirect after login.
     sessionStorage.setItem('redirectPath', location.pathname + location.search);
     return <Navigate to="/login" replace />;
   }
@@ -87,13 +87,15 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+// ── App routes ─────────────────────────────────────────────────────────────
 const AppRoutes = () => {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
       {/* @ts-ignore */}
       <Routes location={location} key={location.pathname}>
-        {/* Public Routes */}
+
+        {/* ── Public Routes ─────────────────────────────────── */}
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
@@ -105,10 +107,28 @@ const AppRoutes = () => {
         <Route path="/who-its-for" element={<WhoItsForPage />} />
         <Route path="/security" element={<SecurityPage />} />
         <Route path="/shared/:shareId" element={<SharedRecord />} />
-        <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-        <Route path="/clinic-dashboard" element={<ClinicDashboard />} />
 
-        {/* Dashboard Protected Routes */}
+        {/* ── Doctor Dashboard (protected, no patient sidebar) ─ */}
+        <Route
+          path="/doctor-dashboard"
+          element={
+            <ProtectedRoute>
+              <DoctorDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ── Clinic Dashboard (protected, no patient sidebar) ── */}
+        <Route
+          path="/clinic-dashboard"
+          element={
+            <ProtectedRoute>
+              <ClinicDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ── Patient Dashboard Protected Routes (with Layout) ── */}
         <Route
           element={
             <ProtectedRoute>
@@ -131,7 +151,7 @@ const AppRoutes = () => {
           <Route path="/find-care" element={<FindCare />} />
           <Route path="/settings" element={<Settings />} />
 
-          {/* New Routes */}
+          {/* Health record pages */}
           <Route path="/test-results" element={<TestResults />} />
           <Route path="/health-summary" element={<HealthSummary />} />
           <Route path="/preventive-care" element={<PreventiveCare />} />
@@ -145,7 +165,7 @@ const AppRoutes = () => {
           <Route path="/sleep" element={<SleepTracker />} />
           <Route path="/appointments/:id/prep" element={<AppointmentPrep />} />
 
-          {/* Mentibot Dashboard Routes */}
+          {/* Mentibot sub-routes inside patient Layout */}
           <Route path="/dashboard/mentibot" element={<MentibotLanding />} />
           <Route path="/dashboard/mentibot/chat" element={<MentibotChat />} />
           <Route path="/dashboard/mentibot/exercises" element={<MentibotExercises />} />
@@ -158,7 +178,7 @@ const AppRoutes = () => {
           <Route path="/dashboard/mentibot/search-admin" element={<MentibotSearchAdmin />} />
         </Route>
 
-        {/* Community Protected Route */}
+        {/* ── Community Protected Route ─────────────────────── */}
         <Route
           element={
             <ProtectedRoute>
@@ -169,7 +189,7 @@ const AppRoutes = () => {
           <Route path="/community" element={<Community />} />
         </Route>
 
-        {/* Mentibot Standalone Protected Routes */}
+        {/* ── Mentibot Standalone Protected Routes ─────────── */}
         <Route
           element={
             <ProtectedRoute>
