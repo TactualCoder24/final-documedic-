@@ -30,16 +30,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (firebaseUser) {
         try {
           const profile = await getProfile(firebaseUser.uid);
+          let updated = false;
+          const updates = { ...profile };
+
           // Set role from profile
           if (profile?.role) {
             setUserRoleState(profile.role as UserRole);
           }
+
           // Sync Language on Login
           const storedLang = getAppLanguage();
           if (profile?.language && profile.language !== storedLang) {
             setAppLanguage(profile.language);
-          } else if (profile && storedLang !== 'English' && !profile.language) {
-            saveProfile(firebaseUser.uid, { ...profile, language: storedLang });
+          } else if (storedLang !== 'English' && !profile?.language) {
+            updates.language = storedLang;
+            updated = true;
+          }
+
+          if (!profile?.name && firebaseUser.displayName) {
+            updates.name = firebaseUser.displayName;
+            updated = true;
+          }
+
+          if (updated) {
+            await saveProfile(firebaseUser.uid, updates);
           }
         } catch (err) {
           console.error(err);

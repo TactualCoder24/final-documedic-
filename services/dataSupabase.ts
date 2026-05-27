@@ -62,6 +62,7 @@ export const saveProfile = async (userId: string, profile: Profile): Promise<voi
         .from('profiles')
         .upsert({
             id: userId,
+            name: profile.name,
             age: profile.age,
             conditions: profile.conditions,
             goals: profile.goals,
@@ -80,6 +81,242 @@ export const saveProfile = async (userId: string, profile: Profile): Promise<voi
         console.error('Error saving profile:', error);
         throw error;
     }
+};
+
+// ============================================================================
+// DOCTOR-PATIENT RELATIONSHIPS
+// ============================================================================
+
+export const getDoctorPatients = async (doctorId: string): Promise<Profile[]> => {
+    // 1. Get all patient IDs linked to this doctor
+    const { data: links, error: linkError } = await supabase
+        .from('doctor_patients')
+        .select('patient_id')
+        .eq('doctor_id', doctorId);
+
+    if (linkError) {
+        console.error('Error fetching linked patients:', linkError);
+        return [];
+    }
+
+    const patientIds = links?.map(l => l.patient_id) || [];
+    
+    if (patientIds.length === 0) return [];
+
+    // 2. Fetch the profiles for those IDs
+    const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', patientIds);
+
+    if (profilesError) {
+        console.error('Error fetching patient profiles:', profilesError);
+        return [];
+    }
+
+    return profiles || [];
+};
+
+// ============================================================================
+// DOCTOR DASHBOARD & INTAKE FORMS
+// ============================================================================
+
+export const submitIntakeForm = async (
+    patientId: string,
+    appointmentId: string,
+    doctorName: string,
+    symptomsDescription: string,
+    file?: File
+): Promise<void> => {
+    let fileUrl = null;
+
+    if (file) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${patientId}/intake_${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+            .from('medical-records')
+            .upload(fileName, file, { cacheControl: '3600', upsert: false });
+            
+        if (uploadError) {
+            console.error('Error uploading intake file:', uploadError);
+            throw uploadError;
+        }
+        fileUrl = fileName;
+    }
+
+    const { error } = await supabase.from('intake_forms').insert({
+        patient_id: patientId,
+        appointment_id: appointmentId,
+        doctor_name: doctorName,
+        symptoms_description: symptomsDescription,
+        file_url: fileUrl
+    });
+
+    if (error) {
+        console.error('Error submitting intake form:', error);
+        throw error;
+    }
+};
+
+export const getIntakeFormByAppointment = async (appointmentId: string) => {
+    const { data, error } = await supabase
+        .from('intake_forms')
+        .select('*')
+        .eq('appointment_id', appointmentId)
+        .single();
+        
+    if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching intake form:', error);
+    }
+    
+    if (!data) return null;
+    
+    let fileUrl = data.file_url;
+    if (fileUrl && !fileUrl.startsWith('data:')) {
+        try {
+            const { data: signedUrlData } = await supabase.storage
+                .from('medical-records')
+                .createSignedUrl(fileUrl, 3600);
+            if (signedUrlData?.signedUrl) {
+                fileUrl = signedUrlData.signedUrl;
+            }
+        } catch (e) {}
+    }
+
+    return {
+        id: data.id,
+        appointmentId: data.appointment_id,
+        patientId: data.patient_id,
+        doctorName: data.doctor_name,
+        symptomsDescription: data.symptoms_description,
+        fileUrl,
+        createdAt: data.created_at
+    };
+};
+
+export const getDoctorTasks = async (doctorId: string) => {
+    const { data, error } = await supabase
+        .from('doctor_tasks')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching tasks:', error);
+        return [];
+    }
+
+    return (data || []).map(t => ({
+        id: t.id,
+        doctorId: t.doctor_id,
+        patientId: t.patient_id,
+        description: t.description,
+        status: t.status,
+        createdAt: t.created_at
+    }));
+};
+
+export const addDoctorTask = async (doctorId: string, description: string, patientId?: string) => {
+    const { error } = await supabase.from('doctor_tasks').insert({
+        doctor_id: doctorId,
+        description,
+        patient_id: patientId || null,
+        status: 'todo'
+    });
+    if (error) {
+        console.error('Error adding task:', error);
+        throw error;
+    }
+};
+
+export const updateTaskStatus = async (taskId: string, status: 'todo' | 'done') => {
+    const { error } = await supabase
+        .from('doctor_tasks')
+        .update({ status })
+        .eq('id', taskId);
+    if (error) {
+        console.error('Error updating task:', error);
+        throw error;
+    }
+};
+
+export const getDoctorAppointmentsToday = async (doctorId: string, doctorName: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get appointments where doctor name matches, OR where patient is linked to doctor.
+    // For simplicity, we just query appointments where doctor_name matches the doctor's name,
+    // OR we could fetch patients for this doctor and then fetch their appointments.
+    
+    // We'll fetch patients for this doctor first
+    const { data: links } = await supabase
+        .from('doctor_patients')
+        .select('patient_id')
+        .eq('doctor_id', doctorId);
+        
+    const patientIds = links?.map(l => l.patient_id) || [];
+    
+    let query = supabase
+        .from('appointments')
+        .select('*')
+        .gte('date_time', today.toISOString())
+        .lt('date_time', tomorrow.toISOString());
+        
+    if (patientIds.length > 0) {
+        query = query.in('user_id', patientIds);
+    } else {
+        // Fallback to name matching
+        query = query.ilike('doctor_name', `%${doctorName}%`);
+    }
+
+    const { data, error } = await query.order('date_time', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching doctor appointments:', error);
+        return [];
+    }
+
+    return (data || []).map(a => ({
+        id: a.id,
+        doctorName: a.doctor_name,
+        specialty: a.specialty,
+        dateTime: a.date_time,
+        location: a.location,
+        notes: a.notes,
+        type: a.type,
+        eCheckInComplete: a.e_check_in_complete,
+        onWaitlist: a.on_waitlist,
+        summaryId: a.summary_id,
+        status: a.status || 'Scheduled',
+        patientId: a.user_id,
+    }));
+};
+
+export const addPatientToDoctor = async (doctorId: string, patientId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('doctor_patients')
+        .insert({
+            doctor_id: doctorId,
+            patient_id: patientId,
+            status: 'active'
+        });
+
+    if (error) {
+        console.error('Error linking patient to doctor:', error);
+        throw error;
+    }
+};
+
+// Helper function to resolve email to User ID (requires Edge Function or secure setup in production, 
+// but we'll try a naive approach or require exact patient ID for now)
+export const resolveEmailToUserId = async (email: string): Promise<string | null> => {
+    // This is difficult in client-side Supabase as auth.users is restricted.
+    // Assuming we have email stored in `profiles` (we don't right now), we can't easily search by email.
+    // For now, this will just return null and the doctor must use the exact User ID.
+    return null; 
 };
 
 // ============================================================================
@@ -414,6 +651,8 @@ export const getAppointments = async (userId: string): Promise<Appointment[]> =>
         eCheckInComplete: a.e_check_in_complete,
         onWaitlist: a.on_waitlist,
         summaryId: a.summary_id,
+        status: a.status || 'Scheduled',
+        patientId: a.user_id,
     }));
 };
 
@@ -453,6 +692,7 @@ export const updateAppointment = async (userId: string, updatedAppointment: Appo
             e_check_in_complete: updatedAppointment.eCheckInComplete,
             on_waitlist: updatedAppointment.onWaitlist,
             summary_id: updatedAppointment.summaryId,
+            status: updatedAppointment.status || 'Scheduled',
         })
         .eq('id', updatedAppointment.id)
         .eq('user_id', userId);

@@ -7,7 +7,7 @@ import { Appointment } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getAppointments, addAppointment, deleteAppointment, updateAppointment } from '../services/dataSupabase';
+import { getAppointments, addAppointment, deleteAppointment, updateAppointment, submitIntakeForm } from '../services/dataSupabase';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -19,7 +19,10 @@ const AppointmentManager: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
+  const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [intakeFile, setIntakeFile] = useState<File | null>(null);
+  const [isSubmittingIntake, setIsSubmittingIntake] = useState(false);
 
   const refreshAppointments = useCallback(async () => {
     if (user) {
@@ -82,6 +85,32 @@ const AppointmentManager: React.FC = () => {
     }
   };
 
+  const handleIntakeClick = (app: Appointment) => {
+    setSelectedAppointment(app);
+    setIsIntakeModalOpen(true);
+    setIntakeFile(null);
+  };
+
+  const handleIntakeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user || !selectedAppointment) return;
+    setIsSubmittingIntake(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const symptomsDescription = formData.get('symptoms') as string;
+      await submitIntakeForm(user.uid, selectedAppointment.id, selectedAppointment.doctorName, symptomsDescription, intakeFile || undefined);
+      await updateAppointment(user.uid, { ...selectedAppointment, status: 'Waiting' });
+      await refreshAppointments();
+      setIsIntakeModalOpen(false);
+      setSelectedAppointment(null);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit intake form. Please try again.');
+    } finally {
+      setIsSubmittingIntake(false);
+    }
+  };
+
   const now = new Date();
   const upcomingAppointments = appointments.filter(a => new Date(a.dateTime) >= now);
   const pastAppointments = appointments
@@ -131,14 +160,20 @@ const AppointmentManager: React.FC = () => {
                       {app.notes && <p className="text-sm italic p-3 bg-secondary/50 rounded-md">{t('appointments.notes', 'Notes:')} "{app.notes}"</p>}
                     </CardContent>
                     <div className="bg-secondary/30 p-3 flex flex-wrap gap-2 justify-end">
-                      {app.eCheckInComplete ? (
-                        <span className="text-sm font-medium text-green-600 self-center mr-auto ml-3">{t('appointments.echeckin_complete', 'eCheck-in Complete!')}</span>
+                      {app.status === 'Waiting' || app.status === 'In-Progress' || app.status === 'Completed' ? (
+                         <span className="text-sm font-medium text-emerald-600 self-center mr-auto ml-3">
+                           ✓ Intake Complete ({app.status})
+                         </span>
                       ) : (
-                        <Button size="sm" onClick={() => handleECheckIn(app)}>{t('appointments.echeckin', 'eCheck-In')}</Button>
+                         <Button size="sm" onClick={() => handleIntakeClick(app)} className="mr-auto ml-3">Complete Intake Form</Button>
+                      )}
+                      {app.eCheckInComplete ? (
+                        <span className="text-sm font-medium text-green-600 self-center">eCheck-in Complete!</span>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => handleECheckIn(app)}>{t('appointments.echeckin', 'eCheck-In')}</Button>
                       )}
                       {app.type === 'Video' && <Button size="sm" variant="secondary">{t('appointments.join_video', 'Join Video Visit')}</Button>}
-                      {!app.onWaitlist && <Button size="sm" variant="outline" onClick={() => handleWaitlist(app)}><Clock className="mr-2 h-4 w-4" />{t('appointments.waitlist', 'Add to Waitlist')}</Button>}
-                      <Link to={`/appointments/${app.id}/prep`}><Button size="sm" variant="outline"><ClipboardList className="mr-2 h-4 w-4" />{t('appointments.prepare', 'Prepare')}</Button></Link>
+                      {!app.onWaitlist && <Button size="sm" variant="outline" onClick={() => handleWaitlist(app)}><Clock className="mr-2 h-4 w-4" />{t('appointments.waitlist', 'Waitlist')}</Button>}
                       <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDelete(app.id)}>{t('appointments.cancel', 'Cancel')}</Button>
                     </div>
                   </Card>
@@ -250,6 +285,40 @@ const AppointmentManager: React.FC = () => {
         <div className="flex justify-end pt-4">
           <Button onClick={() => setIsWaitlistModalOpen(false)}>{t('appointments.modals.ok', 'OK')}</Button>
         </div>
+      </Modal>
+
+      <Modal title="Pre-Visit Intake Form" isOpen={isIntakeModalOpen} onClose={() => setIsIntakeModalOpen(false)}>
+        <p className="text-sm text-muted-foreground mb-4">Please provide context about your upcoming visit with {selectedAppointment?.doctorName}. This helps your doctor prepare for your visit.</p>
+        <form onSubmit={handleIntakeSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="symptoms" className="block text-sm font-medium text-foreground mb-1">Reason for Visit / Symptoms</label>
+            <textarea 
+              id="symptoms" 
+              name="symptoms" 
+              rows={4} 
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" 
+              placeholder="Describe what you are experiencing..." 
+              required
+            ></textarea>
+          </div>
+          <div>
+             <label htmlFor="file-upload" className="block text-sm font-medium text-foreground mb-1">Upload Photo/Document (Optional)</label>
+             <input 
+               id="file-upload" 
+               type="file" 
+               accept="image/*,application/pdf"
+               onChange={(e) => setIntakeFile(e.target.files?.[0] || null)}
+               className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
+             />
+             <p className="text-xs text-muted-foreground mt-1">Share a picture of a visible symptom or a related document.</p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => setIsIntakeModalOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={isSubmittingIntake}>
+               {isSubmittingIntake ? 'Submitting...' : 'Submit to Doctor'}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </>
   );

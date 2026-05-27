@@ -112,9 +112,15 @@ const typeColors: Record<TimelineEvent['type'], { dot: string; bg: string; icon:
    MAIN COMPONENT
 ══════════════════════════════════════════════ */
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+
+  React.useEffect(() => {
+    if (userRole === 'doctor') {
+      navigate('/doctor-dashboard', { replace: true });
+    }
+  }, [userRole, navigate]);
   const [vitals, setVitals]         = React.useState<Vital[]>([]);
   const [records, setRecords]       = React.useState<MedicalRecord[]>([]);
   const [medications, setMedications] = React.useState<Medication[]>([]);

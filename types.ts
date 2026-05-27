@@ -62,7 +62,6 @@ export interface Reminder {
   description: string;
 }
 
-// Defines the structure for a doctor's appointment.
 export interface Appointment {
   id: string;
   doctorName: string;
@@ -74,6 +73,29 @@ export interface Appointment {
   eCheckInComplete: boolean;
   onWaitlist: boolean;
   summaryId?: string; // Link to an AfterVisitSummary
+  status?: 'Scheduled' | 'Waiting' | 'In-Progress' | 'Completed';
+  patientId?: string; // To fetch patient details on doctor dashboard
+}
+
+// Defines an intake form filled by the patient before the appointment
+export interface IntakeForm {
+  id: string;
+  appointmentId: string;
+  patientId: string;
+  doctorName: string;
+  symptomsDescription: string;
+  fileUrl?: string; // Photo/Document URL
+  createdAt: string;
+}
+
+// Defines a lightweight task for the doctor
+export interface DoctorTask {
+  id: string;
+  doctorId: string;
+  patientId?: string; // Optional link
+  description: string;
+  status: 'todo' | 'done';
+  createdAt: string;
 }
 
 // Defines the structure for a symptom log entry.
@@ -115,6 +137,8 @@ export interface Vital {
 
 // Defines the structure for a user's health profile.
 export interface Profile {
+  id?: string;
+  name?: string;
   age?: string;
   conditions?: string;
   goals?: string;
@@ -127,6 +151,7 @@ export interface Profile {
   familyHistory?: string;
   language?: string;
   role?: 'patient' | 'doctor' | 'clinic';
+  specialty?: string; // For doctors
 }
 
 // Defines the structure for a chat message with the AI assistant.
