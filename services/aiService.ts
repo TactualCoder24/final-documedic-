@@ -1,23 +1,22 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { Type } from "@google/genai";
 import { DocumentAnalysis } from "../types";
 
-// Per security best practices and platform requirements, the API key is
-// sourced exclusively from the `process.env.API_KEY` environment variable.
-const API_KEY = process.env.GEMINI_API_KEY;
-
-// A single, reusable instance of the GoogleGenAI client is created.
-// This is more efficient than creating a new instance for every API call.
-let ai: GoogleGenAI | null = null;
-
-// Initialize the client only if the API key is available.
-if (API_KEY) {
-  ai = new GoogleGenAI({ apiKey: API_KEY });
-} else {
-  // Log a warning to the console if the key is missing. This helps with debugging.
-  console.warn(
-    "Gemini API key not found. Please set the process.env.API_KEY environment variable. AI features will be disabled."
-  );
-}
+const ai = {
+  models: {
+    generateContent: async (payload: any) => {
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch AI API');
+      }
+      return await response.json();
+    }
+  }
+};
 
 export const getHealthSummary = async (healthData: string): Promise<string> => {
   // Gracefully handle the case where the AI client could not be initialized.

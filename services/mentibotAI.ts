@@ -1,11 +1,19 @@
-import { GoogleGenAI } from "@google/genai";
-
-const API_KEY = process.env.GEMINI_API_KEY;
-let ai: GoogleGenAI | null = null;
-
-if (API_KEY) {
-    ai = new GoogleGenAI({ apiKey: API_KEY });
-}
+const ai = {
+  models: {
+    generateContent: async (payload: any) => {
+      const response = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch AI API');
+      }
+      return await response.json();
+    }
+  }
+};
 
 export interface MentalHealthResponse {
     text: string;
