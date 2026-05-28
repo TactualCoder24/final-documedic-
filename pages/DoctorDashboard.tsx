@@ -19,12 +19,14 @@ import {
 } from '../services/dataSupabase';
 import {
   ocrMedicalDocument, chatWithPatientData,
-  generatePreAppointmentBriefing, generateEMRExport, getCDSSAnalysis
+  generatePreAppointmentBriefing, generateEMRExport, getCDSSAnalysis,
+  generateVisualTrend, ChartConfig
 } from '../services/aiService';
 import { Profile, Appointment, DoctorTask, IntakeForm } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import DynamicAITrendChart from '../components/doctor/DynamicAITrendChart';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface ChatMessage { role: 'doctor' | 'ai'; text: string; }
@@ -125,6 +127,12 @@ const DoctorDashboard: React.FC = () => {
   const [cdssResult, setCdssResult] = useState<CDSSResult | null>(null);
   const [cdssLoading, setCdssLoading] = useState(false);
   const [cdssPatient, setCdssPatient] = useState<(Profile & { id: string }) | null>(null);
+
+  // Feature 7 - Visual Trends
+  const [isTrendOpen, setIsTrendOpen] = useState(false);
+  const [trendQuery, setTrendQuery] = useState('');
+  const [trendLoading, setTrendLoading] = useState(false);
+  const [trendResult, setTrendResult] = useState<ChartConfig | null>(null);
 
   // ─── Load data ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -304,7 +312,17 @@ const DoctorDashboard: React.FC = () => {
   };
 
   const navTo = (tab: TabType) => {
-    setActiveTab(tab); setSelectedPatient(null); setIsChatOpen(false);
+    setActiveTab(tab); setSelectedPatient(null); setIsChatOpen(false); setIsTrendOpen(false);
+  };
+
+  const handleRunTrend = async () => {
+    if (!selectedPatient || !trendQuery.trim() || trendLoading) return;
+    setTrendLoading(true);
+    setTrendResult(null);
+    const ctx = await buildContext(selectedPatient.id, selectedPatient);
+    const config = await generateVisualTrend(trendQuery, ctx);
+    setTrendResult(config);
+    setTrendLoading(false);
   };
 
   const filteredPatients = patients.filter(p =>
@@ -461,6 +479,10 @@ const DoctorDashboard: React.FC = () => {
                     className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm">
                     <BrainCircuit size={13} /> Run CDSS
                   </button>
+                  <button onClick={() => { setIsTrendOpen(true); setTrendResult(null); setTrendQuery(''); }}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-pink-600 hover:bg-pink-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm">
+                    <LayoutDashboard size={13} /> Visual Trends
+                  </button>
                   <div className="flex items-center gap-1 p-1 bg-white dark:bg-card rounded-xl border border-border/60 shadow-sm">
                     <select value={emrFormat} onChange={e => setEmrFormat(e.target.value as 'FHIR' | 'CSV')}
                       className="text-xs font-medium bg-transparent px-1.5 outline-none cursor-pointer">
@@ -476,6 +498,39 @@ const DoctorDashboard: React.FC = () => {
               </div>
 
               <PatientProfile patient={selectedPatient} patientId={selectedPatient.id} />
+              
+              {/* AI Trend Modal */}
+              <Modal isOpen={isTrendOpen} onClose={() => setIsTrendOpen(false)} title="Interactive Visual Trends">
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Ask AI to plot a trend. E.g., "Weight loss vs Blood pressure over time" or "Fasting sugar levels over the last 30 days".</p>
+                  <div className="flex gap-2">
+                    <Input 
+                      value={trendQuery} 
+                      onChange={(e) => setTrendQuery(e.target.value)} 
+                      placeholder="e.g. Plot systolic and diastolic blood pressure" 
+                      className="flex-1"
+                      onKeyDown={(e) => e.key === 'Enter' && handleRunTrend()}
+                    />
+                    <Button onClick={handleRunTrend} disabled={trendLoading || !trendQuery.trim()}>
+                      {trendLoading ? <Loader2 size={16} className="animate-spin mr-2" /> : <Sparkles size={16} className="mr-2" />}
+                      Generate
+                    </Button>
+                  </div>
+                  
+                  {trendLoading && (
+                    <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
+                      <Loader2 size={32} className="animate-spin text-primary mb-4" />
+                      <p className="text-sm">Analyzing longitudinal data and generating chart configuration...</p>
+                    </div>
+                  )}
+
+                  {trendResult && !trendLoading && (
+                    <div className="mt-6 animate-in fade-in duration-300">
+                      <DynamicAITrendChart config={trendResult} />
+                    </div>
+                  )}
+                </div>
+              </Modal>
             </div>
 
           ) : (

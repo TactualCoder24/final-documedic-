@@ -562,3 +562,54 @@ export const translateTexts = async (texts: string[], targetLang: string): Promi
   }
 };
 
+export interface ChartConfig {
+  title: string;
+  description: string;
+  chartType: 'LineChart' | 'BarChart' | 'AreaChart';
+  xAxisKey: string;
+  series: { dataKey: string; color: string; name: string }[];
+  data: any[];
+}
+
+export const generateVisualTrend = async (query: string, patientContextJSON: string): Promise<ChartConfig | null> => {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Doctor's Trend Query: "${query}"\n\nPatient Data:\n${patientContextJSON}`,
+      config: {
+        systemInstruction: `You are an expert clinical data visualization AI. Analyze the patient's data based on the doctor's query and extract data points over time.
+Output a strict JSON object configuring a chart. DO NOT INCLUDE ANY MARKDOWN formatting like \`\`\`json. Return pure JSON.
+Schema:
+{
+  "title": "Short title (e.g. Blood Sugar vs Weight)",
+  "description": "1-2 sentence clinical summary of the trend observed.",
+  "chartType": "LineChart", // Or BarChart / AreaChart
+  "xAxisKey": "date", // The key used in your data array for the X axis
+  "series": [
+    { "dataKey": "systolic", "color": "#ef4444", "name": "Systolic BP" },
+    { "dataKey": "diastolic", "color": "#3b82f6", "name": "Diastolic BP" }
+  ],
+  "data": [
+    { "date": "Jan 10", "systolic": 120, "diastolic": 80 },
+    { "date": "Jan 15", "systolic": 130, "diastolic": 85 }
+  ]
+}
+
+Rules:
+1. "data" must be an array of objects sorted chronologically by the xAxisKey.
+2. Only include data points that actually exist in the Patient Data.
+3. Keep the "description" clinical and insightful.
+4. "color" should be valid hex codes or tailwind colors.`,
+        responseMimeType: "application/json",
+        temperature: 0.1,
+      }
+    });
+    
+    let textRes = response.text || "{}";
+    textRes = textRes.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(textRes) as ChartConfig;
+  } catch (error) {
+    console.error("Error generating visual trend:", error);
+    return null;
+  }
+};
