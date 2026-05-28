@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, Pill, BrainCircuit, Bell, Lightbulb, QrCode, HeartPulse, Activity, ClipboardList, Moon, Utensils, Users, CalendarDays, ShieldCheck } from '../components/icons/Icons';
+import { FileText, Pill, BrainCircuit, Bell, Lightbulb, QrCode, HeartPulse, Activity, ClipboardList, Moon, Utensils, Users, CalendarDays, ShieldCheck, MessageCircle, Brain, ScanLine, MessageSquare, FileDown } from '../components/icons/Icons';
 import Logo from '../components/icons/Logo';
 import Button from '../components/ui/Button';
 import ThemeToggle from '../components/ui/ThemeToggle';
 
-const allFeatures = [
+const patientFeatures = [
   {
     icon: FileText,
     title: 'Medical Records',
@@ -103,6 +103,65 @@ const allFeatures = [
     iconColor: 'text-sky-600 dark:text-sky-400',
     description: 'Schedule, track, and prepare for medical appointments. Get pre-visit summaries and post-visit notes to make every doctor interaction more productive.',
   },
+  {
+    icon: MessageCircle,
+    title: 'Community Support',
+    tag: 'Community',
+    color: 'from-sky-500/20 to-sky-600/10',
+    iconColor: 'text-sky-600 dark:text-sky-400',
+    description: 'Connect with others on similar health journeys. Share experiences, ask questions, and find support in a safe, moderated environment.',
+  },
+  {
+    icon: Brain,
+    title: 'Mentibot Companion',
+    tag: 'Mental Health',
+    color: 'from-purple-500/20 to-purple-600/10',
+    iconColor: 'text-purple-600 dark:text-purple-400',
+    description: 'Your AI mental health companion providing empathetic chat, guided exercises, mood tracking, and journaling for holistic well-being.',
+  }
+];
+
+const doctorFeatures = [
+  {
+    icon: ScanLine,
+    title: 'AI-Powered OCR',
+    tag: 'Digitisation',
+    color: 'from-blue-500/20 to-indigo-600/10',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    description: 'Instantly scan and convert old, handwritten physical prescriptions and unstructured lab reports into clean, categorised digital formats.',
+  },
+  {
+    icon: MessageSquare,
+    title: 'Patient Chat',
+    tag: 'Data Retrieval',
+    color: 'from-violet-500/20 to-purple-600/10',
+    iconColor: 'text-violet-600 dark:text-violet-400',
+    description: 'Use an intuitive conversational interface to pull up specific past records, blood tests, or old prescriptions instantly without clicking through folders.',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Pre-Appointment Briefing',
+    tag: 'Insights',
+    color: 'from-emerald-500/20 to-teal-600/10',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    description: 'Get a centralised dashboard overview with AI-powered insights summarizing the patient\'s history before they even step into your office.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'CDSS',
+    tag: 'Decision Support',
+    color: 'from-rose-500/20 to-red-600/10',
+    iconColor: 'text-rose-600 dark:text-rose-400',
+    description: 'Clinical Decision Support System analyzing longitudinal health records to provide real-time guidance, flag drug interactions, and suggest lab investigations.',
+  },
+  {
+    icon: FileDown,
+    title: 'EMR Export',
+    tag: 'Interoperability',
+    color: 'from-amber-500/20 to-orange-600/10',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    description: 'Generate standardized, portable clinical summaries in one click, ready to be sent to other healthcare providers or added to external systems.',
+  }
 ];
 
 const FeaturesPage: React.FC = () => (
@@ -162,11 +221,50 @@ const FeaturesPage: React.FC = () => (
       </motion.div>
     </section>
 
-    {/* Features Grid */}
-    <section className="py-16 pb-24">
+    {/* Patient Features Grid */}
+    <section className="py-16 pb-12">
       <div className="container mx-auto px-4">
+        <div className="mb-10 text-center">
+          <h2 className="text-3xl font-bold font-heading">For Patients & Families</h2>
+          <p className="text-muted-foreground mt-2 text-lg">Everything you need to manage your personal health journey.</p>
+        </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {allFeatures.map((feature, i) => (
+          {patientFeatures.map((feature, i) => (
+            <motion.div
+              key={feature.title}
+              className={`group p-7 rounded-2xl bg-gradient-to-br ${feature.color} border border-border/50 hover:border-primary/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.4, delay: (i % 6) * 0.06 }}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`w-12 h-12 rounded-xl bg-white dark:bg-card flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform`}>
+                  <feature.icon className={`h-6 w-6 ${feature.iconColor}`} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-base font-heading">{feature.title}</h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/60 dark:bg-black/20 text-muted-foreground">{feature.tag}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* Doctor Features Grid */}
+    <section className="py-12 pb-24 bg-muted/30">
+      <div className="container mx-auto px-4">
+        <div className="mb-10 text-center">
+          <h2 className="text-3xl font-bold font-heading">For Doctors & Clinics</h2>
+          <p className="text-muted-foreground mt-2 text-lg">Advanced AI tools to streamline your practice and improve patient care.</p>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {doctorFeatures.map((feature, i) => (
             <motion.div
               key={feature.title}
               className={`group p-7 rounded-2xl bg-gradient-to-br ${feature.color} border border-border/50 hover:border-primary/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
