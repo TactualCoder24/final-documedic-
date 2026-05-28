@@ -19,7 +19,7 @@ const roles: { id: RoleType; label: string; emoji: string; desc: string; color: 
   {
     id: 'patient',
     label: 'Patient',
-    emoji: '🧑‍⚕️',
+    emoji: '👤',
     desc: 'Manage your personal health records, medications & appointments.',
     color: 'from-blue-500 to-indigo-600',
     border: 'border-blue-400/40',
