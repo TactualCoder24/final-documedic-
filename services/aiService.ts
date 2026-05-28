@@ -339,7 +339,201 @@ export const chatWithSwasthya = async (message: string): Promise<string> => {
   }
 };
 
+/**
+ * Feature 3: AI-Powered OCR
+ * Reads a handwritten/unstructured medical image and extracts structured info.
+ */
+export const ocrMedicalDocument = async (base64Data: string, mimeType: string): Promise<string> => {
+  if (!ai) return JSON.stringify({ error: 'AI features are currently unavailable.' });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: {
+        parts: [
+          { inlineData: { data: base64Data, mimeType } },
+          {
+            text: `You are an expert medical OCR assistant. Carefully read this image of a medical document (which may be handwritten, a prescription, or a lab report). Extract ALL text and structure it into a clean JSON response with the following fields:
+- documentType: "Prescription" | "Lab Report" | "Clinical Note" | "Other"
+- patientName: (if visible)
+- doctorName: (if visible)
+- date: (if visible)
+- medications: array of { name, dosage, frequency, duration } (for prescriptions)
+- labResults: array of { testName, value, unit, referenceRange, status: "Normal"|"High"|"Low"|"Critical" } (for lab reports)
+- rawText: the full verbatim text extracted from the image
+- summary: a 1-2 sentence plain English summary of what this document contains
+
+Be highly accurate. If a field is not present, omit it from the JSON. Return ONLY valid JSON.`
+          }
+        ]
+      },
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.1,
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error('Error in OCR:', error);
+    return JSON.stringify({ error: 'OCR processing failed. Please try again.' });
+  }
+};
+
+/**
+ * Feature 4: Conversational Chat for Patient Data Retrieval
+ * Doctor asks a natural language question; AI answers using the patient's data as context.
+ */
+export const chatWithPatientData = async (query: string, patientContextJSON: string, chatHistory: {role: string, text: string}[]): Promise<string> => {
+  if (!ai) return 'AI features are currently unavailable.';
+
+  const historyText = chatHistory.map(m => `${m.role === 'doctor' ? 'Doctor' : 'AI'}: ${m.text}`).join('\n');
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Patient Record (JSON):
+${patientContextJSON}
+
+${historyText ? `Previous conversation:\n${historyText}\n` : ''}Doctor's question: ${query}`,
+      config: {
+        systemInstruction: `You are an intelligent medical records assistant for a doctor. You have been given a patient's complete health record in JSON format. Answer the doctor's questions concisely and accurately using ONLY the data provided. 
+Rules:
+- Be direct and clinical in your tone.
+- If data is missing, say so clearly.
+- Use bullet points for lists.
+- Never fabricate data that isn't in the patient record.
+- Always cite the source field (e.g. "From medications list: ...").`,
+        temperature: 0.2,
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error('Error in patient chat:', error);
+    return 'Unable to retrieve data at this time. Please try again.';
+  }
+};
+
+/**
+ * Feature 5: Pre-Appointment AI Briefing
+ * Generates a structured pre-visit summary for a doctor before seeing a patient.
+ */
+export const generatePreAppointmentBriefing = async (patientProfileJSON: string, appointmentReason?: string): Promise<string> => {
+  if (!ai) return 'AI features are currently unavailable.';
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Generate a pre-appointment clinical briefing for the following patient.
+${appointmentReason ? `Reason for today's visit: ${appointmentReason}` : ''}
+
+Patient Data:
+${patientProfileJSON}`,
+      config: {
+        systemInstruction: `You are a clinical decision support AI. Generate a concise pre-appointment briefing for a doctor. Structure it with these exact markdown sections:
+
+## 👤 Patient Overview
+(Name, age, gender, key conditions in 1-2 sentences)
+
+## 💊 Active Medications
+(Bullet list of current medications with dosage)
+
+## 📊 Recent Vitals & Labs
+(Most notable recent values with dates, flag anything abnormal with ⚠️)
+
+## 🎯 Key Concerns for This Visit
+(Bullet list of things the doctor should pay particular attention to)
+
+## 💬 Suggested Topics
+(2-3 clinical questions or topics the doctor might want to raise)
+
+---
+*This is an AI-generated briefing for informational purposes only. Always review the full patient record.*
+
+Be specific with values and dates from the data. Keep each section brief and scannable.`,
+        temperature: 0.3,
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error('Error generating briefing:', error);
+    return 'Unable to generate briefing at this time. Please try again.';
+  }
+};
+
+/**
+ * Feature 6: EMR Export
+ * Formats patient data into a standard EMR-compatible format (FHIR JSON or CSV).
+ */
+export const generateEMRExport = async (patientProfileJSON: string, format: 'FHIR' | 'CSV'): Promise<string> => {
+  if (!ai) return format === 'FHIR' ? '{}' : '';
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Convert this patient health record into a ${format === 'FHIR' ? 'HL7 FHIR R4 compliant JSON Bundle' : 'CSV format with headers'}.
+
+Patient Data:
+${patientProfileJSON}
+
+${format === 'FHIR' ? 
+  'Create a valid FHIR R4 Bundle resource containing Patient, MedicationStatement, Observation, and Condition resources as applicable. Use proper FHIR data types and coding systems (SNOMED, LOINC where appropriate). Return ONLY valid JSON.' : 
+  'Create a CSV with headers and one row per medication/lab result/condition as appropriate. Separate sections with blank lines and section headers. Return ONLY the CSV text, no markdown.'}`,
+      config: {
+        responseMimeType: format === 'FHIR' ? 'application/json' : 'text/plain',
+        temperature: 0.1,
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error('Error generating EMR export:', error);
+    return format === 'FHIR' ? '{"error": "Export failed"}' : 'Export failed';
+  }
+};
+
+/**
+ * Clinical Decision Support System (CDSS)
+ * Analyzes patient's full longitudinal health record and returns evidence-based alerts.
+ */
+export const getCDSSAnalysis = async (patientContextJSON: string): Promise<string> => {
+  if (!ai) return JSON.stringify({ alerts: [], summary: 'AI unavailable.' });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Analyze the following patient's complete health record and generate a Clinical Decision Support (CDSS) report. Patient Data:\n${patientContextJSON}`,
+      config: {
+        systemInstruction: `You are an expert Clinical Decision Support System (CDSS) AI embedded in a doctor's workflow. Analyze the patient's longitudinal health record and generate structured, evidence-based clinical alerts.
+
+Produce a JSON object with:
+- "alerts": array of alert objects, each with:
+  - "type": one of "drug_interaction" | "lab_suggestion" | "diagnosis_flag" | "guideline_alert" | "follow_up"
+  - "severity": one of "critical" | "warning" | "info"
+  - "title": short alert title (max 8 words)
+  - "description": clinical rationale (2-3 sentences, cite specific values from the record)
+  - "recommendation": specific actionable step for the doctor
+  - "evidence": brief evidence basis (e.g., "Based on ADA 2023 guidelines")
+- "summary": a 1-2 sentence overall clinical impression
+
+Rules:
+- Only flag real issues found in the data. Do NOT fabricate alerts.
+- For drug interactions, list the specific drugs involved.
+- For lab suggestions, specify the exact test and why.
+- Severity "critical" = needs immediate action, "warning" = needs attention this visit, "info" = general guidance.
+- If no significant issues found, return an empty alerts array with a clear summary.
+- Return ONLY valid JSON.`,
+        responseMimeType: 'application/json',
+        temperature: 0.1,
+      }
+    });
+    return response.text;
+  } catch (error) {
+    console.error('Error in CDSS analysis:', error);
+    return JSON.stringify({ alerts: [], summary: 'CDSS analysis failed. Please try again.' });
+  }
+};
+
 export const translateTexts = async (texts: string[], targetLang: string): Promise<string[]> => {
+
   if (!ai || targetLang === 'English' || texts.length === 0) return texts;
 
   try {
