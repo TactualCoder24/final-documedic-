@@ -613,7 +613,7 @@ const Landing: React.FC = () => {
                 >
                   <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-bold uppercase tracking-wider">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                    June 2026
+                    Live Now
                   </div>
                   <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <span className="text-4xl">👨‍⚕️</span>
@@ -623,7 +623,7 @@ const Landing: React.FC = () => {
                     Access patient histories, review AI-parsed lab results, manage appointments, and collaborate with care teams.
                   </p>
                   <div className="mt-6 inline-flex items-center gap-2 text-blue-500 font-semibold text-sm">
-                    Coming Soon →
+                    Enter Portal →
                   </div>
                 </Link>
               </motion.div>
