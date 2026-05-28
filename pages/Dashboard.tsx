@@ -4,14 +4,14 @@ import { useAuth } from '../hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Skeleton from '../components/ui/Skeleton';
 import Button from '../components/ui/Button';
-import { Pill, FileText, BrainCircuit, ClipboardList, Search, Bell, Share2, Lightbulb, Activity, GlassWater, Utensils, Plus, HeartPulse, Stethoscope, MapPin, CalendarDays, Settings } from '../components/icons/Icons';
+import { Pill, FileText, BrainCircuit, ClipboardList, Search, Bell, Share2, Lightbulb, Activity, GlassWater, Utensils, Plus, HeartPulse, Stethoscope, MapPin, CalendarDays, Settings, QrCode } from '../components/icons/Icons';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/useToast';
 import { Vital, MedicalRecord, Medication, Reminder, Profile, Symptom, TestOrProcedure } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
-import { getVitals, getRecords, getMedications, getReminders, getProfile, saveProfile, addVital, getSymptoms, getWaterIntake, updateWaterIntake, getTestsAndProcedures } from '../services/dataSupabase';
+import { getVitals, getRecords, getMedications, getReminders, getProfile, saveProfile, addVital, getSymptoms, getWaterIntake, updateWaterIntake, getTestsAndProcedures, getPendingRequests, approveConnectionRequest, rejectConnectionRequest, generateConnectionPin } from '../services/dataSupabase';
 import { getMoodHistory, MoodEntry } from '../services/mentibotSupabase';
 import { calculateHealthScore } from '../services/healthScore';
 
@@ -130,10 +130,14 @@ const Dashboard: React.FC = () => {
   const [waterIntake, setWaterIntake] = React.useState(0);
   const [profile, setProfile]       = React.useState<Profile | null>(null);
   const [moodHistory, setMoodHistory] = React.useState<MoodEntry[]>([]);
+  const [pendingRequests, setPendingRequests] = React.useState<any[]>([]);
+  const [activePin, setActivePin] = React.useState<string | null>(null);
+  const [connectTab, setConnectTab] = React.useState<'pin' | 'qr'>('pin');
   const [isLoading, setIsLoading]   = React.useState(true);
 
   const [isVitalsModalOpen, setIsVitalsModalOpen]   = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
+  const [isQrModalOpen, setIsQrModalOpen]           = React.useState(false);
   const [searchQuery, setSearchQuery]               = React.useState('');
   const { t } = useTranslation();
 
@@ -153,12 +157,13 @@ const Dashboard: React.FC = () => {
           getProfile(user.uid).catch(e => { console.error('getProfile error:', e); return null; }),
           getTestsAndProcedures(user.uid).catch(e => { console.error('getTestsAndProcedures error:', e); return []; }),
           getMoodHistory(user.uid).catch(e => { console.error('getMoodHistory error:', e); return []; }),
+          getPendingRequests(user.uid).catch(e => { console.error('getPendingRequests error:', e); return []; }),
         ]);
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Dashboard data fetch timeout')), 10000)
         );
         const result = await Promise.race([fetchPromise, timeoutPromise]) as any[];
-        const [vitalsData, recordsData, medsData, remindersData, symptomsData, waterIntakeData, profileData, testsData, moodData] = result;
+        const [vitalsData, recordsData, medsData, remindersData, symptomsData, waterIntakeData, profileData, testsData, moodData, requestsData] = result;
 
         setVitals(vitalsData);
         setRecords(recordsData);
@@ -169,6 +174,7 @@ const Dashboard: React.FC = () => {
         setWaterIntake(waterIntakeData);
         setProfile(profileData);
         setMoodHistory(moodData);
+        setPendingRequests(requestsData);
 
         const lastProfileSkipDate = localStorage.getItem('profileUpdateSkippedDate');
         if (lastProfileSkipDate !== todayStr && profileData && !profileData.age && !profileData.conditions && !profileData.goals) {
@@ -223,6 +229,9 @@ const Dashboard: React.FC = () => {
     try {
       const formData = new FormData(e.currentTarget);
       const newProfile: Profile = {
+        name: formData.get('name') as string || profile?.name,
+        email: formData.get('email') as string,
+        phone: formData.get('phone') as string,
         age: formData.get('age') as string,
         conditions: formData.get('conditions') as string,
         goals: formData.get('goals') as string,
@@ -620,9 +629,58 @@ const Dashboard: React.FC = () => {
     );
   };
 
+  const handleGeneratePin = async () => {
+    if (!user) return;
+    try {
+      const pin = await generateConnectionPin(user.uid);
+      setActivePin(pin);
+      setIsQrModalOpen(true); // Reuse the modal or create a new one. Let's create a new state or just show it in the QR modal.
+    } catch (e) {
+      toast.error('Failed to generate PIN');
+    }
+  };
+
+  const handleApproveRequest = async (requestId: string, doctorId: string) => {
+    if (!user) return;
+    try {
+      await approveConnectionRequest(requestId, user.uid, doctorId);
+      toast.success('Doctor connected successfully!');
+      refreshData();
+    } catch (e) {
+      toast.error('Failed to approve request');
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      await rejectConnectionRequest(requestId);
+      toast.success('Request rejected.');
+      refreshData();
+    } catch (e) {
+      toast.error('Failed to reject request');
+    }
+  };
+
   return (
     <>
       <div className="space-y-6">
+        {pendingRequests.length > 0 && (
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center gap-3 text-indigo-900 dark:text-indigo-200">
+              <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-800 flex items-center justify-center shrink-0">
+                <Stethoscope className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-semibold">{pendingRequests[0].doctorName} wants to connect with you.</p>
+                <p className="text-sm opacity-90">Approve to allow them to view your health records securely.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0 w-full sm:w-auto">
+              <Button variant="outline" className="flex-1 sm:flex-none border-indigo-200 text-indigo-700 hover:bg-indigo-100" onClick={() => handleRejectRequest(pendingRequests[0].id)}>Decline</Button>
+              <Button className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white" onClick={() => handleApproveRequest(pendingRequests[0].id, pendingRequests[0].doctorId)}>Approve</Button>
+            </div>
+          </div>
+        )}
         {/* Page header */}
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
           <div>
@@ -645,7 +703,15 @@ const Dashboard: React.FC = () => {
             </Button>
             <Button onClick={handleShareProfile} variant="gradient" className="gap-2">
               <Share2 className="h-4 w-4" />
-              Share Emergency Profile
+              Share Link
+            </Button>
+            <Button onClick={handleGeneratePin} variant="secondary" className="gap-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300">
+              <span className="font-bold">#</span>
+              Share PIN
+            </Button>
+            <Button onClick={() => { setActivePin(null); setIsQrModalOpen(true); }} variant="secondary" className="gap-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300">
+              <QrCode className="h-4 w-4" />
+              Emergency QR
             </Button>
           </div>
         </div>
@@ -739,6 +805,8 @@ const Dashboard: React.FC = () => {
         <form className="space-y-4" onSubmit={handleSaveProfile}>
           <p className="text-sm text-muted-foreground">Help us personalise your experience with some basic information.</p>
           {[
+            { id: 'email', label: 'Email Address', placeholder: 'e.g., patient@example.com', type: 'email', defaultValue: profile?.email || '' },
+            { id: 'phone', label: 'Phone Number', placeholder: 'e.g., +1 555-0199', type: 'tel', defaultValue: profile?.phone || '' },
             { id: 'age', label: 'Age', placeholder: 'e.g., 35', type: 'number', defaultValue: profile?.age || '' },
             { id: 'waterGoal', label: 'Daily Water Goal (glasses)', placeholder: 'e.g., 8', type: 'number', defaultValue: String(profile?.waterGoal || 8) },
             { id: 'bloodType', label: 'Blood Type', placeholder: 'e.g., O+', type: 'text', defaultValue: profile?.bloodType || '' },
@@ -758,6 +826,72 @@ const Dashboard: React.FC = () => {
             <Button type="submit">Save Profile</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Emergency & Connection Modal */}
+      <Modal title={activePin ? "Connect with your Doctor" : "Your Emergency QR Code"} isOpen={isQrModalOpen} onClose={() => { setIsQrModalOpen(false); setActivePin(null); }}>
+        <div className="flex flex-col items-center text-center space-y-4 py-4">
+          {activePin ? (
+            <div className="w-full flex flex-col gap-4 animate-in fade-in">
+              <div className="flex p-1 bg-secondary rounded-lg mx-auto w-full max-w-xs">
+                <button onClick={() => setConnectTab('pin')} className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors ${connectTab === 'pin' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>6-Digit PIN</button>
+                <button onClick={() => setConnectTab('qr')} className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors ${connectTab === 'qr' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>QR Code</button>
+              </div>
+
+              {connectTab === 'pin' ? (
+                <div className="p-8 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/40 rounded-3xl w-full">
+                  <p className="text-indigo-600 dark:text-indigo-400 font-semibold mb-2 uppercase tracking-widest text-sm">Your temporary PIN</p>
+                  <h2 className="text-5xl font-black tracking-[0.2em] text-indigo-950 dark:text-indigo-100 font-heading">{activePin}</h2>
+                  <p className="text-sm text-indigo-600/80 dark:text-indigo-400/80 mt-4 font-medium flex items-center justify-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    Expires in 15 minutes
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100">
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=documedic-connect:${user?.uid}`} 
+                      alt="Connection QR Code" 
+                      className="w-48 h-48 sm:w-64 sm:h-64 object-contain"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Doctor can scan this using the 'Add Patient' camera.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 bg-white rounded-2xl shadow-sm border border-slate-100">
+              {user?.uid ? (
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}#/emergency/${user.uid}`)}`} 
+                  alt="Emergency QR Code" 
+                  className="w-48 h-48 sm:w-64 sm:h-64 object-contain"
+                />
+              ) : (
+                <div className="w-48 h-48 flex items-center justify-center bg-slate-50 text-muted-foreground rounded-xl">
+                  Loading...
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div>
+            <h3 className="font-bold text-lg">{activePin ? (connectTab === 'pin' ? "Read this to your doctor" : "Show this to your doctor") : "Scan in case of emergency"}</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
+              {activePin 
+                ? (connectTab === 'pin' ? "Your doctor can enter this 6-digit PIN on their dashboard to instantly connect with your account." : "The doctor can instantly link your account by scanning this code.")
+                : "First responders and doctors can scan this code to instantly view your critical medical history, allergies, and emergency contacts."}
+            </p>
+          </div>
+          
+          {!activePin && (
+            <Button onClick={handleShareProfile} variant="outline" className="mt-2 w-full sm:w-auto">
+              <Share2 className="h-4 w-4 mr-2" />
+              Copy Profile Link Instead
+            </Button>
+          )}
+        </div>
       </Modal>
     </>
   );

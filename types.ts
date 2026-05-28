@@ -139,6 +139,8 @@ export interface Vital {
 export interface Profile {
   id?: string;
   name?: string;
+  email?: string;
+  phone?: string;
   age?: string;
   conditions?: string;
   goals?: string;

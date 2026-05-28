@@ -63,6 +63,8 @@ export const saveProfile = async (userId: string, profile: Profile): Promise<voi
         .upsert({
             id: userId,
             name: profile.name,
+            email: profile.email,
+            phone: profile.phone,
             age: profile.age,
             conditions: profile.conditions,
             goals: profile.goals,
@@ -1645,3 +1647,150 @@ export const deleteUserData = async (userId: string): Promise<void> => {
     console.warn('deleteUserData: User data will be automatically deleted when auth user is removed.');
     console.warn('To delete a user, use Supabase Auth admin functions.');
 };
+
+// ============================================================================
+// NATIVE CONNECTION WORKFLOWS
+// ============================================================================
+
+// --- 1. 6-Digit PIN Method ---
+
+export const generateConnectionPin = async (patientId: string): Promise<string> => {
+    // Generate a random 6-digit PIN
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    // Expires in 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60000).toISOString();
+
+    const { error } = await supabase.from('patient_pins').insert({
+        pin,
+        patient_id: patientId,
+        expires_at: expiresAt
+    });
+
+    if (error) {
+        console.error('Error generating PIN:', error);
+        throw error;
+    }
+    return pin;
+};
+
+export const connectViaPin = async (doctorId: string, pin: string): Promise<Profile | null> => {
+    // First, try to fetch the PIN to see if it exists and is not expired
+    const { data: pinData, error: pinError } = await supabase
+        .from('patient_pins')
+        .select('patient_id, expires_at')
+        .eq('pin', pin)
+        .single();
+
+    if (pinError || !pinData) {
+        console.error('PIN error or not found:', pinError);
+        throw new Error('Invalid or expired PIN.');
+    }
+
+    if (new Date(pinData.expires_at) < new Date()) {
+        throw new Error('This PIN has expired.');
+    }
+
+    const patientId = pinData.patient_id;
+
+    // Link the patient to the doctor
+    await addPatientToDoctor(doctorId, patientId);
+
+    // Fetch the patient profile to return it
+    const profile = await getProfile(patientId);
+
+    // Delete the PIN so it can't be reused
+    await supabase.from('patient_pins').delete().eq('pin', pin);
+
+    return profile;
+};
+
+// --- 2. Global Search & Approval Workflow ---
+
+export const searchPatients = async (query: string): Promise<Profile[]> => {
+    if (!query) return [];
+    
+    // Search by email, phone, or name using OR logic
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`email.ilike.%${query}%,phone.ilike.%${query}%,name.ilike.%${query}%`)
+        .eq('role', 'patient')
+        .limit(10);
+
+    if (error) {
+        console.error('Error searching patients:', error);
+        throw error;
+    }
+
+    return data || [];
+};
+
+export const sendConnectionRequest = async (doctorId: string, patientId: string): Promise<void> => {
+    const { error } = await supabase.from('connection_requests').insert({
+        doctor_id: doctorId,
+        patient_id: patientId,
+        status: 'pending'
+    });
+
+    if (error) {
+        console.error('Error sending connection request:', error);
+        throw error;
+    }
+};
+
+export const getPendingRequests = async (patientId: string): Promise<any[]> => {
+    const { data, error } = await supabase
+        .from('connection_requests')
+        .select('id, doctor_id, created_at, status')
+        .eq('patient_id', patientId)
+        .eq('status', 'pending');
+
+    if (error) {
+        console.error('Error getting pending requests:', error);
+        return [];
+    }
+
+    // We need to fetch the doctor's name for each request
+    const requests = [];
+    for (const req of (data || [])) {
+        const doctorProfile = await getProfile(req.doctor_id);
+        requests.push({
+            id: req.id,
+            doctorId: req.doctor_id,
+            doctorName: doctorProfile.name || 'Unknown Doctor',
+            createdAt: req.created_at,
+            status: req.status
+        });
+    }
+
+    return requests;
+};
+
+export const approveConnectionRequest = async (requestId: string, patientId: string, doctorId: string): Promise<void> => {
+    // Update status to approved
+    const { error: updateError } = await supabase
+        .from('connection_requests')
+        .update({ status: 'approved' })
+        .eq('id', requestId);
+
+    if (updateError) {
+        console.error('Error approving request:', updateError);
+        throw updateError;
+    }
+
+    // Link the patient and doctor natively
+    await addPatientToDoctor(doctorId, patientId);
+};
+
+export const rejectConnectionRequest = async (requestId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('connection_requests')
+        .update({ status: 'rejected' })
+        .eq('id', requestId);
+
+    if (error) {
+        console.error('Error rejecting request:', error);
+        throw error;
+    }
+};
+

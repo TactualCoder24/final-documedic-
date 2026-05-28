@@ -3,19 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import Logo from '../components/icons/Logo';
-import {
-  Users, BarChart3 as LayoutDashboard, CalendarDays,
-  TestTube2 as FlaskConical, Search, ArrowLeft, Plus,
-  Send, Brain, FileDown, MessageSquare, Sparkles, X,
-  Loader2, ScanLine, Copy, CheckCheck, ShieldAlert, AlertTriangle,
-  Info, CheckCircle2, Upload, BrainCircuit
+import { 
+  FileText, LogOut, CheckCircle2, FileDown, 
+  Settings, Brain, Plus, X, Search, CalendarDays, BrainCircuit, MessageSquare, ArrowLeft, Loader2, Share2, Pill, HeartPulse, Bell, ScanLine, TestTube2 as FlaskConical, Play, CheckCheck, Copy, Sparkles, BarChart3 as LayoutDashboard, Users, Activity, ShieldAlert, AlertTriangle, Info, Send
 } from '../components/icons/Icons';
+import {
+  Users as UsersIcon, BarChart3 as LayoutDashboardIcon, CalendarDays as CalendarDaysIcon,
+  TestTube2 as FlaskConicalIcon, Search as SearchIcon, ArrowLeft as ArrowLeftIcon, Plus as PlusIcon,
+  Send as SendIcon, Brain as BrainIcon, FileDown as FileDownIcon, MessageSquare as MessageSquareIcon, Sparkles as SparklesIcon, X as XIcon,
+  Loader2 as Loader2Icon, ScanLine as ScanLineIcon, Copy as CopyIcon, CheckCheck as CheckCheckIcon, ShieldAlert as ShieldAlertIcon, AlertTriangle as AlertTriangleIcon,
+  Info as InfoIcon, CheckCircle2 as CheckCircle2Icon, Upload as UploadIcon, BrainCircuit as BrainCircuitIcon
+} from '../components/icons/Icons';
+
+declare var Html5QrcodeScanner: any;
+
 import PatientProfile from '@/components/doctor/PatientProfile.tsx';
 import {
   getDoctorPatients, addPatientToDoctor, getProfile, saveProfile,
   getDoctorAppointmentsToday, getDoctorTasks, addDoctorTask,
   updateTaskStatus, updateAppointment, getIntakeFormByAppointment,
-  getMedications, getVitals, getSymptoms, getRecords
+  getMedications, getVitals, getSymptoms, getRecords,
+  connectViaPin, searchPatients, sendConnectionRequest
 } from '../services/dataSupabase';
 import {
   ocrMedicalDocument, chatWithPatientData,
@@ -88,7 +96,11 @@ const DoctorDashboard: React.FC = () => {
   const [patients, setPatients] = useState<(Profile & { id: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddingPatient, setIsAddingPatient] = useState(false);
-  const [newPatientId, setNewPatientId] = useState('');
+  const [addPatientTab, setAddPatientTab] = useState<'pin' | 'search' | 'qr'>('pin');
+  const [pinInput, setPinInput] = useState('');
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [globalSearchResults, setGlobalSearchResults] = useState<Profile[]>([]);
+  const [isSearchingGlobal, setIsSearchingGlobal] = useState(false);
   const [doctorProfile, setDoctorProfile] = useState<Profile | null>(null);
   const [isSpecialtyModalOpen, setIsSpecialtyModalOpen] = useState(false);
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
@@ -139,6 +151,33 @@ const DoctorDashboard: React.FC = () => {
     if (user) { loadDoctorProfile(); loadPatients(); loadQueueAndTasks(); }
   }, [user]);
 
+  useEffect(() => {
+    let scanner: any = null;
+    if (isAddingPatient && addPatientTab === 'qr') {
+      scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+      scanner.render(async (decodedText: string) => {
+        if (decodedText.startsWith('documedic-connect:')) {
+          scanner.clear();
+          const patientId = decodedText.split(':')[1];
+          try {
+            await addPatientToDoctor(user!.uid, patientId);
+            setIsAddingPatient(false);
+            setAddPatientTab('pin');
+            loadPatients();
+            alert('Patient connected successfully via QR Code!');
+          } catch (e) {
+            alert('Failed to connect patient.');
+          }
+        }
+      }, () => {});
+    }
+    return () => {
+      if (scanner) {
+        scanner.clear().catch(() => {});
+      }
+    };
+  }, [isAddingPatient, addPatientTab, user]);
+
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
 
   const loadQueueAndTasks = async () => {
@@ -185,11 +224,44 @@ const DoctorDashboard: React.FC = () => {
   // ─── Handlers ───────────────────────────────────────────────────────────────
   const handleSignOut = async () => { await signOut(); navigate('/'); };
 
-  const handleAddPatient = async (e: React.FormEvent) => {
+  const handlePinConnect = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPatientId.trim() || !user) return;
-    await addPatientToDoctor(user.uid, newPatientId.trim()).catch(() => alert('Failed to add patient.'));
-    setNewPatientId(''); setIsAddingPatient(false); loadPatients();
+    if (!pinInput.trim() || !user) return;
+    try {
+      await connectViaPin(user.uid, pinInput.trim());
+      setPinInput('');
+      setIsAddingPatient(false);
+      loadPatients();
+      alert('Patient connected successfully!');
+    } catch (err: any) {
+      alert(err.message || 'Failed to connect via PIN.');
+    }
+  };
+
+  const handleGlobalSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!globalSearchQuery.trim()) return;
+    setIsSearchingGlobal(true);
+    try {
+      const results = await searchPatients(globalSearchQuery.trim());
+      setGlobalSearchResults(results);
+    } catch (err) {
+      alert('Search failed.');
+    } finally {
+      setIsSearchingGlobal(false);
+    }
+  };
+
+  const handleSendRequest = async (patientId: string) => {
+    if (!user) return;
+    try {
+      await sendConnectionRequest(user.uid, patientId);
+      alert('Connection request sent to patient!');
+      // remove from search results visually to prevent multiple clicks
+      setGlobalSearchResults(prev => prev.filter(p => p.id !== patientId));
+    } catch (err) {
+      alert('Failed to send request. You may have already sent one.');
+    }
   };
 
   const handleSaveSpecialty = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -565,17 +637,71 @@ const DoctorDashboard: React.FC = () => {
                 )}
               </div>
 
-              {/* Add Patient Form */}
+              {/* Add Patient Workflow */}
               {isAddingPatient && activeTab === 'patients' && (
-                <form onSubmit={handleAddPatient} className="p-4 rounded-xl bg-card border border-border/50 shadow-sm flex flex-col sm:flex-row items-end gap-3">
-                  <div className="flex-1 w-full">
-                    <label className="block text-xs font-bold text-muted-foreground mb-1">Patient UUID</label>
-                    <input type="text" required value={newPatientId} onChange={e => setNewPatientId(e.target.value)}
-                      className="w-full h-10 px-3 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      placeholder="Enter patient's exact UUID" />
+                <div className="p-5 rounded-2xl bg-card border border-border/50 shadow-md flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                    <h3 className="font-bold text-lg">Connect with Patient</h3>
+                    <button onClick={() => setIsAddingPatient(false)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
                   </div>
-                  <button type="submit" className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm w-full sm:w-auto">Link Patient</button>
-                </form>
+                  
+                  <div className="flex p-1 bg-secondary rounded-lg">
+                    <button onClick={() => setAddPatientTab('pin')} className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors ${addPatientTab === 'pin' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>6-Digit PIN</button>
+                    <button onClick={() => setAddPatientTab('qr')} className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors ${addPatientTab === 'qr' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>Scan QR</button>
+                    <button onClick={() => setAddPatientTab('search')} className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition-colors ${addPatientTab === 'search' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>Search Directory</button>
+                  </div>
+
+                  {addPatientTab === 'pin' ? (
+                    <form onSubmit={handlePinConnect} className="flex flex-col gap-3 pt-2">
+                      <p className="text-sm text-muted-foreground">Ask the patient to generate a temporary PIN on their dashboard and enter it below.</p>
+                      <div className="flex gap-2">
+                        <input type="text" required value={pinInput} onChange={e => setPinInput(e.target.value)}
+                          className="flex-1 h-11 px-4 text-center tracking-[0.3em] font-mono text-xl font-bold border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                          placeholder="------" maxLength={6} />
+                        <button type="submit" className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm flex-shrink-0 transition-colors">Connect</button>
+                      </div>
+                    </form>
+                  ) : addPatientTab === 'qr' ? (
+                    <div className="flex flex-col gap-3 pt-2 items-center">
+                      <p className="text-sm text-muted-foreground text-center">Scan the QR code from the patient's phone screen to connect instantly.</p>
+                      <div id="reader" className="w-full max-w-sm rounded-xl overflow-hidden border border-border/50 bg-background"></div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4 pt-2">
+                      <p className="text-sm text-muted-foreground">Search by patient's registered email, phone number, or name.</p>
+                      <form onSubmit={handleGlobalSearch} className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input type="text" value={globalSearchQuery} onChange={e => setGlobalSearchQuery(e.target.value)}
+                            className="w-full h-11 pl-9 pr-4 border border-border bg-background rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                            placeholder="Email, phone or name..." required />
+                        </div>
+                        <button type="submit" disabled={isSearchingGlobal} className="h-11 px-5 bg-secondary hover:bg-secondary/80 text-foreground font-semibold rounded-xl text-sm flex items-center gap-2 transition-colors">
+                          {isSearchingGlobal ? <Loader2 size={16} className="animate-spin" /> : 'Search'}
+                        </button>
+                      </form>
+
+                      {globalSearchResults.length > 0 && (
+                        <div className="max-h-60 overflow-y-auto border border-border/50 rounded-xl divide-y divide-border/50">
+                          {globalSearchResults.map(p => (
+                            <div key={p.id} className="flex items-center justify-between p-3 bg-background hover:bg-secondary/20 transition-colors">
+                              <div>
+                                <p className="font-semibold text-sm">{p.name || 'Unknown Patient'}</p>
+                                <p className="text-xs text-muted-foreground">{p.email || p.phone || 'No contact info'}</p>
+                              </div>
+                              <button onClick={() => handleSendRequest(p.id!)} className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 text-xs font-semibold rounded-lg transition-colors">
+                                Request Link
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {globalSearchResults.length === 0 && globalSearchQuery && !isSearchingGlobal && (
+                        <p className="text-sm text-center text-muted-foreground py-4">No patients found. Please ask them to update their profile.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* ── OVERVIEW TAB ── */}
