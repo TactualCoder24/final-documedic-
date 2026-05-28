@@ -302,6 +302,12 @@ const Landing: React.FC = () => {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" asChild>
+              <Link to="/doctor-dashboard">{t('nav.item.DoctorDashboard', 'Doctor Dashboard')}</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link to="/dashboard">{t('nav.item.PatientDashboard', 'Patient Dashboard')}</Link>
+            </Button>
+            <Button variant="ghost" asChild>
               <Link to="/community">{t('nav.item.Community', 'Community')}</Link>
             </Button>
             <Button variant="ghost" asChild>
@@ -332,6 +338,12 @@ const Landing: React.FC = () => {
             className="md:hidden bg-background border-b border-border overflow-hidden"
           >
             <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+              <Button variant="ghost" asChild>
+                <Link to="/doctor-dashboard" onClick={() => setIsMenuOpen(false)}>{t('nav.item.DoctorDashboard', 'Doctor Dashboard')}</Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>{t('nav.item.PatientDashboard', 'Patient Dashboard')}</Link>
+              </Button>
               <Button variant="ghost" asChild>
                 <Link to="/community" onClick={() => setIsMenuOpen(false)}>{t('nav.item.Community', 'Community')}</Link>
               </Button>
