@@ -16,7 +16,7 @@ All code changes are complete! Here's what was implemented:
 
 ### Step 1: Get Your Supabase Anon Key
 
-1. Go to your Supabase project: https://pdeoazosrtlgsnkuojve.supabase.co
+1. Go to your Supabase project:
 2. Click **Settings** (gear icon) in the left sidebar
 3. Click **API** section
 4. Copy the **anon public** key (long string starting with `eyJ...`)
@@ -27,7 +27,7 @@ Edit your `.env.local` file and add:
 
 ```env
 GEMINI_API_KEY=your_existing_key_here
-VITE_SUPABASE_URL=https://pdeoazosrtlgsnkuojve.supabase.co
+VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=paste_your_anon_key_here
 ```
 

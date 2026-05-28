@@ -1,5 +1,34 @@
 import { useEffect } from 'react';
-import { translateTexts } from '../services/aiService';
+import translationEN from '../locales/en/translation.json';
+import translationHI from '../locales/hi/translation.json';
+import translationPA from '../locales/pa/translation.json';
+
+const flattenJSON = (obj: any, prefix = ''): Record<string, string> => {
+    return Object.keys(obj).reduce((acc: Record<string, string>, k: string) => {
+        const pre = prefix.length ? prefix + '.' : '';
+        if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
+            Object.assign(acc, flattenJSON(obj[k], pre + k));
+        } else {
+            acc[pre + k] = obj[k];
+        }
+        return acc;
+    }, {});
+};
+
+const enFlat = flattenJSON(translationEN);
+const hiFlat = flattenJSON(translationHI);
+const paFlat = flattenJSON(translationPA);
+
+const staticDicts: Record<string, Record<string, string>> = {
+    'Hindi': Object.keys(enFlat).reduce((acc: Record<string, string>, key) => {
+        if (hiFlat[key]) acc[enFlat[key].trim()] = hiFlat[key];
+        return acc;
+    }, {}),
+    'Punjabi': Object.keys(enFlat).reduce((acc: Record<string, string>, key) => {
+        if (paFlat[key]) acc[enFlat[key].trim()] = paFlat[key];
+        return acc;
+    }, {})
+};
 
 export const SUPPORTED_LANGUAGES = [
     'English', 'Hindi', 'Punjabi', 'Bengali', 'Marathi', 'Kannada', 'Tamil', 'Telugu', 'Malayalam'
@@ -51,28 +80,20 @@ export const AutoTranslator = () => {
             const uniqueTexts = Array.from(textsToFetch.keys());
 
             if (uniqueTexts.length > 0) {
-                const chunkSize = 25;
-                for (let i = 0; i < uniqueTexts.length; i += chunkSize) {
-                    const chunk = uniqueTexts.slice(i, i + chunkSize);
-                    try {
-                        const translated = await translateTexts(chunk, currentLang);
+                const dict = staticDicts[currentLang] || {};
 
-                        chunk.forEach((originalText, index) => {
-                            const transText = translated[index];
-                            if (transText && transText !== originalText) {
-                                translationCache[originalText] = transText;
-                                textsToFetch.get(originalText)?.forEach(n => {
-                                    if (n.isConnected && n.nodeValue) {
-                                        n.nodeValue = n.nodeValue.replace(originalText, transText);
-                                    }
-                                });
+                uniqueTexts.forEach((originalText) => {
+                    const transText = dict[originalText.trim()];
+                    if (transText && transText !== originalText) {
+                        translationCache[originalText] = transText;
+                        textsToFetch.get(originalText)?.forEach(n => {
+                            if (n.isConnected && n.nodeValue) {
+                                n.nodeValue = n.nodeValue.replace(originalText, transText);
                             }
                         });
-                        localStorage.setItem(`lang_cache_${currentLang}`, JSON.stringify(translationCache));
-                    } catch (e) {
-                        console.error("Translation fail", e);
                     }
-                }
+                });
+                localStorage.setItem(`lang_cache_${currentLang}`, JSON.stringify(translationCache));
             }
 
             isTranslating = false;
