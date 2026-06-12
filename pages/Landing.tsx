@@ -13,6 +13,7 @@ import AnimatedCounter from '../components/ui/AnimatedCounter';
 import SwasthyaAssistant from '../components/SwasthyaAssistant';
 import BetaRegistrationModal from '../components/BetaRegistrationModal';
 import LandingOnboardingWizard from '../components/walkthrough/LandingOnboardingWizard';
+import { ROLE_HOME } from '../constants/roles';
 
 const features = [
   {
@@ -218,7 +219,7 @@ const InteractiveDashboardMockup = () => {
 
 
 const Landing: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, userRole } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -240,10 +241,10 @@ const Landing: React.FC = () => {
   }, [location.hash]);
 
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
+    if (user && userRole) {
+      navigate(ROLE_HOME[userRole] || '/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, userRole, navigate]);
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     // This handler is for same-page navigation on the landing page.
@@ -653,7 +654,7 @@ const Landing: React.FC = () => {
                 >
                   <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-wider">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    June 2026
+                    Live Now
                   </div>
                   <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <span className="text-4xl">🏥</span>
@@ -662,8 +663,8 @@ const Landing: React.FC = () => {
                   <p className="text-muted-foreground text-sm leading-relaxed">
                     Enterprise portal for managing patient populations, OPD queues, billing workflows, and department analytics.
                   </p>
-                  <div className="mt-6 inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
-                    Coming Soon →
+                  <div className="mt-6 inline-flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm group-hover:gap-3 transition-all">
+                    Enter Portal →
                   </div>
                 </Link>
               </motion.div>

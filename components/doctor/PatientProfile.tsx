@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { HeartPulse, Pill, FileText, Bell, AlertTriangle, Activity } from '../../components/icons/Icons';
-import { getVitals, getRecords, getMedications, getSymptoms } from '../../services/dataSupabase';
-import { Vital, MedicalRecord, Medication, Profile, Symptom } from '../../types';
+import { HeartPulse, Pill, FileText, Bell, AlertTriangle, Activity, Plus, Send } from '../../components/icons/Icons';
+import { getVitals, getRecords, getMedications, getSymptoms, getPrescriptionsForPatient, getReferralsForPatient } from '../../services/dataSupabase';
+import { Vital, MedicalRecord, Medication, Profile, Symptom, Prescription, Referral } from '../../types';
 import { calculateHealthScore } from '../../services/healthScore';
+import Button from '../ui/Button';
+import PrescriptionWriter from './PrescriptionWriter';
+import PrescriptionHistory from './PrescriptionHistory';
+import DentalChart from './DentalChart';
+import ReferralModal from './ReferralModal';
+import ReferralHistory from './ReferralHistory';
+import PatientMessages from './PatientMessages';
 
 /* ── tiny sparkline component (CSS-only) ─────────────────────────── */
 const Sparkline: React.FC<{ values: number[]; color?: string }> = ({ values, color = 'hsl(var(--primary))' }) => {
@@ -52,27 +59,61 @@ const StatTile = ({ label, value, sub, iconBg = 'bg-blue-50 dark:bg-primary/10',
   );
 };
 
-const PatientProfile = ({ patient, patientId }: { patient: Profile, patientId: string }) => {
+interface PatientProfileProps {
+  patient: Profile;
+  patientId: string;
+  doctorId?: string;
+  doctorProfile?: Profile | null;
+}
+
+const PatientProfile = ({ patient, patientId, doctorId, doctorProfile }: PatientProfileProps) => {
   const [vitals, setVitals] = useState<Vital[]>([]);
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRxWriterOpen, setIsRxWriterOpen] = useState(false);
+  const [isReferralOpen, setIsReferralOpen] = useState(false);
+
+  const refreshPrescriptions = useCallback(async () => {
+    try {
+      const fetched = await getPrescriptionsForPatient(patientId);
+      setPrescriptions(fetched);
+    } catch (error) {
+      console.error("Error fetching prescriptions", error);
+    }
+  }, [patientId]);
+
+  const refreshReferrals = useCallback(async () => {
+    if (!doctorId) return;
+    try {
+      const fetched = await getReferralsForPatient(doctorId, patientId);
+      setReferrals(fetched);
+    } catch (error) {
+      console.error("Error fetching referrals", error);
+    }
+  }, [doctorId, patientId]);
 
   useEffect(() => {
     const fetchPatientData = async () => {
       setLoading(true);
       try {
-        const [fetchedVitals, fetchedRecords, fetchedMeds, fetchedSymptoms] = await Promise.all([
+        const [fetchedVitals, fetchedRecords, fetchedMeds, fetchedSymptoms, fetchedRx, fetchedReferrals] = await Promise.all([
           getVitals(patientId),
           getRecords(patientId),
           getMedications(patientId),
-          getSymptoms(patientId)
+          getSymptoms(patientId),
+          getPrescriptionsForPatient(patientId),
+          doctorId ? getReferralsForPatient(doctorId, patientId) : Promise.resolve([])
         ]);
         setVitals(fetchedVitals);
         setRecords(fetchedRecords);
         setMedications(fetchedMeds);
         setSymptoms(fetchedSymptoms);
+        setPrescriptions(fetchedRx);
+        setReferrals(fetchedReferrals);
       } catch (error) {
         console.error("Error fetching patient specific data", error);
       } finally {
@@ -80,7 +121,7 @@ const PatientProfile = ({ patient, patientId }: { patient: Profile, patientId: s
       }
     };
     if (patientId) fetchPatientData();
-  }, [patientId]);
+  }, [patientId, doctorId]);
 
   if (loading) {
     return <div className="text-center p-12 text-muted-foreground">Loading patient data...</div>;
@@ -161,6 +202,81 @@ const PatientProfile = ({ patient, patientId }: { patient: Profile, patientId: s
             />
          </div>
       </div>
+
+      {/* Prescriptions */}
+      <div>
+         <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold font-heading flex items-center gap-2">
+               <span className="w-1.5 h-5 rounded-full bg-emerald-500 inline-block" />
+               Prescriptions
+            </h2>
+            {doctorId && (
+              <Button size="sm" onClick={() => setIsRxWriterOpen(true)} className="gap-1.5">
+                <Plus className="h-3.5 w-3.5" /> New Prescription
+              </Button>
+            )}
+         </div>
+         <PrescriptionHistory
+            prescriptions={prescriptions}
+            doctorProfile={doctorProfile || null}
+            patient={{ ...patient, id: patientId }}
+            onChange={refreshPrescriptions}
+         />
+      </div>
+
+      {/* Specialty template: Dental chart for dentists */}
+      {doctorId && doctorProfile?.specialty?.toLowerCase().includes('dent') && (
+        <div>
+           <h2 className="text-lg font-bold font-heading mb-4 flex items-center gap-2">
+              <span className="w-1.5 h-5 rounded-full bg-blue-500 inline-block" />
+              Dental Chart
+           </h2>
+           <DentalChart doctorId={doctorId} patientId={patientId} />
+        </div>
+      )}
+
+      {/* Messages & Reminders */}
+      {doctorId && (
+        <PatientMessages doctorId={doctorId} doctorName={doctorProfile?.name} patient={{ ...patient, id: patientId }} />
+      )}
+
+      {/* Referrals */}
+      {doctorId && (
+        <div>
+           <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold font-heading flex items-center gap-2">
+                 <span className="w-1.5 h-5 rounded-full bg-purple-500 inline-block" />
+                 Referrals
+              </h2>
+              <Button size="sm" onClick={() => setIsReferralOpen(true)} className="gap-1.5">
+                <Send className="h-3.5 w-3.5" /> Refer Patient
+              </Button>
+           </div>
+           <ReferralHistory referrals={referrals} />
+        </div>
+      )}
+
+      {doctorId && (
+        <PrescriptionWriter
+          isOpen={isRxWriterOpen}
+          onClose={() => setIsRxWriterOpen(false)}
+          doctorId={doctorId}
+          doctorProfile={doctorProfile || null}
+          patient={{ ...patient, id: patientId }}
+          onSaved={refreshPrescriptions}
+        />
+      )}
+
+      {doctorId && (
+        <ReferralModal
+          isOpen={isReferralOpen}
+          onClose={() => setIsReferralOpen(false)}
+          doctorId={doctorId}
+          doctorProfile={doctorProfile || null}
+          patient={{ ...patient, id: patientId }}
+          onSaved={refreshReferrals}
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          {/* Charts Column */}

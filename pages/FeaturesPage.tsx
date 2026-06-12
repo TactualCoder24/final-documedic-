@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, Pill, BrainCircuit, Bell, Lightbulb, QrCode, HeartPulse, Activity, ClipboardList, Moon, Utensils, Users, CalendarDays, ShieldCheck, MessageCircle, Brain, ScanLine, MessageSquare, FileDown } from '../components/icons/Icons';
+import { FileText, Pill, BrainCircuit, Bell, Lightbulb, QrCode, HeartPulse, Activity, ClipboardList, Moon, Utensils, Users, CalendarDays, ShieldCheck, MessageCircle, Brain, ScanLine, MessageSquare, FileDown, Star, Video, Mic, Share2, ClipboardCheck, KeyRound, Globe, TrendingUp, Calendar, Smile, BedDouble, TestTube2, Wrench, Boxes } from '../components/icons/Icons';
 import Logo from '../components/icons/Logo';
 import Button from '../components/ui/Button';
 import ThemeToggle from '../components/ui/ThemeToggle';
@@ -118,7 +118,31 @@ const patientFeatures = [
     color: 'from-purple-500/20 to-purple-600/10',
     iconColor: 'text-purple-600 dark:text-purple-400',
     description: 'Your AI mental health companion providing empathetic chat, guided exercises, mood tracking, and journaling for holistic well-being.',
-  }
+  },
+  {
+    icon: Video,
+    title: 'Video Teleconsultation',
+    tag: 'Telehealth',
+    color: 'from-blue-500/20 to-cyan-600/10',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    description: 'Join secure, in-browser video visits with your doctor directly from your appointment list — no extra apps or downloads needed.',
+  },
+  {
+    icon: Bell,
+    title: 'Notification Center',
+    tag: 'Updates',
+    color: 'from-amber-500/20 to-yellow-600/10',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    description: 'Get real-time alerts for new prescriptions, invoices, messages, referrals, and appointment updates — all in one place.',
+  },
+  {
+    icon: Star,
+    title: 'Doctor Reviews & Feedback',
+    tag: 'Feedback',
+    color: 'from-yellow-500/20 to-amber-600/10',
+    iconColor: 'text-yellow-600 dark:text-yellow-400',
+    description: 'Rate your visits and share feedback with your doctor after every appointment, helping clinics improve patient experience.',
+  },
 ];
 
 const doctorFeatures = [
@@ -161,7 +185,181 @@ const doctorFeatures = [
     color: 'from-amber-500/20 to-orange-600/10',
     iconColor: 'text-amber-600 dark:text-amber-400',
     description: 'Generate standardized, portable clinical summaries in one click, ready to be sent to other healthcare providers or added to external systems.',
-  }
+  },
+  {
+    icon: Mic,
+    title: 'Voice-to-Prescription',
+    tag: 'AI-Powered',
+    color: 'from-violet-500/20 to-fuchsia-600/10',
+    iconColor: 'text-violet-600 dark:text-violet-400',
+    description: 'Dictate diagnoses, medications, and instructions naturally — DocuMedic transcribes and structures them into a ready-to-sign prescription instantly.',
+  },
+  {
+    icon: Pill,
+    title: 'Prescription Writer & History',
+    tag: 'e-Prescriptions',
+    color: 'from-emerald-500/20 to-green-600/10',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    description: 'Write digital prescriptions with dosage, frequency, and duration, generate printable PDFs, and access a full history for every patient.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Billing & Invoicing',
+    tag: 'Billing',
+    color: 'from-amber-500/20 to-yellow-600/10',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    description: 'Generate itemised invoices with tax calculations, track payments, and give patients instant access to their billing history.',
+  },
+  {
+    icon: Share2,
+    title: 'Referral Management',
+    tag: 'Care Coordination',
+    color: 'from-sky-500/20 to-blue-600/10',
+    iconColor: 'text-sky-600 dark:text-sky-400',
+    description: 'Refer patients to specialists with notes and history attached, and track referral status from sent to completed.',
+  },
+  {
+    icon: MessageSquare,
+    title: 'Secure Patient Messaging',
+    tag: 'Communication',
+    color: 'from-purple-500/20 to-violet-600/10',
+    iconColor: 'text-purple-600 dark:text-purple-400',
+    description: 'Send secure messages and reminders directly to patients, with automatic notifications so nothing gets missed.',
+  },
+  {
+    icon: Smile,
+    title: 'Dental Chart',
+    tag: 'Specialty Tools',
+    color: 'from-cyan-500/20 to-teal-600/10',
+    iconColor: 'text-cyan-600 dark:text-cyan-400',
+    description: 'Interactive tooth-by-tooth charting for dental practices to record conditions, treatments, and history per patient.',
+  },
+  {
+    icon: Activity,
+    title: 'Medical Calculators',
+    tag: 'Clinical Tools',
+    color: 'from-rose-500/20 to-pink-600/10',
+    iconColor: 'text-rose-600 dark:text-rose-400',
+    description: 'Quick-access clinical calculators (BMI, dosage, eGFR, and more) built right into your workflow.',
+  },
+];
+
+const clinicFeatures = [
+  {
+    icon: Users,
+    title: 'Multi-Doctor Staff Management',
+    tag: 'Clinic Admin',
+    color: 'from-blue-500/20 to-indigo-600/10',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    description: 'Invite doctors, nurses, and front-desk staff, organise them into departments, and manage their access from one dashboard.',
+  },
+  {
+    icon: KeyRound,
+    title: 'Roles & Permission Matrix',
+    tag: 'Access Control',
+    color: 'from-slate-500/20 to-zinc-600/10',
+    iconColor: 'text-slate-600 dark:text-slate-400',
+    description: 'Define granular, role-based permissions — including custom roles — to control exactly what each staff member can view and do.',
+  },
+  {
+    icon: Calendar,
+    title: 'Scheduler Configuration',
+    tag: 'Operations',
+    color: 'from-sky-500/20 to-cyan-600/10',
+    iconColor: 'text-sky-600 dark:text-sky-400',
+    description: 'Set per-doctor appointment slot durations, buffer times, overbooking rules, and walk-in queue priority.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Rate Card & Billing Config',
+    tag: 'Revenue',
+    color: 'from-amber-500/20 to-orange-600/10',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    description: 'Maintain a centralised price list for consultations, procedures, and diagnostics with tax rates, ready to use across invoices.',
+  },
+  {
+    icon: ClipboardCheck,
+    title: 'Intake Form Builder & e-Signature',
+    tag: 'Patient Intake',
+    color: 'from-emerald-500/20 to-teal-600/10',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    description: 'Design custom pre-visit intake forms with text, dropdown, and checkbox fields, plus consent text and digital signature capture.',
+  },
+  {
+    icon: Globe,
+    title: 'Public Booking Page',
+    tag: 'Patient Acquisition',
+    color: 'from-violet-500/20 to-purple-600/10',
+    iconColor: 'text-violet-600 dark:text-violet-400',
+    description: 'Give your clinic a shareable public booking page so new and existing patients can request appointments online, 24/7.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Audit Log',
+    tag: 'Compliance',
+    color: 'from-rose-500/20 to-red-600/10',
+    iconColor: 'text-rose-600 dark:text-rose-400',
+    description: 'A tamper-evident record of staff and configuration changes across your clinic, for accountability and compliance.',
+  },
+  {
+    icon: BrainCircuit,
+    title: 'Practice Analytics',
+    tag: 'Insights',
+    color: 'from-indigo-500/20 to-blue-600/10',
+    iconColor: 'text-indigo-600 dark:text-indigo-400',
+    description: 'Track patient volume, revenue, completion rates, top diagnoses, and patient reviews across your entire clinic.',
+  },
+];
+
+const hospitalFeatures = [
+  {
+    icon: BedDouble,
+    title: 'IPD & Bed Management',
+    tag: 'In-Patient Care',
+    color: 'from-cyan-500/20 to-sky-600/10',
+    iconColor: 'text-cyan-600 dark:text-cyan-400',
+    description: 'Manage wards and beds by type, admit and discharge in-patients, and keep real-time occupancy status across the hospital.',
+  },
+  {
+    icon: Pill,
+    title: 'Pharmacy & Inventory',
+    tag: 'Pharmacy',
+    color: 'from-emerald-500/20 to-green-600/10',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    description: 'Track medicine stock levels, get reorder alerts, and dispense medicines directly against inventory with a full dispense log.',
+  },
+  {
+    icon: TestTube2,
+    title: 'Lab Order Management',
+    tag: 'Diagnostics',
+    color: 'from-purple-500/20 to-fuchsia-600/10',
+    iconColor: 'text-purple-600 dark:text-purple-400',
+    description: 'Route lab test orders from request through sample collection, processing, and result entry — all in one tracker.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Insurance & Claims Tracking',
+    tag: 'Billing',
+    color: 'from-amber-500/20 to-yellow-600/10',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    description: 'Track insurance claims per patient and payer from draft through submission, approval, and settlement, with claim totals by status.',
+  },
+  {
+    icon: Wrench,
+    title: 'Equipment & Asset Tracking',
+    tag: 'Facilities',
+    color: 'from-slate-500/20 to-gray-600/10',
+    iconColor: 'text-slate-600 dark:text-slate-400',
+    description: 'Keep a register of medical equipment with location, status, and service schedules, with alerts for assets due for service.',
+  },
+  {
+    icon: Boxes,
+    title: 'Clinic Commerce Settings',
+    tag: 'Configuration',
+    color: 'from-teal-500/20 to-emerald-600/10',
+    iconColor: 'text-teal-600 dark:text-teal-400',
+    description: 'Toggle pharmacy and lab fulfillment on or off for your clinic, and configure markup percentages and delivery fees.',
+  },
 ];
 
 const FeaturesPage: React.FC = () => (
@@ -208,7 +406,7 @@ const FeaturesPage: React.FC = () => (
           Everything you need for <span className="text-gradient">smarter health</span>
         </h1>
         <p className="mt-6 text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-          DocuMedic brings together 12+ powerful features to give you complete visibility and control over your health — from day-to-day tracking to emergency preparedness.
+          DocuMedic brings together 35+ powerful features to give you complete visibility and control over your health — from day-to-day tracking to emergency preparedness, plus full practice management tools for doctors, clinics, and hospitals.
         </p>
         <div className="mt-8 flex gap-3 justify-center">
           <Button asChild variant="gradient" size="lg">
@@ -288,8 +486,82 @@ const FeaturesPage: React.FC = () => (
             </motion.div>
           ))}
         </div>
+      </div>
+    </section>
 
-        {/* CTA Banner */}
+    {/* Clinic Admin Features Grid */}
+    <section className="py-12 pb-24">
+      <div className="container mx-auto px-4">
+        <div className="mb-10 text-center">
+          <h2 className="text-3xl font-bold font-heading">For Clinics & Practice Admins</h2>
+          <p className="text-muted-foreground mt-2 text-lg">Run your entire practice — staff, scheduling, billing, and compliance — from one place.</p>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {clinicFeatures.map((feature, i) => (
+            <motion.div
+              key={feature.title}
+              className={`group p-7 rounded-2xl bg-gradient-to-br ${feature.color} border border-border/50 hover:border-primary/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.4, delay: (i % 6) * 0.06 }}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`w-12 h-12 rounded-xl bg-white dark:bg-card flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform`}>
+                  <feature.icon className={`h-6 w-6 ${feature.iconColor}`} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-base font-heading">{feature.title}</h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/60 dark:bg-black/20 text-muted-foreground">{feature.tag}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* Hospital Operations Features Grid */}
+    <section className="py-12 pb-24">
+      <div className="container mx-auto px-4">
+        <div className="mb-10 text-center">
+          <h2 className="text-3xl font-bold font-heading">Hospital Operations</h2>
+          <p className="text-muted-foreground mt-2 text-lg">For larger facilities — beds and in-patient care, pharmacy, lab, insurance, and equipment, all in one place.</p>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {hospitalFeatures.map((feature, i) => (
+            <motion.div
+              key={feature.title}
+              className={`group p-7 rounded-2xl bg-gradient-to-br ${feature.color} border border-border/50 hover:border-primary/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.4, delay: (i % 6) * 0.06 }}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`w-12 h-12 rounded-xl bg-white dark:bg-card flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform`}>
+                  <feature.icon className={`h-6 w-6 ${feature.iconColor}`} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-base font-heading">{feature.title}</h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/60 dark:bg-black/20 text-muted-foreground">{feature.tag}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* CTA Banner */}
+    <section className="pb-24">
+      <div className="container mx-auto px-4">
         <motion.div
           className="mt-16 rounded-3xl p-12 text-center animated-gradient shadow-2xl"
           initial={{ opacity: 0, y: 20 }}

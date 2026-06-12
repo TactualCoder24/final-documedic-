@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { CalendarDays, Plus, Trash2, Video, Star, Clock, ClipboardList } from '../components/icons/Icons';
-import { Appointment } from '../types';
+import { Appointment, Profile, Review, ClinicIntakeTemplate } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getAppointments, addAppointment, deleteAppointment, updateAppointment, submitIntakeForm } from '../services/dataSupabase';
+import { getAppointments, addAppointment, deleteAppointment, updateAppointment, submitIntakeForm, getConnectedDoctorsForPatient, createReview, getReviewForAppointment, getActiveIntakeTemplateForDoctor } from '../services/dataSupabase';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -23,6 +23,20 @@ const AppointmentManager: React.FC = () => {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [intakeFile, setIntakeFile] = useState<File | null>(null);
   const [isSubmittingIntake, setIsSubmittingIntake] = useState(false);
+  const [activeTemplate, setActiveTemplate] = useState<ClinicIntakeTemplate | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string | boolean>>({});
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [hasSignature, setHasSignature] = useState(false);
+  const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef = useRef(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewAppointment, setReviewAppointment] = useState<Appointment | null>(null);
+  const [connectedDoctors, setConnectedDoctors] = useState<(Profile & { id: string })[]>([]);
+  const [reviewsByAppointment, setReviewsByAppointment] = useState<Record<string, Review>>({});
+  const [reviewDoctorId, setReviewDoctorId] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const refreshAppointments = useCallback(async () => {
     if (user) {
@@ -85,20 +99,102 @@ const AppointmentManager: React.FC = () => {
     }
   };
 
-  const handleIntakeClick = (app: Appointment) => {
+  const handleIntakeClick = async (app: Appointment) => {
     setSelectedAppointment(app);
     setIsIntakeModalOpen(true);
     setIntakeFile(null);
+    setActiveTemplate(null);
+    setCustomFieldValues({});
+    setConsentChecked(false);
+    setHasSignature(false);
+    if (user) {
+      try {
+        const doctors = await getConnectedDoctorsForPatient(user.uid);
+        const matched = doctors.find(d => d.name === app.doctorName);
+        if (matched?.id) {
+          const template = await getActiveIntakeTemplateForDoctor(matched.id);
+          if (template) {
+            setActiveTemplate(template);
+            const defaults: Record<string, string | boolean> = {};
+            template.fields.forEach(f => { defaults[f.id] = f.type === 'checkbox' ? false : ''; });
+            setCustomFieldValues(defaults);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleCustomFieldChange = (fieldId: string, value: string | boolean) => {
+    setCustomFieldValues(prev => ({ ...prev, [fieldId]: value }));
+  };
+
+  const getCanvasPos = (e: React.MouseEvent | React.TouchEvent): { x: number; y: number } | null => {
+    const canvas = signatureCanvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const point = 'touches' in e ? e.touches[0] : e;
+    return { x: (point.clientX - rect.left) * scaleX, y: (point.clientY - rect.top) * scaleY };
+  };
+
+  const handleSignatureStart = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const canvas = signatureCanvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    const pos = getCanvasPos(e);
+    if (!ctx || !pos) return;
+    isDrawingRef.current = true;
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const handleSignatureMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawingRef.current) return;
+    e.preventDefault();
+    const canvas = signatureCanvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    const pos = getCanvasPos(e);
+    if (!ctx || !pos) return;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    setHasSignature(true);
+  };
+
+  const handleSignatureEnd = () => {
+    isDrawingRef.current = false;
+  };
+
+  const clearSignature = () => {
+    const canvas = signatureCanvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSignature(false);
   };
 
   const handleIntakeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user || !selectedAppointment) return;
+    if (activeTemplate?.consentText && (!consentChecked || !hasSignature)) {
+      alert('Please review the consent statement, sign, and check the consent box before submitting.');
+      return;
+    }
     setIsSubmittingIntake(true);
     try {
       const formData = new FormData(e.currentTarget);
       const symptomsDescription = formData.get('symptoms') as string;
-      await submitIntakeForm(user.uid, selectedAppointment.id, selectedAppointment.doctorName, symptomsDescription, intakeFile || undefined);
+      const customFields = activeTemplate ? {
+        templateId: activeTemplate.id,
+        customResponses: customFieldValues,
+        signatureDataUrl: hasSignature ? signatureCanvasRef.current?.toDataURL('image/png') : undefined,
+        consentAccepted: consentChecked,
+      } : undefined;
+      await submitIntakeForm(user.uid, selectedAppointment.id, selectedAppointment.doctorName, symptomsDescription, intakeFile || undefined, customFields);
       await updateAppointment(user.uid, { ...selectedAppointment, status: 'Waiting' });
       await refreshAppointments();
       setIsIntakeModalOpen(false);
@@ -116,6 +212,63 @@ const AppointmentManager: React.FC = () => {
   const pastAppointments = appointments
     .filter(a => new Date(a.dateTime) < now)
     .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+
+  useEffect(() => {
+    if (!user || pastAppointments.length === 0) return;
+    let cancelled = false;
+    Promise.all(pastAppointments.map(app => getReviewForAppointment(app.id)))
+      .then(results => {
+        if (cancelled) return;
+        const map: Record<string, Review> = {};
+        results.forEach((review, i) => {
+          if (review) map[pastAppointments[i].id] = review;
+        });
+        setReviewsByAppointment(map);
+      })
+      .catch(console.error);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, appointments]);
+
+  const handleFeedbackClick = async (app: Appointment) => {
+    if (!user) return;
+    setReviewAppointment(app);
+    const existing = reviewsByAppointment[app.id];
+    setReviewRating(existing?.rating || 5);
+    setReviewComment(existing?.comment || '');
+    try {
+      const doctors = await getConnectedDoctorsForPatient(user.uid);
+      setConnectedDoctors(doctors);
+      setReviewDoctorId(existing?.doctorId || doctors[0]?.id || '');
+    } catch (err) {
+      console.error(err);
+      setConnectedDoctors([]);
+    }
+    setIsReviewModalOpen(true);
+  };
+
+  const handleReviewSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user || !reviewAppointment) return;
+    setIsSubmittingReview(true);
+    try {
+      const review = await createReview({
+        patientId: user.uid,
+        doctorId: reviewDoctorId || undefined,
+        appointmentId: reviewAppointment.id,
+        rating: reviewRating,
+        comment: reviewComment.trim() || undefined,
+      });
+      setReviewsByAppointment(prev => ({ ...prev, [reviewAppointment.id]: review }));
+      setIsReviewModalOpen(false);
+      setReviewAppointment(null);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit feedback. Please try again.');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
 
   return (
@@ -172,7 +325,13 @@ const AppointmentManager: React.FC = () => {
                       ) : (
                         <Button size="sm" variant="outline" onClick={() => handleECheckIn(app)}>{t('appointments.echeckin', 'eCheck-In')}</Button>
                       )}
-                      {app.type === 'Video' && <Button size="sm" variant="secondary">{t('appointments.join_video', 'Join Video Visit')}</Button>}
+                      {app.type === 'Video' && (
+                        <Button asChild size="sm" variant="secondary">
+                          <Link to={`/consult/${app.id}`}>
+                            <Video className="mr-2 h-4 w-4" />{t('appointments.join_video', 'Join Video Visit')}
+                          </Link>
+                        </Button>
+                      )}
                       {!app.onWaitlist && <Button size="sm" variant="outline" onClick={() => handleWaitlist(app)}><Clock className="mr-2 h-4 w-4" />{t('appointments.waitlist', 'Waitlist')}</Button>}
                       <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDelete(app.id)}>{t('appointments.cancel', 'Cancel')}</Button>
                     </div>
@@ -206,11 +365,17 @@ const AppointmentManager: React.FC = () => {
                         <p className="text-sm text-muted-foreground">{new Date(app.dateTime).toLocaleDateString([], { dateStyle: 'full' })}</p>
                       </div>
                     </div>
-                    {app.summaryId ? (
-                      <Button asChild variant="outline" size="sm">
-                        <Link to={`/appointments/${app.id}/summary`}>{t('appointments.view_summary', 'View Summary')}</Link>
+                    <div className="flex items-center gap-2">
+                      {app.summaryId ? (
+                        <Button asChild variant="outline" size="sm">
+                          <Link to={`/appointments/${app.id}/summary`}>{t('appointments.view_summary', 'View Summary')}</Link>
+                        </Button>
+                      ) : <span className="text-xs text-muted-foreground">{t('appointments.no_summary', 'No Summary Available')}</span>}
+                      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleFeedbackClick(app)}>
+                        <Star className={`h-4 w-4 ${reviewsByAppointment[app.id] ? 'fill-yellow-400 text-yellow-500' : ''}`} />
+                        {reviewsByAppointment[app.id] ? 'Edit Feedback' : 'Leave Feedback'}
                       </Button>
-                    ) : <span className="text-xs text-muted-foreground">{t('appointments.no_summary', 'No Summary Available')}</span>}
+                    </div>
                   </div>
                 ))
               ) : (
@@ -312,10 +477,159 @@ const AppointmentManager: React.FC = () => {
              />
              <p className="text-xs text-muted-foreground mt-1">Share a picture of a visible symptom or a related document.</p>
           </div>
+
+          {activeTemplate && activeTemplate.fields.length > 0 && (
+            <div className="space-y-3 pt-2 border-t border-border/50">
+              <h4 className="text-sm font-semibold">{activeTemplate.name}</h4>
+              {activeTemplate.fields.map(field => (
+                <div key={field.id}>
+                  {field.type === 'checkbox' ? (
+                    <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={!!customFieldValues[field.id]}
+                        onChange={(e) => handleCustomFieldChange(field.id, e.target.checked)}
+                        required={field.required}
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      {field.label}{field.required && ' *'}
+                    </label>
+                  ) : field.type === 'textarea' ? (
+                    <>
+                      <label className="block text-sm font-medium text-foreground mb-1">{field.label}{field.required && ' *'}</label>
+                      <textarea
+                        rows={3}
+                        value={(customFieldValues[field.id] as string) || ''}
+                        onChange={(e) => handleCustomFieldChange(field.id, e.target.value)}
+                        required={field.required}
+                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      ></textarea>
+                    </>
+                  ) : field.type === 'select' ? (
+                    <>
+                      <label className="block text-sm font-medium text-foreground mb-1">{field.label}{field.required && ' *'}</label>
+                      <select
+                        value={(customFieldValues[field.id] as string) || ''}
+                        onChange={(e) => handleCustomFieldChange(field.id, e.target.value)}
+                        required={field.required}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Select...</option>
+                        {(field.options || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                      </select>
+                    </>
+                  ) : (
+                    <>
+                      <label className="block text-sm font-medium text-foreground mb-1">{field.label}{field.required && ' *'}</label>
+                      <Input
+                        value={(customFieldValues[field.id] as string) || ''}
+                        onChange={(e) => handleCustomFieldChange(field.id, e.target.value)}
+                        required={field.required}
+                      />
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTemplate?.consentText && (
+            <div className="space-y-2 pt-2 border-t border-border/50">
+              <div className="p-3 bg-secondary rounded-md">
+                <h4 className="font-semibold text-sm mb-1">Consent</h4>
+                <p className="text-xs text-muted-foreground">{activeTemplate.consentText}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Signature</label>
+                <canvas
+                  ref={signatureCanvasRef}
+                  width={500}
+                  height={150}
+                  className="w-full h-32 rounded-md border border-input bg-background touch-none"
+                  onMouseDown={handleSignatureStart}
+                  onMouseMove={handleSignatureMove}
+                  onMouseUp={handleSignatureEnd}
+                  onMouseLeave={handleSignatureEnd}
+                  onTouchStart={handleSignatureStart}
+                  onTouchMove={handleSignatureMove}
+                  onTouchEnd={handleSignatureEnd}
+                />
+                <div className="flex justify-end mt-1">
+                  <Button type="button" variant="ghost" size="sm" onClick={clearSignature}>Clear</Button>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-xs font-medium text-foreground">
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                I have read and agree to the consent statement above.
+              </label>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setIsIntakeModalOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={isSubmittingIntake}>
                {isSubmittingIntake ? 'Submitting...' : 'Submit to Doctor'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal title="Leave Feedback" isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)}>
+        <p className="text-sm text-muted-foreground mb-4">
+          Share your experience from your visit{reviewAppointment ? ` on ${new Date(reviewAppointment.dateTime).toLocaleDateString([], { dateStyle: 'medium' })}` : ''}.
+        </p>
+        <form onSubmit={handleReviewSubmit} className="space-y-4">
+          {connectedDoctors.length > 0 && (
+            <div>
+              <label htmlFor="review-doctor" className="block text-sm font-medium text-foreground mb-1">Doctor</label>
+              <select
+                id="review-doctor"
+                value={reviewDoctorId}
+                onChange={(e) => setReviewDoctorId(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {connectedDoctors.map(doc => (
+                  <option key={doc.id} value={doc.id}>{doc.name || 'Doctor'}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">Rating</label>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setReviewRating(star)}
+                  aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                  className="p-0.5"
+                >
+                  <Star className={`h-6 w-6 ${star <= reviewRating ? 'fill-yellow-400 text-yellow-500' : 'text-muted-foreground'}`} />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label htmlFor="review-comment" className="block text-sm font-medium text-foreground mb-1">Comments (Optional)</label>
+            <textarea
+              id="review-comment"
+              rows={4}
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              placeholder="Tell us about your experience..."
+            ></textarea>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => setIsReviewModalOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={isSubmittingReview}>
+              {isSubmittingReview ? 'Submitting...' : 'Submit Feedback'}
             </Button>
           </div>
         </form>

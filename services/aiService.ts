@@ -125,6 +125,70 @@ If a section can't be determined from the notes, provide a reasonable default. B
   }
 };
 
+/**
+ * Voice-to-prescription: turn a doctor's spoken dictation into structured
+ * prescription fields (diagnosis, medications, advice, notes, follow-up date).
+ */
+export interface DictatedPrescription {
+  diagnosis?: string;
+  medications: { name: string; dosage: string; frequency: string; duration: string; instructions?: string }[];
+  advice?: string;
+  notes?: string;
+  followUpDate?: string; // YYYY-MM-DD if mentioned, else empty
+}
+
+export const parsePrescriptionFromDictation = async (transcript: string, todayDateISO: string): Promise<DictatedPrescription> => {
+  if (!ai) {
+    return { medications: [] };
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Today's date is ${todayDateISO}. Convert this doctor's spoken dictation into a structured prescription. Dictation:\n"""${transcript}"""`,
+      config: {
+        systemInstruction: `You are a medical scribe assistant. Extract a structured prescription from a doctor's spoken dictation.
+- diagnosis: short diagnosis text, if mentioned.
+- medications: array of { name, dosage, frequency, duration, instructions }. Use standard abbreviations the doctor said (e.g. "1-0-1", "twice daily", "5 days"). Leave a field as an empty string if not mentioned.
+- advice: lifestyle/dietary advice, if mentioned.
+- notes: any other clinical notes, if mentioned.
+- followUpDate: an absolute date in YYYY-MM-DD format if the doctor mentioned a follow-up (e.g. "follow up in one week" -> compute from today's date), else an empty string.
+Only include information explicitly present in the dictation. Do not invent medications or details.`,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            diagnosis: { type: Type.STRING },
+            medications: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  dosage: { type: Type.STRING },
+                  frequency: { type: Type.STRING },
+                  duration: { type: Type.STRING },
+                  instructions: { type: Type.STRING },
+                },
+                required: ['name', 'dosage', 'frequency', 'duration', 'instructions'],
+              },
+            },
+            advice: { type: Type.STRING },
+            notes: { type: Type.STRING },
+            followUpDate: { type: Type.STRING },
+          },
+          required: ['medications'],
+        },
+        temperature: 0.2,
+      }
+    });
+    return JSON.parse(response.text);
+  } catch (error) {
+    console.error("Error parsing dictated prescription:", error);
+    return { medications: [] };
+  }
+};
+
 export const getLifestyleTips = async (userInfo: string): Promise<string> => {
   // Gracefully handle the case where the AI client could not be initialized.
   if (!ai) {

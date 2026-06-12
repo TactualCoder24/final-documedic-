@@ -119,6 +119,8 @@ const Dashboard: React.FC = () => {
   React.useEffect(() => {
     if (userRole === 'doctor') {
       navigate('/doctor-dashboard', { replace: true });
+    } else if (userRole === 'clinic') {
+      navigate('/clinic-dashboard', { replace: true });
     }
   }, [userRole, navigate]);
   const [vitals, setVitals]         = React.useState<Vital[]>([]);

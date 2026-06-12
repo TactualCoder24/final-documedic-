@@ -86,6 +86,10 @@ export interface IntakeForm {
   symptomsDescription: string;
   fileUrl?: string; // Photo/Document URL
   createdAt: string;
+  templateId?: string;
+  customResponses?: Record<string, string | boolean>;
+  signatureDataUrl?: string;
+  consentAccepted?: boolean;
 }
 
 // Defines a lightweight task for the doctor
@@ -301,6 +305,262 @@ export interface GrowthRecord {
   headCircumference?: number; // in cm
 }
 
+// Defines a single medication line item within a prescription.
+export interface PrescriptionMedication {
+  name: string;
+  dosage: string; // e.g. "500mg"
+  frequency: string; // e.g. "1-0-1" or "Twice daily"
+  duration: string; // e.g. "5 days"
+  instructions?: string; // e.g. "After food"
+}
+
+// Defines a diagnosis code (ICD-10) attached to a prescription.
+export interface DiagnosisCode {
+  code: string;
+  description: string;
+}
+
+// Defines a digital prescription written by a doctor for a patient.
+export interface Prescription {
+  id: string;
+  doctorId: string;
+  patientId: string;
+  appointmentId?: string;
+  diagnosis?: string;
+  diagnosisCodes?: DiagnosisCode[];
+  medications: PrescriptionMedication[];
+  notes?: string;
+  advice?: string;
+  followUpDate?: string; // YYYY-MM-DD
+  createdAt: string; // ISO string
+}
+
+// Defines a single line item on an invoice.
+export interface InvoiceItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+// Defines an invoice issued by a doctor to a patient.
+export interface Invoice {
+  id: string;
+  doctorId: string;
+  patientId: string;
+  patientName?: string;
+  appointmentId?: string;
+  items: InvoiceItem[];
+  total: number;
+  status: 'due' | 'paid' | 'partial';
+  issuedDate: string; // YYYY-MM-DD
+  dueDate?: string; // YYYY-MM-DD
+  notes?: string;
+  createdAt: string; // ISO string
+}
+
+// Defines a dental chart for a patient (FDI tooth numbering).
+export interface DentalChart {
+  teeth: Record<string, string>; // FDI tooth number -> condition
+  notes?: string;
+  updatedAt?: string;
+}
+
+// Defines a referral sent from one doctor to another (or external) for a patient.
+export interface Referral {
+  id: string;
+  referringDoctorId: string;
+  referringDoctorName?: string;
+  patientId: string;
+  patientName?: string;
+  referredToDoctorId?: string;
+  referredToName: string;
+  specialty?: string;
+  reason: string;
+  notes?: string;
+  status: 'pending' | 'acknowledged' | 'completed' | 'declined';
+  createdAt: string;
+}
+
+// Defines an in-app message or reminder sent from a doctor to a patient.
+export interface PatientMessage {
+  id: string;
+  doctorId: string;
+  doctorName?: string;
+  patientId: string;
+  type: 'message' | 'reminder';
+  title: string;
+  body?: string;
+  scheduledFor?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// Defines a recurring weekly availability slot for a doctor's public booking page.
+export interface DoctorAvailability {
+  id: string;
+  doctorId: string;
+  dayOfWeek: number; // 0 = Sunday ... 6 = Saturday
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  slotDurationMinutes: number;
+}
+
+// Defines an appointment booking request submitted via a doctor's public page.
+export interface BookingRequest {
+  id: string;
+  doctorId: string;
+  patientName: string;
+  patientEmail?: string;
+  patientPhone?: string;
+  requestedDateTime: string;
+  reason?: string;
+  status: 'pending' | 'confirmed' | 'declined';
+  createdAt: string;
+}
+
+// Defines a clinic/hospital account (1:1 with a profile of role 'clinic').
+export interface Clinic {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  specialties?: string[];
+  logoUrl?: string;
+  createdAt: string;
+}
+
+// Defines a department within a clinic.
+export interface Department {
+  id: string;
+  clinicId: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+}
+
+// Defines a staff member (doctor, nurse, front-desk, admin) of a clinic.
+export interface ClinicStaff {
+  id: string;
+  clinicId: string;
+  userId?: string;
+  staffName?: string;
+  staffEmail?: string;
+  role: 'doctor' | 'front_desk' | 'nurse' | 'admin';
+  departmentId?: string;
+  status: 'pending' | 'active' | 'inactive';
+  createdAt: string;
+}
+
+// Defines a front-desk queue entry for walk-in / checked-in patients.
+export interface ClinicQueueEntry {
+  id: string;
+  clinicId: string;
+  patientName: string;
+  patientPhone?: string;
+  doctorId?: string;
+  departmentId?: string;
+  status: 'waiting' | 'in_progress' | 'completed' | 'cancelled';
+  tokenNumber?: number;
+  notes?: string;
+  checkedInAt: string;
+  calledAt?: string;
+  completedAt?: string;
+}
+
+// Defines an entry in the audit log (compliance / who-did-what tracking).
+export interface AuditLogEntry {
+  id: string;
+  actorId?: string;
+  actorName?: string;
+  actorRole?: string;
+  clinicId?: string;
+  action: string;
+  entityType?: string;
+  entityId?: string;
+  details?: Record<string, any>;
+  createdAt: string;
+}
+
+// Defines an in-app notification.
+export interface AppNotification {
+  id: string;
+  userId: string;
+  type: 'appointment' | 'message' | 'referral' | 'billing' | 'review' | 'system';
+  title: string;
+  body?: string;
+  link?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// Defines a patient review/feedback entry.
+export interface Review {
+  id: string;
+  patientId: string;
+  patientName?: string;
+  doctorId?: string;
+  clinicId?: string;
+  appointmentId?: string;
+  rating: number; // 1-5
+  comment?: string;
+  createdAt: string;
+}
+
+// Defines per-doctor scheduler configuration.
+export interface DoctorScheduleConfig {
+  doctorId: string;
+  clinicId?: string;
+  slotDurationMinutes: number;
+  bufferMinutes: number;
+  allowOverbooking: boolean;
+  walkinPriority: 'fifo' | 'scheduled_first';
+  updatedAt: string;
+}
+
+// Defines a permission set for a (possibly custom) clinic staff role.
+export interface ClinicRolePermissions {
+  id: string;
+  clinicId: string;
+  roleName: string;
+  permissions: Record<string, boolean>;
+  isCustom: boolean;
+  createdAt: string;
+}
+
+// Defines a billable service in a clinic's rate card.
+export interface ClinicService {
+  id: string;
+  clinicId: string;
+  name: string;
+  category: 'consultation' | 'procedure' | 'diagnostic' | 'other';
+  price: number;
+  taxRate: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+// Defines a single field in a custom intake form template.
+export interface IntakeField {
+  id: string;
+  label: string;
+  type: 'text' | 'textarea' | 'select' | 'checkbox';
+  options?: string[];
+  required: boolean;
+}
+
+// Defines a clinic-configurable intake form template.
+export interface ClinicIntakeTemplate {
+  id: string;
+  clinicId: string;
+  name: string;
+  fields: IntakeField[];
+  consentText?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Defines a questionnaire from a provider.
 export interface Questionnaire {
   id: string;
@@ -308,4 +568,124 @@ export interface Questionnaire {
   provider: string;
   dueDate: string; // YYYY-MM-DD
   status: 'Pending' | 'Completed';
+}
+
+// ─── Hospital Ops (Phase 3) ────────────────────────────────────────────────
+
+// Defines a bed/ward slot for in-patient management.
+export interface HospitalBed {
+  id: string;
+  clinicId: string;
+  wardName: string;
+  bedNumber: string;
+  bedType: 'general' | 'private' | 'icu' | 'emergency';
+  status: 'available' | 'occupied' | 'maintenance';
+  createdAt: string;
+}
+
+// Defines an in-patient (IPD) admission record.
+export interface IpdAdmission {
+  id: string;
+  clinicId: string;
+  patientId?: string;
+  patientName: string;
+  bedId?: string;
+  admittingDoctorId?: string;
+  admittingDoctorName?: string;
+  diagnosis?: string;
+  admissionDate: string;
+  expectedDischargeDate?: string;
+  dischargeDate?: string;
+  status: 'admitted' | 'discharged';
+  notes?: string;
+  createdAt: string;
+}
+
+// Defines a pharmacy stock item.
+export interface PharmacyInventoryItem {
+  id: string;
+  clinicId: string;
+  medicineName: string;
+  category?: string;
+  sku?: string;
+  unit: string;
+  stockQuantity: number;
+  reorderLevel: number;
+  unitPrice: number;
+  expiryDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Defines a record of medicine dispensed from pharmacy stock.
+export interface PharmacyDispense {
+  id: string;
+  clinicId: string;
+  inventoryId?: string;
+  medicineName: string;
+  quantity: number;
+  patientName?: string;
+  dispensedBy?: string;
+  dispensedAt: string;
+}
+
+// Defines a lab test order and its result tracking.
+export interface LabOrder {
+  id: string;
+  clinicId: string;
+  patientId?: string;
+  patientName: string;
+  doctorId?: string;
+  doctorName?: string;
+  testName: string;
+  status: 'ordered' | 'sample_collected' | 'in_progress' | 'completed' | 'cancelled';
+  orderedAt: string;
+  resultUrl?: string;
+  resultNotes?: string;
+  completedAt?: string;
+}
+
+// Defines an insurance claim tied to a patient visit/invoice.
+export interface InsuranceClaim {
+  id: string;
+  clinicId: string;
+  patientId?: string;
+  patientName: string;
+  invoiceId?: string;
+  insurerName: string;
+  policyNumber?: string;
+  claimAmount: number;
+  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'settled';
+  submittedAt?: string;
+  settledAt?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+// Defines a tracked equipment/asset record.
+export interface EquipmentAsset {
+  id: string;
+  clinicId: string;
+  name: string;
+  category?: string;
+  serialNumber?: string;
+  location?: string;
+  status: 'operational' | 'maintenance' | 'retired';
+  purchaseDate?: string;
+  lastServiceDate?: string;
+  nextServiceDate?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+// Defines clinic-wide commerce settings (pharmacy/lab partner integration toggles).
+export interface ClinicCommerceSettings {
+  clinicId: string;
+  commerceEnabled: boolean;
+  pharmacyEnabled: boolean;
+  labEnabled: boolean;
+  pharmacyMarkupPercent: number;
+  labMarkupPercent: number;
+  deliveryFee: number;
+  updatedAt: string;
 }

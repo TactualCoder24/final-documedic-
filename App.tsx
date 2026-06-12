@@ -1,6 +1,7 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { ROLE_HOME } from './constants/roles';
 import { ThemeProvider } from './hooks/useTheme';
 import { OnboardingProvider } from './hooks/useOnboarding';
 import { ToastProvider } from './hooks/useToast';
@@ -64,6 +65,9 @@ import SharedRecord from './pages/SharedRecord';
 import SleepTracker from './pages/SleepTracker';
 import DoctorDashboard from './pages/DoctorDashboard';
 import ClinicDashboard from './pages/ClinicDashboard';
+import PublicBooking from './pages/PublicBooking';
+import PublicClinic from './pages/PublicClinic';
+import TeleconsultRoom from './pages/TeleconsultRoom';
 
 
 // ── Protected route: requires auth ────────────────────────────────────────
@@ -82,6 +86,33 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   if (!user) {
     sessionStorage.setItem('redirectPath', location.pathname + location.search);
     return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// ── Role-based route guard ──────────────────────────────────────────────────
+// Redirects to the correct dashboard if the user's role doesn't match.
+const RoleRoute: React.FC<{ role: 'patient' | 'doctor' | 'clinic'; children: React.ReactNode }> = ({ role, children }) => {
+  const { user, loading, userRole } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen soft-aurora">
+        <Skeleton variant="dashboard" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    sessionStorage.setItem('redirectPath', location.pathname + location.search);
+    return <Navigate to="/login" replace />;
+  }
+
+  // If role is known and doesn't match expected, redirect to correct home
+  if (userRole && userRole !== role) {
+    return <Navigate to={ROLE_HOME[userRole] || '/dashboard'} replace />;
   }
 
   return <>{children}</>;
@@ -107,33 +138,45 @@ const AppRoutes = () => {
         <Route path="/who-its-for" element={<WhoItsForPage />} />
         <Route path="/security" element={<SecurityPage />} />
         <Route path="/shared/:shareId" element={<SharedRecord />} />
+        <Route path="/book/:doctorId" element={<PublicBooking />} />
+        <Route path="/clinic/:clinicId" element={<PublicClinic />} />
 
-        {/* ── Doctor Dashboard (protected, no patient sidebar) ─ */}
+        {/* ── Teleconsultation video room (any authenticated role) ──── */}
+        <Route
+          path="/consult/:appointmentId"
+          element={
+            <ProtectedRoute>
+              <TeleconsultRoom />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ── Doctor Dashboard (role-guarded: doctor only) ─────── */}
         <Route
           path="/doctor-dashboard"
           element={
-            <ProtectedRoute>
+            <RoleRoute role="doctor">
               <DoctorDashboard />
-            </ProtectedRoute>
+            </RoleRoute>
           }
         />
 
-        {/* ── Clinic Dashboard (protected, no patient sidebar) ── */}
+        {/* ── Clinic Dashboard (role-guarded: clinic only) ──────── */}
         <Route
           path="/clinic-dashboard"
           element={
-            <ProtectedRoute>
+            <RoleRoute role="clinic">
               <ClinicDashboard />
-            </ProtectedRoute>
+            </RoleRoute>
           }
         />
 
-        {/* ── Patient Dashboard Protected Routes (with Layout) ── */}
+        {/* ── Patient Dashboard (role-guarded: patient only) ───── */}
         <Route
           element={
-            <ProtectedRoute>
+            <RoleRoute role="patient">
               <Layout />
-            </ProtectedRoute>
+            </RoleRoute>
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />

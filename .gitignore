@@ -23,4 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .env
-.env.local 
+.env.local
+
+# Local planning / internal docs
+todo.md
+SECURITY.md

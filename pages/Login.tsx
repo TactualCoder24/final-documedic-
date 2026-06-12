@@ -97,12 +97,12 @@ const Login: React.FC = () => {
     setError(null);
     try {
       if (action === 'google') {
-        await signInWithGoogle();
-        // After Google sign-in, user effect will trigger
-        // We still need to save the role after auth
         if (selectedRole) {
-          await setUserRole(selectedRole);
+          sessionStorage.setItem('pendingRole', selectedRole);
         }
+        await signInWithGoogle();
+        // After the OAuth redirect, the auth state listener will apply
+        // the pending role once the real user is available.
       }
     } catch (err: any) {
       setError(err.message || t('login.error_signin', 'An error occurred during sign-in.'));
@@ -123,16 +123,16 @@ const Login: React.FC = () => {
     }
 
     try {
+      if (selectedRole) {
+        sessionStorage.setItem('pendingRole', selectedRole);
+      }
       if (isSignUp) {
         await signUpWithEmailPassword(email, password);
       } else {
         await signInWithEmailPassword(email, password);
       }
-      // Save role after auth — user effect will pick up via useEffect
-      // but we eagerly save it here too
-      if (selectedRole) {
-        await setUserRole(selectedRole);
-      }
+      // The auth state listener applies the pending role once the
+      // real user/session is available, avoiding the stale-user race.
     } catch (err: any) {
       setError(err.message || (isSignUp
         ? t('login.error_fail_signup', 'Failed to sign up.')

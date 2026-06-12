@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from './ui/ThemeToggle';
+import NotificationBell from './shared/NotificationBell';
 import Button from './ui/Button';
 import { Menu, X, LogOut, Settings } from './icons/Icons';
 import Logo from './icons/Logo';
@@ -265,6 +266,7 @@ const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
 
       {/* Right controls */}
       <div className="flex items-center gap-2">
+        {user?.uid && <NotificationBell userId={user.uid} />}
         {state.welcomeCompleted && (
           <button
             data-tour="tour-button"

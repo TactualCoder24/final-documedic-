@@ -33,9 +33,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let updated = false;
           const updates = { ...profile };
 
-          // Set role from profile
-          if (profile?.role) {
-            setUserRoleState(profile.role as UserRole);
+          // Apply a role selected during login/signup before the user object was available
+          const pendingRole = sessionStorage.getItem('pendingRole') as UserRole;
+          if (pendingRole && pendingRole !== profile?.role) {
+            updates.role = pendingRole;
+            updated = true;
+          }
+          sessionStorage.removeItem('pendingRole');
+
+          // Set role from profile (or the pending role just applied above)
+          if (updates.role) {
+            setUserRoleState(updates.role as UserRole);
           }
 
           // Sync Language on Login
@@ -114,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = useCallback(async () => {
     try {
       await auth.signOut();
+      sessionStorage.removeItem('pendingRole');
       setUserRoleState(null);
     } catch (error) {
       console.error("Error signing out", error);

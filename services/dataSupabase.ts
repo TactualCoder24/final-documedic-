@@ -22,7 +22,37 @@ import {
     GrowthRecord,
     Questionnaire,
     CommunityComment,
-    SleepLog
+    SleepLog,
+    Prescription,
+    PrescriptionMedication,
+    DiagnosisCode,
+    DentalChart,
+    Invoice,
+    InvoiceItem,
+    Referral,
+    PatientMessage,
+    DoctorAvailability,
+    BookingRequest,
+    Clinic,
+    Department,
+    ClinicStaff,
+    ClinicQueueEntry,
+    AuditLogEntry,
+    AppNotification,
+    Review,
+    DoctorScheduleConfig,
+    ClinicRolePermissions,
+    ClinicService,
+    ClinicIntakeTemplate,
+    IntakeField,
+    HospitalBed,
+    IpdAdmission,
+    PharmacyInventoryItem,
+    PharmacyDispense,
+    LabOrder,
+    InsuranceClaim,
+    EquipmentAsset,
+    ClinicCommerceSettings
 } from '../types';
 
 // ============================================================================
@@ -128,18 +158,19 @@ export const submitIntakeForm = async (
     appointmentId: string,
     doctorName: string,
     symptomsDescription: string,
-    file?: File
+    file?: File,
+    customFields?: { templateId?: string; customResponses?: Record<string, string | boolean>; signatureDataUrl?: string; consentAccepted?: boolean }
 ): Promise<void> => {
     let fileUrl = null;
 
     if (file) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${patientId}/intake_${Date.now()}.${fileExt}`;
-        
+
         const { error: uploadError } = await supabase.storage
             .from('medical-records')
             .upload(fileName, file, { cacheControl: '3600', upsert: false });
-            
+
         if (uploadError) {
             console.error('Error uploading intake file:', uploadError);
             throw uploadError;
@@ -152,7 +183,11 @@ export const submitIntakeForm = async (
         appointment_id: appointmentId,
         doctor_name: doctorName,
         symptoms_description: symptomsDescription,
-        file_url: fileUrl
+        file_url: fileUrl,
+        template_id: customFields?.templateId,
+        custom_responses: customFields?.customResponses,
+        signature_data_url: customFields?.signatureDataUrl,
+        consent_accepted: customFields?.consentAccepted ?? false,
     });
 
     if (error) {
@@ -1792,5 +1827,2380 @@ export const rejectConnectionRequest = async (requestId: string): Promise<void> 
         console.error('Error rejecting request:', error);
         throw error;
     }
+};
+
+// ============================================================================
+// PRESCRIPTIONS
+// ============================================================================
+
+const mapPrescription = (data: any): Prescription => ({
+    id: data.id,
+    doctorId: data.doctor_id,
+    patientId: data.patient_id,
+    appointmentId: data.appointment_id || undefined,
+    diagnosis: data.diagnosis || undefined,
+    diagnosisCodes: data.diagnosis_codes || [],
+    medications: data.medications || [],
+    notes: data.notes || undefined,
+    advice: data.advice || undefined,
+    followUpDate: data.follow_up_date || undefined,
+    createdAt: data.created_at,
+});
+
+export const getPrescriptionsForPatient = async (patientId: string): Promise<Prescription[]> => {
+    const { data, error } = await supabase
+        .from('prescriptions')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching prescriptions:', error);
+        throw error;
+    }
+    return (data || []).map(mapPrescription);
+};
+
+export const createPrescription = async (
+    doctorId: string,
+    patientId: string,
+    prescription: {
+        appointmentId?: string;
+        diagnosis?: string;
+        diagnosisCodes?: DiagnosisCode[];
+        medications: PrescriptionMedication[];
+        notes?: string;
+        advice?: string;
+        followUpDate?: string;
+    }
+): Promise<Prescription> => {
+    const { data, error } = await supabase
+        .from('prescriptions')
+        .insert({
+            doctor_id: doctorId,
+            patient_id: patientId,
+            appointment_id: prescription.appointmentId || null,
+            diagnosis: prescription.diagnosis || null,
+            diagnosis_codes: prescription.diagnosisCodes || [],
+            medications: prescription.medications,
+            notes: prescription.notes || null,
+            advice: prescription.advice || null,
+            follow_up_date: prescription.followUpDate || null,
+        })
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Error creating prescription:', error);
+        throw error;
+    }
+
+    await createNotification({
+        userId: patientId,
+        type: 'message',
+        title: 'New prescription from your doctor',
+        body: prescription.diagnosis ? `Diagnosis: ${prescription.diagnosis}` : 'A new prescription has been added to your records.',
+        link: '/medications',
+    });
+
+    return mapPrescription(data);
+};
+
+export const deletePrescription = async (prescriptionId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('prescriptions')
+        .delete()
+        .eq('id', prescriptionId);
+
+    if (error) {
+        console.error('Error deleting prescription:', error);
+        throw error;
+    }
+};
+
+// ============================================================================
+// DENTAL CHART
+// ============================================================================
+
+export const getDentalChart = async (doctorId: string, patientId: string): Promise<DentalChart | null> => {
+    const { data, error } = await supabase
+        .from('dental_charts')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .eq('patient_id', patientId)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching dental chart:', error);
+        throw error;
+    }
+    if (!data) return null;
+    return { teeth: data.teeth || {}, notes: data.notes || undefined, updatedAt: data.updated_at };
+};
+
+export const saveDentalChart = async (
+    doctorId: string,
+    patientId: string,
+    chart: { teeth: Record<string, string>; notes?: string }
+): Promise<void> => {
+    const { error } = await supabase
+        .from('dental_charts')
+        .upsert({
+            doctor_id: doctorId,
+            patient_id: patientId,
+            teeth: chart.teeth,
+            notes: chart.notes || null,
+            updated_at: new Date().toISOString(),
+        }, { onConflict: 'doctor_id,patient_id' });
+
+    if (error) {
+        console.error('Error saving dental chart:', error);
+        throw error;
+    }
+};
+
+// ============================================================================
+// INVOICES / BILLING
+// ============================================================================
+
+const mapInvoice = (data: any): Invoice => ({
+    id: data.id,
+    doctorId: data.doctor_id,
+    patientId: data.patient_id,
+    patientName: data.patient_name || undefined,
+    appointmentId: data.appointment_id || undefined,
+    items: data.items || [],
+    total: Number(data.total) || 0,
+    status: data.status,
+    issuedDate: data.issued_date,
+    dueDate: data.due_date || undefined,
+    notes: data.notes || undefined,
+    createdAt: data.created_at,
+});
+
+export const getInvoicesForDoctor = async (doctorId: string): Promise<Invoice[]> => {
+    const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .order('issued_date', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching invoices:', error);
+        throw error;
+    }
+    return (data || []).map(mapInvoice);
+};
+
+export const getInvoicesForPatient = async (patientId: string): Promise<Invoice[]> => {
+    const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('issued_date', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching invoices:', error);
+        throw error;
+    }
+    return (data || []).map(mapInvoice);
+};
+
+export const createInvoice = async (
+    doctorId: string,
+    patientId: string,
+    invoice: {
+        patientName?: string;
+        appointmentId?: string;
+        items: InvoiceItem[];
+        status?: 'due' | 'paid' | 'partial';
+        issuedDate?: string;
+        dueDate?: string;
+        notes?: string;
+    }
+): Promise<Invoice> => {
+    const total = invoice.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+    const { data, error } = await supabase
+        .from('invoices')
+        .insert({
+            doctor_id: doctorId,
+            patient_id: patientId,
+            patient_name: invoice.patientName || null,
+            appointment_id: invoice.appointmentId || null,
+            items: invoice.items,
+            total,
+            status: invoice.status || 'due',
+            issued_date: invoice.issuedDate || getTodayDateString(),
+            due_date: invoice.dueDate || null,
+            notes: invoice.notes || null,
+        })
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Error creating invoice:', error);
+        throw error;
+    }
+
+    await createNotification({
+        userId: patientId,
+        type: 'billing',
+        title: 'New invoice generated',
+        body: `An invoice for ₹${total.toFixed(2)} has been generated for your visit.`,
+        link: '/health-summary',
+    });
+
+    return mapInvoice(data);
+};
+
+export const updateInvoiceStatus = async (invoiceId: string, status: 'due' | 'paid' | 'partial'): Promise<void> => {
+    const { error } = await supabase
+        .from('invoices')
+        .update({ status })
+        .eq('id', invoiceId);
+
+    if (error) {
+        console.error('Error updating invoice status:', error);
+        throw error;
+    }
+};
+
+export const deleteInvoice = async (invoiceId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoiceId);
+
+    if (error) {
+        console.error('Error deleting invoice:', error);
+        throw error;
+    }
+};
+
+// ============================================================================
+// PRACTICE ANALYTICS
+// ============================================================================
+
+export interface PracticeAnalytics {
+    monthlyPatientCounts: { month: string; count: number }[]; // new patients added per month (last 6 months)
+    monthlyAppointmentCounts: { month: string; count: number }[]; // appointments per month (last 6 months)
+    monthlyRevenue: { month: string; total: number }[]; // invoice totals per month (last 6 months)
+    topDiagnoses: { diagnosis: string; count: number }[];
+    completionRate: number; // % of past appointments marked Completed
+    totalPatients: number;
+    totalAppointments: number;
+}
+
+const lastNMonthsLabels = (n: number): { key: string; label: string }[] => {
+    const months: { key: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = n - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({
+            key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+            label: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+        });
+    }
+    return months;
+};
+
+export const getDoctorAnalytics = async (doctorId: string): Promise<PracticeAnalytics> => {
+    const months = lastNMonthsLabels(6);
+    const monthKeyOf = (dateStr: string) => {
+        const d = new Date(dateStr);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    };
+
+    // Patients linked to this doctor
+    const { data: links, error: linkError } = await supabase
+        .from('doctor_patients')
+        .select('patient_id, created_at')
+        .eq('doctor_id', doctorId);
+
+    if (linkError) {
+        console.error('Error fetching doctor patients for analytics:', linkError);
+        throw linkError;
+    }
+    const patientIds = (links || []).map(l => l.patient_id);
+
+    const monthlyPatientCounts = months.map(({ key, label }) => ({
+        month: label,
+        count: (links || []).filter(l => monthKeyOf(l.created_at) === key).length,
+    }));
+
+    // Appointments for these patients
+    let appointments: { date_time: string; status: string }[] = [];
+    if (patientIds.length > 0) {
+        const { data: appts, error: apptError } = await supabase
+            .from('appointments')
+            .select('date_time, status')
+            .in('user_id', patientIds);
+
+        if (apptError) {
+            console.error('Error fetching appointments for analytics:', apptError);
+        } else {
+            appointments = appts || [];
+        }
+    }
+
+    const monthlyAppointmentCounts = months.map(({ key, label }) => ({
+        month: label,
+        count: appointments.filter(a => monthKeyOf(a.date_time) === key).length,
+    }));
+
+    const now = new Date();
+    const pastAppointments = appointments.filter(a => new Date(a.date_time) < now);
+    const completionRate = pastAppointments.length > 0
+        ? Math.round((pastAppointments.filter(a => a.status === 'Completed').length / pastAppointments.length) * 100)
+        : 0;
+
+    // Revenue from invoices
+    const { data: invoices, error: invoiceError } = await supabase
+        .from('invoices')
+        .select('total, issued_date')
+        .eq('doctor_id', doctorId);
+
+    if (invoiceError) {
+        console.error('Error fetching invoices for analytics:', invoiceError);
+    }
+
+    const monthlyRevenue = months.map(({ key, label }) => ({
+        month: label,
+        total: (invoices || [])
+            .filter(inv => monthKeyOf(inv.issued_date) === key)
+            .reduce((sum, inv) => sum + Number(inv.total || 0), 0),
+    }));
+
+    // Top diagnoses from prescriptions
+    const { data: prescriptions, error: rxError } = await supabase
+        .from('prescriptions')
+        .select('diagnosis')
+        .eq('doctor_id', doctorId)
+        .not('diagnosis', 'is', null);
+
+    if (rxError) {
+        console.error('Error fetching prescriptions for analytics:', rxError);
+    }
+
+    const diagnosisCounts = new Map<string, number>();
+    (prescriptions || []).forEach(p => {
+        const d = (p.diagnosis || '').trim();
+        if (!d) return;
+        diagnosisCounts.set(d, (diagnosisCounts.get(d) || 0) + 1);
+    });
+    const topDiagnoses = Array.from(diagnosisCounts.entries())
+        .map(([diagnosis, count]) => ({ diagnosis, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+    return {
+        monthlyPatientCounts,
+        monthlyAppointmentCounts,
+        monthlyRevenue,
+        topDiagnoses,
+        completionRate,
+        totalPatients: patientIds.length,
+        totalAppointments: appointments.length,
+    };
+};
+
+// ============================================================================
+// REFERRAL MANAGEMENT
+// ============================================================================
+
+export const searchDoctors = async (query: string): Promise<Profile[]> => {
+    if (!query) return [];
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`email.ilike.%${query}%,phone.ilike.%${query}%,name.ilike.%${query}%,specialty.ilike.%${query}%`)
+        .eq('role', 'doctor')
+        .limit(10);
+
+    if (error) {
+        console.error('Error searching doctors:', error);
+        throw error;
+    }
+
+    return data || [];
+};
+
+export const getConnectedDoctorsForPatient = async (patientId: string): Promise<(Profile & { id: string })[]> => {
+    const { data: links, error: linkError } = await supabase
+        .from('doctor_patients')
+        .select('doctor_id')
+        .eq('patient_id', patientId)
+        .eq('status', 'active');
+
+    if (linkError) {
+        console.error('Error fetching connected doctors:', linkError);
+        return [];
+    }
+
+    const doctorIds = (links || []).map(l => l.doctor_id).filter(Boolean);
+    if (doctorIds.length === 0) return [];
+
+    const { data, error } = await supabase.from('profiles').select('*').in('id', doctorIds);
+    if (error) {
+        console.error('Error fetching connected doctor profiles:', error);
+        return [];
+    }
+    return data || [];
+};
+
+const mapReferral = (row: any): Referral => ({
+    id: row.id,
+    referringDoctorId: row.referring_doctor_id,
+    referringDoctorName: row.referring_doctor_name || undefined,
+    patientId: row.patient_id,
+    patientName: row.patient_name || undefined,
+    referredToDoctorId: row.referred_to_doctor_id || undefined,
+    referredToName: row.referred_to_name,
+    specialty: row.specialty || undefined,
+    reason: row.reason,
+    notes: row.notes || undefined,
+    status: row.status,
+    createdAt: row.created_at,
+});
+
+export const createReferral = async (referral: {
+    referringDoctorId: string;
+    referringDoctorName?: string;
+    patientId: string;
+    patientName?: string;
+    referredToDoctorId?: string;
+    referredToName: string;
+    specialty?: string;
+    reason: string;
+    notes?: string;
+}): Promise<Referral> => {
+    const { data, error } = await supabase
+        .from('referrals')
+        .insert({
+            referring_doctor_id: referral.referringDoctorId,
+            referring_doctor_name: referral.referringDoctorName || null,
+            patient_id: referral.patientId,
+            patient_name: referral.patientName || null,
+            referred_to_doctor_id: referral.referredToDoctorId || null,
+            referred_to_name: referral.referredToName,
+            specialty: referral.specialty || null,
+            reason: referral.reason,
+            notes: referral.notes || null,
+        })
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Error creating referral:', error);
+        throw error;
+    }
+
+    if (referral.referredToDoctorId) {
+        await createNotification({
+            userId: referral.referredToDoctorId,
+            type: 'referral',
+            title: 'New patient referral',
+            body: `${referral.referringDoctorName || 'A doctor'} referred ${referral.patientName || 'a patient'} to you${referral.specialty ? ` (${referral.specialty})` : ''}.`,
+            link: '/doctor-dashboard',
+        });
+    }
+
+    return mapReferral(data);
+};
+
+export const getOutgoingReferrals = async (doctorId: string): Promise<Referral[]> => {
+    const { data, error } = await supabase
+        .from('referrals')
+        .select('*')
+        .eq('referring_doctor_id', doctorId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching outgoing referrals:', error);
+        throw error;
+    }
+    return (data || []).map(mapReferral);
+};
+
+export const getIncomingReferrals = async (doctorId: string): Promise<Referral[]> => {
+    const { data, error } = await supabase
+        .from('referrals')
+        .select('*')
+        .eq('referred_to_doctor_id', doctorId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching incoming referrals:', error);
+        throw error;
+    }
+    return (data || []).map(mapReferral);
+};
+
+export const getReferralsForPatient = async (doctorId: string, patientId: string): Promise<Referral[]> => {
+    const { data, error } = await supabase
+        .from('referrals')
+        .select('*')
+        .eq('referring_doctor_id', doctorId)
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching referrals for patient:', error);
+        throw error;
+    }
+    return (data || []).map(mapReferral);
+};
+
+export const updateReferralStatus = async (
+    referralId: string,
+    status: Referral['status'],
+    sharedRecordContext?: { referredToDoctorId: string; patientId: string }
+): Promise<void> => {
+    const { error } = await supabase
+        .from('referrals')
+        .update({ status })
+        .eq('id', referralId);
+
+    if (error) {
+        console.error('Error updating referral status:', error);
+        throw error;
+    }
+
+    // Acknowledging a referral grants the referred-to doctor access to the
+    // patient's existing chart, by linking them like any other connected patient.
+    if (status === 'acknowledged' && sharedRecordContext) {
+        const { error: linkError } = await supabase
+            .from('doctor_patients')
+            .upsert(
+                { doctor_id: sharedRecordContext.referredToDoctorId, patient_id: sharedRecordContext.patientId, status: 'active' },
+                { onConflict: 'doctor_id,patient_id', ignoreDuplicates: true }
+            );
+        if (linkError) {
+            console.error('Error linking referred patient to doctor:', linkError);
+        }
+    }
+};
+
+// ============================================================================
+// PATIENT MESSAGES & REMINDERS (DOCTOR -> PATIENT)
+// ============================================================================
+
+const mapPatientMessage = (row: any): PatientMessage => ({
+    id: row.id,
+    doctorId: row.doctor_id,
+    doctorName: row.doctor_name || undefined,
+    patientId: row.patient_id,
+    type: row.type,
+    title: row.title,
+    body: row.body || undefined,
+    scheduledFor: row.scheduled_for || undefined,
+    isRead: row.is_read,
+    createdAt: row.created_at,
+});
+
+export const sendPatientMessage = async (message: {
+    doctorId: string;
+    doctorName?: string;
+    patientId: string;
+    type: 'message' | 'reminder';
+    title: string;
+    body?: string;
+    scheduledFor?: string;
+}): Promise<PatientMessage> => {
+    const { data, error } = await supabase
+        .from('patient_messages')
+        .insert({
+            doctor_id: message.doctorId,
+            doctor_name: message.doctorName || null,
+            patient_id: message.patientId,
+            type: message.type,
+            title: message.title,
+            body: message.body || null,
+            scheduled_for: message.scheduledFor || null,
+        })
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Error sending patient message:', error);
+        throw error;
+    }
+
+    await createNotification({
+        userId: message.patientId,
+        type: message.type === 'reminder' ? 'appointment' : 'message',
+        title: message.title,
+        body: message.body,
+        link: '/reminders',
+    });
+
+    return mapPatientMessage(data);
+};
+
+export const getMessagesSentToPatient = async (doctorId: string, patientId: string): Promise<PatientMessage[]> => {
+    const { data, error } = await supabase
+        .from('patient_messages')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching sent messages:', error);
+        throw error;
+    }
+    return (data || []).map(mapPatientMessage);
+};
+
+export const getMessagesForPatient = async (patientId: string): Promise<PatientMessage[]> => {
+    const { data, error } = await supabase
+        .from('patient_messages')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching patient messages:', error);
+        throw error;
+    }
+    return (data || []).map(mapPatientMessage);
+};
+
+export const markMessageRead = async (messageId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('patient_messages')
+        .update({ is_read: true })
+        .eq('id', messageId);
+
+    if (error) {
+        console.error('Error marking message as read:', error);
+        throw error;
+    }
+};
+
+export const deletePatientMessage = async (messageId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('patient_messages')
+        .delete()
+        .eq('id', messageId);
+
+    if (error) {
+        console.error('Error deleting patient message:', error);
+        throw error;
+    }
+};
+
+// ============================================================================
+// PUBLIC BOOKING PAGE
+// ============================================================================
+
+const mapAvailability = (row: any): DoctorAvailability => ({
+    id: row.id,
+    doctorId: row.doctor_id,
+    dayOfWeek: row.day_of_week,
+    startTime: row.start_time?.slice(0, 5),
+    endTime: row.end_time?.slice(0, 5),
+    slotDurationMinutes: row.slot_duration_minutes,
+});
+
+const mapBookingRequest = (row: any): BookingRequest => ({
+    id: row.id,
+    doctorId: row.doctor_id,
+    patientName: row.patient_name,
+    patientEmail: row.patient_email || undefined,
+    patientPhone: row.patient_phone || undefined,
+    requestedDateTime: row.requested_date_time,
+    reason: row.reason || undefined,
+    status: row.status,
+    createdAt: row.created_at,
+});
+
+export const getDoctorPublicProfile = async (doctorId: string): Promise<Profile | null> => {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', doctorId)
+        .eq('role', 'doctor')
+        .eq('public_booking_enabled', true)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching doctor public profile:', error);
+        throw error;
+    }
+    return data;
+};
+
+export const updatePublicBookingSettings = async (doctorId: string, settings: { publicBookingEnabled: boolean; bookingBio?: string }): Promise<void> => {
+    const { error } = await supabase
+        .from('profiles')
+        .update({
+            public_booking_enabled: settings.publicBookingEnabled,
+            booking_bio: settings.bookingBio || null,
+        })
+        .eq('id', doctorId);
+
+    if (error) {
+        console.error('Error updating public booking settings:', error);
+        throw error;
+    }
+};
+
+export const getDoctorAvailability = async (doctorId: string): Promise<DoctorAvailability[]> => {
+    const { data, error } = await supabase
+        .from('doctor_availability')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .order('day_of_week', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching doctor availability:', error);
+        throw error;
+    }
+    return (data || []).map(mapAvailability);
+};
+
+export const setDoctorAvailability = async (doctorId: string, slots: { dayOfWeek: number; startTime: string; endTime: string; slotDurationMinutes: number }[]): Promise<void> => {
+    const { error: deleteError } = await supabase
+        .from('doctor_availability')
+        .delete()
+        .eq('doctor_id', doctorId);
+
+    if (deleteError) {
+        console.error('Error clearing doctor availability:', deleteError);
+        throw deleteError;
+    }
+
+    if (slots.length === 0) return;
+
+    const { error } = await supabase
+        .from('doctor_availability')
+        .insert(slots.map(s => ({
+            doctor_id: doctorId,
+            day_of_week: s.dayOfWeek,
+            start_time: s.startTime,
+            end_time: s.endTime,
+            slot_duration_minutes: s.slotDurationMinutes,
+        })));
+
+    if (error) {
+        console.error('Error saving doctor availability:', error);
+        throw error;
+    }
+};
+
+export const createBookingRequest = async (request: {
+    doctorId: string;
+    patientName: string;
+    patientEmail?: string;
+    patientPhone?: string;
+    requestedDateTime: string;
+    reason?: string;
+}): Promise<BookingRequest> => {
+    const { data, error } = await supabase
+        .from('booking_requests')
+        .insert({
+            doctor_id: request.doctorId,
+            patient_name: request.patientName,
+            patient_email: request.patientEmail || null,
+            patient_phone: request.patientPhone || null,
+            requested_date_time: request.requestedDateTime,
+            reason: request.reason || null,
+        })
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Error creating booking request:', error);
+        throw error;
+    }
+
+    await createNotification({
+        userId: request.doctorId,
+        type: 'appointment',
+        title: 'New booking request',
+        body: `${request.patientName} requested an appointment for ${new Date(request.requestedDateTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}.`,
+        link: '/doctor-dashboard',
+    });
+
+    return mapBookingRequest(data);
+};
+
+export const getBookingRequests = async (doctorId: string): Promise<BookingRequest[]> => {
+    const { data, error } = await supabase
+        .from('booking_requests')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .order('requested_date_time', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching booking requests:', error);
+        throw error;
+    }
+    return (data || []).map(mapBookingRequest);
+};
+
+export const updateBookingRequestStatus = async (requestId: string, status: BookingRequest['status']): Promise<void> => {
+    const { error } = await supabase
+        .from('booking_requests')
+        .update({ status })
+        .eq('id', requestId);
+
+    if (error) {
+        console.error('Error updating booking request status:', error);
+        throw error;
+    }
+};
+
+// ============================================================================
+// CLINIC DATA MODEL
+// ============================================================================
+
+const mapClinic = (row: any): Clinic => ({
+    id: row.id,
+    name: row.name,
+    address: row.address || undefined,
+    phone: row.phone || undefined,
+    email: row.email || undefined,
+    specialties: row.specialties || undefined,
+    logoUrl: row.logo_url || undefined,
+    createdAt: row.created_at,
+});
+
+const mapDepartment = (row: any): Department => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    name: row.name,
+    description: row.description || undefined,
+    createdAt: row.created_at,
+});
+
+const mapClinicStaff = (row: any): ClinicStaff => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    userId: row.user_id || undefined,
+    staffName: row.staff_name || undefined,
+    staffEmail: row.staff_email || undefined,
+    role: row.role,
+    departmentId: row.department_id || undefined,
+    status: row.status,
+    createdAt: row.created_at,
+});
+
+const mapQueueEntry = (row: any): ClinicQueueEntry => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    patientName: row.patient_name,
+    patientPhone: row.patient_phone || undefined,
+    doctorId: row.doctor_id || undefined,
+    departmentId: row.department_id || undefined,
+    status: row.status,
+    tokenNumber: row.token_number || undefined,
+    notes: row.notes || undefined,
+    checkedInAt: row.checked_in_at,
+    calledAt: row.called_at || undefined,
+    completedAt: row.completed_at || undefined,
+});
+
+export const getClinic = async (clinicId: string): Promise<Clinic | null> => {
+    const { data, error } = await supabase
+        .from('clinics')
+        .select('*')
+        .eq('id', clinicId)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching clinic:', error);
+        throw error;
+    }
+    return data ? mapClinic(data) : null;
+};
+
+export const saveClinic = async (clinicId: string, clinic: { name: string; address?: string; phone?: string; email?: string; specialties?: string[] }): Promise<Clinic> => {
+    const { data, error } = await supabase
+        .from('clinics')
+        .upsert({
+            id: clinicId,
+            name: clinic.name,
+            address: clinic.address || null,
+            phone: clinic.phone || null,
+            email: clinic.email || null,
+            specialties: clinic.specialties || null,
+        })
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Error saving clinic:', error);
+        throw error;
+    }
+    return mapClinic(data);
+};
+
+export const getDepartments = async (clinicId: string): Promise<Department[]> => {
+    const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('name', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching departments:', error);
+        throw error;
+    }
+    return (data || []).map(mapDepartment);
+};
+
+export const createDepartment = async (clinicId: string, name: string, description?: string): Promise<Department> => {
+    const { data, error } = await supabase
+        .from('departments')
+        .insert({ clinic_id: clinicId, name, description: description || null })
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Error creating department:', error);
+        throw error;
+    }
+    return mapDepartment(data);
+};
+
+export const deleteDepartment = async (departmentId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('departments')
+        .delete()
+        .eq('id', departmentId);
+
+    if (error) {
+        console.error('Error deleting department:', error);
+        throw error;
+    }
+};
+
+export const getClinicStaff = async (clinicId: string): Promise<ClinicStaff[]> => {
+    const { data, error } = await supabase
+        .from('clinic_staff')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching clinic staff:', error);
+        throw error;
+    }
+    return (data || []).map(mapClinicStaff);
+};
+
+export const inviteClinicStaff = async (clinicId: string, invite: { email: string; role: ClinicStaff['role']; departmentId?: string }): Promise<ClinicStaff> => {
+    // Try to find an existing profile with this email to link the invite
+    const { data: matches } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .ilike('email', invite.email)
+        .limit(1);
+
+    const matchedProfile = matches && matches.length > 0 ? matches[0] : null;
+
+    const { data, error } = await supabase
+        .from('clinic_staff')
+        .insert({
+            clinic_id: clinicId,
+            user_id: matchedProfile?.id || null,
+            staff_name: matchedProfile?.name || null,
+            staff_email: invite.email,
+            role: invite.role,
+            department_id: invite.departmentId || null,
+            status: matchedProfile ? 'active' : 'pending',
+        })
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Error inviting clinic staff:', error);
+        throw error;
+    }
+    return mapClinicStaff(data);
+};
+
+export const updateClinicStaff = async (staffId: string, patch: { role?: ClinicStaff['role']; departmentId?: string | null; status?: ClinicStaff['status'] }): Promise<void> => {
+    const update: any = {};
+    if (patch.role) update.role = patch.role;
+    if (patch.departmentId !== undefined) update.department_id = patch.departmentId;
+    if (patch.status) update.status = patch.status;
+
+    const { error } = await supabase
+        .from('clinic_staff')
+        .update(update)
+        .eq('id', staffId);
+
+    if (error) {
+        console.error('Error updating clinic staff:', error);
+        throw error;
+    }
+};
+
+export const removeClinicStaff = async (staffId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('clinic_staff')
+        .delete()
+        .eq('id', staffId);
+
+    if (error) {
+        console.error('Error removing clinic staff:', error);
+        throw error;
+    }
+};
+
+export const getClinicQueue = async (clinicId: string): Promise<ClinicQueueEntry[]> => {
+    const { data, error } = await supabase
+        .from('clinic_queue')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('checked_in_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching clinic queue:', error);
+        throw error;
+    }
+    return (data || []).map(mapQueueEntry);
+};
+
+export const addToQueue = async (clinicId: string, entry: { patientName: string; patientPhone?: string; doctorId?: string; departmentId?: string; notes?: string; tokenNumber?: number }): Promise<ClinicQueueEntry> => {
+    const { data, error } = await supabase
+        .from('clinic_queue')
+        .insert({
+            clinic_id: clinicId,
+            patient_name: entry.patientName,
+            patient_phone: entry.patientPhone || null,
+            doctor_id: entry.doctorId || null,
+            department_id: entry.departmentId || null,
+            notes: entry.notes || null,
+            token_number: entry.tokenNumber || null,
+        })
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Error adding to clinic queue:', error);
+        throw error;
+    }
+    return mapQueueEntry(data);
+};
+
+export const updateQueueStatus = async (queueId: string, status: ClinicQueueEntry['status']): Promise<void> => {
+    const update: any = { status };
+    if (status === 'in_progress') update.called_at = new Date().toISOString();
+    if (status === 'completed') update.completed_at = new Date().toISOString();
+
+    const { error } = await supabase
+        .from('clinic_queue')
+        .update(update)
+        .eq('id', queueId);
+
+    if (error) {
+        console.error('Error updating queue status:', error);
+        throw error;
+    }
+};
+
+export const removeFromQueue = async (queueId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('clinic_queue')
+        .delete()
+        .eq('id', queueId);
+
+    if (error) {
+        console.error('Error removing from queue:', error);
+        throw error;
+    }
+};
+
+// ============================================================================
+// CLINIC-WIDE BILLING & ANALYTICS
+// ============================================================================
+
+const getActiveClinicDoctors = async (clinicId: string): Promise<{ id: string; name: string }[]> => {
+    const { data, error } = await supabase
+        .from('clinic_staff')
+        .select('user_id, staff_name')
+        .eq('clinic_id', clinicId)
+        .eq('role', 'doctor')
+        .eq('status', 'active')
+        .not('user_id', 'is', null);
+
+    if (error) {
+        console.error('Error fetching clinic doctors:', error);
+        throw error;
+    }
+    return (data || []).map(d => ({ id: d.user_id as string, name: d.staff_name || 'Doctor' }));
+};
+
+export interface ClinicInvoice extends Invoice {
+    doctorName?: string;
+}
+
+export const getClinicInvoices = async (clinicId: string): Promise<ClinicInvoice[]> => {
+    const doctors = await getActiveClinicDoctors(clinicId);
+    if (doctors.length === 0) return [];
+    const doctorNameMap = new Map(doctors.map(d => [d.id, d.name]));
+
+    const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .in('doctor_id', doctors.map(d => d.id))
+        .order('issued_date', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching clinic invoices:', error);
+        throw error;
+    }
+    return (data || []).map(row => ({ ...mapInvoice(row), doctorName: doctorNameMap.get(row.doctor_id) || 'Doctor' }));
+};
+
+export interface ClinicAnalytics {
+    totalDoctors: number;
+    totalPatients: number;
+    totalAppointments: number;
+    completionRate: number;
+    monthlyAppointmentCounts: { month: string; count: number }[];
+    monthlyRevenue: { month: string; total: number }[];
+    doctorUtilization: { doctorName: string; appointments: number }[];
+    topDiagnoses: { diagnosis: string; count: number }[];
+}
+
+export const getClinicAnalytics = async (clinicId: string): Promise<ClinicAnalytics> => {
+    const months = lastNMonthsLabels(6);
+    const monthKeyOf = (dateStr: string) => {
+        const d = new Date(dateStr);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    };
+
+    const doctors = await getActiveClinicDoctors(clinicId);
+    if (doctors.length === 0) {
+        return {
+            totalDoctors: 0,
+            totalPatients: 0,
+            totalAppointments: 0,
+            completionRate: 0,
+            monthlyAppointmentCounts: months.map(({ label }) => ({ month: label, count: 0 })),
+            monthlyRevenue: months.map(({ label }) => ({ month: label, total: 0 })),
+            doctorUtilization: [],
+            topDiagnoses: [],
+        };
+    }
+    const doctorIds = doctors.map(d => d.id);
+
+    // Patients linked to any of the clinic's active doctors
+    const { data: links, error: linkError } = await supabase
+        .from('doctor_patients')
+        .select('doctor_id, patient_id')
+        .in('doctor_id', doctorIds);
+
+    if (linkError) {
+        console.error('Error fetching clinic doctor-patient links:', linkError);
+        throw linkError;
+    }
+
+    const uniquePatientIds = Array.from(new Set((links || []).map(l => l.patient_id)));
+
+    // Appointments for those patients
+    let appointments: { date_time: string; status: string; user_id: string }[] = [];
+    if (uniquePatientIds.length > 0) {
+        const { data: appts, error: apptError } = await supabase
+            .from('appointments')
+            .select('date_time, status, user_id')
+            .in('user_id', uniquePatientIds);
+
+        if (apptError) {
+            console.error('Error fetching clinic appointments:', apptError);
+        } else {
+            appointments = appts || [];
+        }
+    }
+
+    const monthlyAppointmentCounts = months.map(({ key, label }) => ({
+        month: label,
+        count: appointments.filter(a => monthKeyOf(a.date_time) === key).length,
+    }));
+
+    const now = new Date();
+    const pastAppointments = appointments.filter(a => new Date(a.date_time) < now);
+    const completionRate = pastAppointments.length > 0
+        ? Math.round((pastAppointments.filter(a => a.status === 'Completed').length / pastAppointments.length) * 100)
+        : 0;
+
+    // Doctor utilization: count appointments per doctor via the patient links
+    const patientToDoctors = new Map<string, string[]>();
+    (links || []).forEach(l => {
+        const arr = patientToDoctors.get(l.patient_id) || [];
+        arr.push(l.doctor_id);
+        patientToDoctors.set(l.patient_id, arr);
+    });
+    const utilCounts = new Map<string, number>();
+    appointments.forEach(a => {
+        (patientToDoctors.get(a.user_id) || []).forEach(doctorId => {
+            utilCounts.set(doctorId, (utilCounts.get(doctorId) || 0) + 1);
+        });
+    });
+    const doctorUtilization = doctors
+        .map(d => ({ doctorName: d.name, appointments: utilCounts.get(d.id) || 0 }))
+        .sort((a, b) => b.appointments - a.appointments);
+
+    // Revenue from invoices
+    const { data: invoices, error: invError } = await supabase
+        .from('invoices')
+        .select('total, issued_date')
+        .in('doctor_id', doctorIds);
+
+    if (invError) {
+        console.error('Error fetching clinic invoices for analytics:', invError);
+    }
+
+    const monthlyRevenue = months.map(({ key, label }) => ({
+        month: label,
+        total: (invoices || [])
+            .filter(inv => monthKeyOf(inv.issued_date) === key)
+            .reduce((sum, inv) => sum + Number(inv.total || 0), 0),
+    }));
+
+    // Top diagnoses across the clinic's doctors
+    const { data: prescriptions, error: rxError } = await supabase
+        .from('prescriptions')
+        .select('diagnosis')
+        .in('doctor_id', doctorIds)
+        .not('diagnosis', 'is', null);
+
+    if (rxError) {
+        console.error('Error fetching clinic prescriptions for analytics:', rxError);
+    }
+
+    const diagnosisCounts = new Map<string, number>();
+    (prescriptions || []).forEach(p => {
+        const d = (p.diagnosis || '').trim();
+        if (!d) return;
+        diagnosisCounts.set(d, (diagnosisCounts.get(d) || 0) + 1);
+    });
+    const topDiagnoses = Array.from(diagnosisCounts.entries())
+        .map(([diagnosis, count]) => ({ diagnosis, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+    return {
+        totalDoctors: doctors.length,
+        totalPatients: uniquePatientIds.length,
+        totalAppointments: appointments.length,
+        completionRate,
+        monthlyAppointmentCounts,
+        monthlyRevenue,
+        doctorUtilization,
+        topDiagnoses,
+    };
+};
+
+// ============================================================================
+// CLINIC PUBLIC PROFILE PAGE
+// ============================================================================
+
+export interface ClinicPublicProfile {
+    clinic: Clinic;
+    departments: Department[];
+    doctors: Profile[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Audit log
+// ─────────────────────────────────────────────────────────────────────────
+const mapAuditLog = (row: any): AuditLogEntry => ({
+    id: row.id,
+    actorId: row.actor_id || undefined,
+    actorName: row.actor_name || undefined,
+    actorRole: row.actor_role || undefined,
+    clinicId: row.clinic_id || undefined,
+    action: row.action,
+    entityType: row.entity_type || undefined,
+    entityId: row.entity_id || undefined,
+    details: row.details || undefined,
+    createdAt: row.created_at,
+});
+
+export const logAuditEvent = async (entry: {
+    actorId: string;
+    actorName?: string;
+    actorRole?: string;
+    clinicId?: string;
+    action: string;
+    entityType?: string;
+    entityId?: string;
+    details?: Record<string, any>;
+}): Promise<void> => {
+    const { error } = await supabase.from('audit_logs').insert({
+        actor_id: entry.actorId,
+        actor_name: entry.actorName,
+        actor_role: entry.actorRole,
+        clinic_id: entry.clinicId,
+        action: entry.action,
+        entity_type: entry.entityType,
+        entity_id: entry.entityId,
+        details: entry.details,
+    });
+    if (error) {
+        console.error('Error logging audit event:', error);
+    }
+};
+
+export const getClinicAuditLog = async (clinicId: string, limit = 100): Promise<AuditLogEntry[]> => {
+    const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error('Error fetching audit log:', error);
+        return [];
+    }
+    return (data || []).map(mapAuditLog);
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Notifications
+// ─────────────────────────────────────────────────────────────────────────
+const mapNotification = (row: any): AppNotification => ({
+    id: row.id,
+    userId: row.user_id,
+    type: row.type,
+    title: row.title,
+    body: row.body || undefined,
+    link: row.link || undefined,
+    isRead: row.is_read,
+    createdAt: row.created_at,
+});
+
+export const createNotification = async (notification: {
+    userId: string;
+    type: AppNotification['type'];
+    title: string;
+    body?: string;
+    link?: string;
+}): Promise<void> => {
+    const { error } = await supabase.from('notifications').insert({
+        user_id: notification.userId,
+        type: notification.type,
+        title: notification.title,
+        body: notification.body,
+        link: notification.link,
+    });
+    if (error) {
+        console.error('Error creating notification:', error);
+    }
+};
+
+export const getNotifications = async (userId: string, limit = 30): Promise<AppNotification[]> => {
+    const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error('Error fetching notifications:', error);
+        return [];
+    }
+    return (data || []).map(mapNotification);
+};
+
+export const getUnreadNotificationCount = async (userId: string): Promise<number> => {
+    const { count, error } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+
+    if (error) {
+        console.error('Error fetching unread notification count:', error);
+        return 0;
+    }
+    return count || 0;
+};
+
+export const markNotificationRead = async (notificationId: string): Promise<void> => {
+    const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', notificationId);
+    if (error) {
+        console.error('Error marking notification read:', error);
+    }
+};
+
+export const markAllNotificationsRead = async (userId: string): Promise<void> => {
+    const { error } = await supabase.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
+    if (error) {
+        console.error('Error marking all notifications read:', error);
+    }
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Patient feedback / reviews
+// ─────────────────────────────────────────────────────────────────────────
+const mapReview = (row: any): Review => ({
+    id: row.id,
+    patientId: row.patient_id,
+    doctorId: row.doctor_id || undefined,
+    clinicId: row.clinic_id || undefined,
+    appointmentId: row.appointment_id || undefined,
+    rating: row.rating,
+    comment: row.comment || undefined,
+    createdAt: row.created_at,
+});
+
+export const createReview = async (review: {
+    patientId: string;
+    doctorId?: string;
+    clinicId?: string;
+    appointmentId?: string;
+    rating: number;
+    comment?: string;
+}): Promise<Review> => {
+    const { data, error } = await supabase
+        .from('reviews')
+        .insert({
+            patient_id: review.patientId,
+            doctor_id: review.doctorId,
+            clinic_id: review.clinicId,
+            appointment_id: review.appointmentId,
+            rating: review.rating,
+            comment: review.comment,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating review:', error);
+        throw error;
+    }
+
+    if (review.doctorId) {
+        await createNotification({
+            userId: review.doctorId,
+            type: 'review',
+            title: 'New patient feedback',
+            body: `You received a ${review.rating}-star review${review.comment ? `: "${review.comment}"` : '.'}`,
+            link: '/doctor-dashboard',
+        });
+    }
+
+    return mapReview(data);
+};
+
+export const getReviewsForDoctor = async (doctorId: string): Promise<Review[]> => {
+    const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching doctor reviews:', error);
+        return [];
+    }
+    return (data || []).map(mapReview);
+};
+
+export const getReviewForAppointment = async (appointmentId: string): Promise<Review | null> => {
+    const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('appointment_id', appointmentId)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching review for appointment:', error);
+        return null;
+    }
+    return data ? mapReview(data) : null;
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Dynamic scheduler config
+// ─────────────────────────────────────────────────────────────────────────
+const mapScheduleConfig = (row: any): DoctorScheduleConfig => ({
+    doctorId: row.doctor_id,
+    clinicId: row.clinic_id || undefined,
+    slotDurationMinutes: row.slot_duration_minutes,
+    bufferMinutes: row.buffer_minutes,
+    allowOverbooking: row.allow_overbooking,
+    walkinPriority: row.walkin_priority,
+    updatedAt: row.updated_at,
+});
+
+export const getDoctorScheduleConfig = async (doctorId: string): Promise<DoctorScheduleConfig | null> => {
+    const { data, error } = await supabase
+        .from('doctor_schedule_config')
+        .select('*')
+        .eq('doctor_id', doctorId)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching doctor schedule config:', error);
+        return null;
+    }
+    return data ? mapScheduleConfig(data) : null;
+};
+
+export const saveDoctorScheduleConfig = async (doctorId: string, config: {
+    clinicId?: string;
+    slotDurationMinutes: number;
+    bufferMinutes: number;
+    allowOverbooking: boolean;
+    walkinPriority: 'fifo' | 'scheduled_first';
+}): Promise<void> => {
+    const { error } = await supabase.from('doctor_schedule_config').upsert({
+        doctor_id: doctorId,
+        clinic_id: config.clinicId,
+        slot_duration_minutes: config.slotDurationMinutes,
+        buffer_minutes: config.bufferMinutes,
+        allow_overbooking: config.allowOverbooking,
+        walkin_priority: config.walkinPriority,
+        updated_at: new Date().toISOString(),
+    }, { onConflict: 'doctor_id' });
+
+    if (error) {
+        console.error('Error saving doctor schedule config:', error);
+        throw error;
+    }
+};
+
+export const getClinicScheduleConfigs = async (clinicId: string): Promise<DoctorScheduleConfig[]> => {
+    const { data, error } = await supabase
+        .from('doctor_schedule_config')
+        .select('*')
+        .eq('clinic_id', clinicId);
+
+    if (error) {
+        console.error('Error fetching clinic schedule configs:', error);
+        return [];
+    }
+    return (data || []).map(mapScheduleConfig);
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Granular permission matrix (custom roles)
+// ─────────────────────────────────────────────────────────────────────────
+const mapRolePermissions = (row: any): ClinicRolePermissions => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    roleName: row.role_name,
+    permissions: row.permissions || {},
+    isCustom: row.is_custom,
+    createdAt: row.created_at,
+});
+
+export const getClinicRolePermissions = async (clinicId: string): Promise<ClinicRolePermissions[]> => {
+    const { data, error } = await supabase
+        .from('clinic_role_permissions')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching clinic role permissions:', error);
+        return [];
+    }
+    return (data || []).map(mapRolePermissions);
+};
+
+export const saveClinicRolePermissions = async (clinicId: string, roleName: string, permissions: Record<string, boolean>, isCustom = false): Promise<void> => {
+    const { error } = await supabase.from('clinic_role_permissions').upsert({
+        clinic_id: clinicId,
+        role_name: roleName,
+        permissions,
+        is_custom: isCustom,
+    }, { onConflict: 'clinic_id,role_name' });
+
+    if (error) {
+        console.error('Error saving clinic role permissions:', error);
+        throw error;
+    }
+};
+
+export const deleteClinicRolePermissions = async (id: string): Promise<void> => {
+    const { error } = await supabase.from('clinic_role_permissions').delete().eq('id', id);
+    if (error) {
+        console.error('Error deleting clinic role permissions:', error);
+        throw error;
+    }
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Billing / rate-card configuration
+// ─────────────────────────────────────────────────────────────────────────
+const mapClinicService = (row: any): ClinicService => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    name: row.name,
+    category: row.category,
+    price: Number(row.price),
+    taxRate: Number(row.tax_rate),
+    isActive: row.is_active,
+    createdAt: row.created_at,
+});
+
+export const getClinicServices = async (clinicId: string, activeOnly = false): Promise<ClinicService[]> => {
+    let query = supabase.from('clinic_services').select('*').eq('clinic_id', clinicId);
+    if (activeOnly) query = query.eq('is_active', true);
+    const { data, error } = await query.order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching clinic services:', error);
+        return [];
+    }
+    return (data || []).map(mapClinicService);
+};
+
+export const createClinicService = async (clinicId: string, service: { name: string; category: ClinicService['category']; price: number; taxRate: number }): Promise<ClinicService> => {
+    const { data, error } = await supabase
+        .from('clinic_services')
+        .insert({
+            clinic_id: clinicId,
+            name: service.name,
+            category: service.category,
+            price: service.price,
+            tax_rate: service.taxRate,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating clinic service:', error);
+        throw error;
+    }
+    return mapClinicService(data);
+};
+
+export const updateClinicService = async (serviceId: string, patch: { name?: string; category?: ClinicService['category']; price?: number; taxRate?: number; isActive?: boolean }): Promise<void> => {
+    const updates: Record<string, any> = {};
+    if (patch.name !== undefined) updates.name = patch.name;
+    if (patch.category !== undefined) updates.category = patch.category;
+    if (patch.price !== undefined) updates.price = patch.price;
+    if (patch.taxRate !== undefined) updates.tax_rate = patch.taxRate;
+    if (patch.isActive !== undefined) updates.is_active = patch.isActive;
+
+    const { error } = await supabase.from('clinic_services').update(updates).eq('id', serviceId);
+    if (error) {
+        console.error('Error updating clinic service:', error);
+        throw error;
+    }
+};
+
+export const deleteClinicService = async (serviceId: string): Promise<void> => {
+    const { error } = await supabase.from('clinic_services').delete().eq('id', serviceId);
+    if (error) {
+        console.error('Error deleting clinic service:', error);
+        throw error;
+    }
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Intake form builder
+// ─────────────────────────────────────────────────────────────────────────
+const mapIntakeTemplate = (row: any): ClinicIntakeTemplate => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    name: row.name,
+    fields: (row.fields || []) as IntakeField[],
+    consentText: row.consent_text || undefined,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+});
+
+export const getClinicIntakeTemplates = async (clinicId: string): Promise<ClinicIntakeTemplate[]> => {
+    const { data, error } = await supabase
+        .from('clinic_intake_templates')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching intake templates:', error);
+        return [];
+    }
+    return (data || []).map(mapIntakeTemplate);
+};
+
+export const getActiveIntakeTemplateForDoctor = async (doctorId: string): Promise<ClinicIntakeTemplate | null> => {
+    const { data: staffRow, error: staffError } = await supabase
+        .from('clinic_staff')
+        .select('clinic_id')
+        .eq('user_id', doctorId)
+        .eq('role', 'doctor')
+        .eq('status', 'active')
+        .maybeSingle();
+
+    if (staffError || !staffRow) return null;
+
+    const { data, error } = await supabase
+        .from('clinic_intake_templates')
+        .select('*')
+        .eq('clinic_id', staffRow.clinic_id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error || !data) return null;
+    return mapIntakeTemplate(data);
+};
+
+export const saveIntakeTemplate = async (clinicId: string, template: { id?: string; name: string; fields: IntakeField[]; consentText?: string; isActive: boolean }): Promise<ClinicIntakeTemplate> => {
+    const payload = {
+        clinic_id: clinicId,
+        name: template.name,
+        fields: template.fields,
+        consent_text: template.consentText,
+        is_active: template.isActive,
+        updated_at: new Date().toISOString(),
+    };
+
+    const query = template.id
+        ? supabase.from('clinic_intake_templates').update(payload).eq('id', template.id)
+        : supabase.from('clinic_intake_templates').insert(payload);
+
+    const { data, error } = await query.select().single();
+
+    if (error) {
+        console.error('Error saving intake template:', error);
+        throw error;
+    }
+    return mapIntakeTemplate(data);
+};
+
+export const deleteIntakeTemplate = async (templateId: string): Promise<void> => {
+    const { error } = await supabase.from('clinic_intake_templates').delete().eq('id', templateId);
+    if (error) {
+        console.error('Error deleting intake template:', error);
+        throw error;
+    }
+};
+
+export const getClinicPublicProfile = async (clinicId: string): Promise<ClinicPublicProfile | null> => {
+    const clinic = await getClinic(clinicId);
+    if (!clinic) return null;
+
+    const [departments, staffResult] = await Promise.all([
+        getDepartments(clinicId),
+        supabase
+            .from('clinic_staff')
+            .select('user_id')
+            .eq('clinic_id', clinicId)
+            .eq('role', 'doctor')
+            .eq('status', 'active')
+            .not('user_id', 'is', null),
+    ]);
+
+    if (staffResult.error) {
+        console.error('Error fetching clinic staff for public profile:', staffResult.error);
+    }
+
+    const doctorIds = (staffResult.data || []).map((r: any) => r.user_id).filter(Boolean);
+    let doctors: Profile[] = [];
+    if (doctorIds.length > 0) {
+        const { data, error } = await supabase.from('profiles').select('*').in('id', doctorIds);
+        if (error) {
+            console.error('Error fetching clinic doctor profiles:', error);
+        } else {
+            doctors = data || [];
+        }
+    }
+
+    return { clinic, departments, doctors };
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Hospital Ops (Phase 3): beds, IPD, pharmacy, lab orders, insurance claims,
+// equipment tracking, and clinic commerce settings
+// ─────────────────────────────────────────────────────────────────────────
+
+const mapHospitalBed = (row: any): HospitalBed => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    wardName: row.ward_name,
+    bedNumber: row.bed_number,
+    bedType: row.bed_type,
+    status: row.status,
+    createdAt: row.created_at,
+});
+
+export const getHospitalBeds = async (clinicId: string): Promise<HospitalBed[]> => {
+    const { data, error } = await supabase
+        .from('hospital_beds')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('ward_name', { ascending: true })
+        .order('bed_number', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching hospital beds:', error);
+        return [];
+    }
+    return (data || []).map(mapHospitalBed);
+};
+
+export const createHospitalBed = async (clinicId: string, bed: { wardName: string; bedNumber: string; bedType: HospitalBed['bedType'] }): Promise<HospitalBed> => {
+    const { data, error } = await supabase
+        .from('hospital_beds')
+        .insert({
+            clinic_id: clinicId,
+            ward_name: bed.wardName,
+            bed_number: bed.bedNumber,
+            bed_type: bed.bedType,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating hospital bed:', error);
+        throw error;
+    }
+    return mapHospitalBed(data);
+};
+
+export const updateHospitalBedStatus = async (bedId: string, status: HospitalBed['status']): Promise<void> => {
+    const { error } = await supabase.from('hospital_beds').update({ status }).eq('id', bedId);
+    if (error) {
+        console.error('Error updating bed status:', error);
+        throw error;
+    }
+};
+
+export const deleteHospitalBed = async (bedId: string): Promise<void> => {
+    const { error } = await supabase.from('hospital_beds').delete().eq('id', bedId);
+    if (error) {
+        console.error('Error deleting hospital bed:', error);
+        throw error;
+    }
+};
+
+const mapIpdAdmission = (row: any): IpdAdmission => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    patientId: row.patient_id || undefined,
+    patientName: row.patient_name,
+    bedId: row.bed_id || undefined,
+    admittingDoctorId: row.admitting_doctor_id || undefined,
+    admittingDoctorName: row.admitting_doctor_name || undefined,
+    diagnosis: row.diagnosis || undefined,
+    admissionDate: row.admission_date,
+    expectedDischargeDate: row.expected_discharge_date || undefined,
+    dischargeDate: row.discharge_date || undefined,
+    status: row.status,
+    notes: row.notes || undefined,
+    createdAt: row.created_at,
+});
+
+export const getIpdAdmissions = async (clinicId: string): Promise<IpdAdmission[]> => {
+    const { data, error } = await supabase
+        .from('ipd_admissions')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('admission_date', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching IPD admissions:', error);
+        return [];
+    }
+    return (data || []).map(mapIpdAdmission);
+};
+
+export const createIpdAdmission = async (clinicId: string, admission: {
+    patientName: string;
+    bedId?: string;
+    admittingDoctorName?: string;
+    diagnosis?: string;
+    expectedDischargeDate?: string;
+    notes?: string;
+}): Promise<IpdAdmission> => {
+    const { data, error } = await supabase
+        .from('ipd_admissions')
+        .insert({
+            clinic_id: clinicId,
+            patient_name: admission.patientName,
+            bed_id: admission.bedId || null,
+            admitting_doctor_name: admission.admittingDoctorName || null,
+            diagnosis: admission.diagnosis || null,
+            expected_discharge_date: admission.expectedDischargeDate || null,
+            notes: admission.notes || null,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating IPD admission:', error);
+        throw error;
+    }
+
+    if (admission.bedId) {
+        await updateHospitalBedStatus(admission.bedId, 'occupied');
+    }
+
+    return mapIpdAdmission(data);
+};
+
+export const dischargeIpdAdmission = async (admissionId: string, bedId?: string): Promise<void> => {
+    const { error } = await supabase
+        .from('ipd_admissions')
+        .update({ status: 'discharged', discharge_date: new Date().toISOString() })
+        .eq('id', admissionId);
+
+    if (error) {
+        console.error('Error discharging patient:', error);
+        throw error;
+    }
+
+    if (bedId) {
+        await updateHospitalBedStatus(bedId, 'available');
+    }
+};
+
+const mapPharmacyInventoryItem = (row: any): PharmacyInventoryItem => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    medicineName: row.medicine_name,
+    category: row.category || undefined,
+    sku: row.sku || undefined,
+    unit: row.unit,
+    stockQuantity: Number(row.stock_quantity),
+    reorderLevel: Number(row.reorder_level),
+    unitPrice: Number(row.unit_price),
+    expiryDate: row.expiry_date || undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+});
+
+export const getPharmacyInventory = async (clinicId: string): Promise<PharmacyInventoryItem[]> => {
+    const { data, error } = await supabase
+        .from('pharmacy_inventory')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('medicine_name', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching pharmacy inventory:', error);
+        return [];
+    }
+    return (data || []).map(mapPharmacyInventoryItem);
+};
+
+export const createPharmacyInventoryItem = async (clinicId: string, item: {
+    medicineName: string;
+    category?: string;
+    sku?: string;
+    unit: string;
+    stockQuantity: number;
+    reorderLevel: number;
+    unitPrice: number;
+    expiryDate?: string;
+}): Promise<PharmacyInventoryItem> => {
+    const { data, error } = await supabase
+        .from('pharmacy_inventory')
+        .insert({
+            clinic_id: clinicId,
+            medicine_name: item.medicineName,
+            category: item.category || null,
+            sku: item.sku || null,
+            unit: item.unit,
+            stock_quantity: item.stockQuantity,
+            reorder_level: item.reorderLevel,
+            unit_price: item.unitPrice,
+            expiry_date: item.expiryDate || null,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating pharmacy inventory item:', error);
+        throw error;
+    }
+    return mapPharmacyInventoryItem(data);
+};
+
+export const updatePharmacyInventoryItem = async (itemId: string, patch: {
+    medicineName?: string;
+    category?: string;
+    sku?: string;
+    unit?: string;
+    stockQuantity?: number;
+    reorderLevel?: number;
+    unitPrice?: number;
+    expiryDate?: string;
+}): Promise<void> => {
+    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+    if (patch.medicineName !== undefined) updates.medicine_name = patch.medicineName;
+    if (patch.category !== undefined) updates.category = patch.category;
+    if (patch.sku !== undefined) updates.sku = patch.sku;
+    if (patch.unit !== undefined) updates.unit = patch.unit;
+    if (patch.stockQuantity !== undefined) updates.stock_quantity = patch.stockQuantity;
+    if (patch.reorderLevel !== undefined) updates.reorder_level = patch.reorderLevel;
+    if (patch.unitPrice !== undefined) updates.unit_price = patch.unitPrice;
+    if (patch.expiryDate !== undefined) updates.expiry_date = patch.expiryDate;
+
+    const { error } = await supabase.from('pharmacy_inventory').update(updates).eq('id', itemId);
+    if (error) {
+        console.error('Error updating pharmacy inventory item:', error);
+        throw error;
+    }
+};
+
+export const deletePharmacyInventoryItem = async (itemId: string): Promise<void> => {
+    const { error } = await supabase.from('pharmacy_inventory').delete().eq('id', itemId);
+    if (error) {
+        console.error('Error deleting pharmacy inventory item:', error);
+        throw error;
+    }
+};
+
+const mapPharmacyDispense = (row: any): PharmacyDispense => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    inventoryId: row.inventory_id || undefined,
+    medicineName: row.medicine_name,
+    quantity: Number(row.quantity),
+    patientName: row.patient_name || undefined,
+    dispensedBy: row.dispensed_by || undefined,
+    dispensedAt: row.dispensed_at,
+});
+
+export const getPharmacyDispenses = async (clinicId: string, limit = 50): Promise<PharmacyDispense[]> => {
+    const { data, error } = await supabase
+        .from('pharmacy_dispenses')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('dispensed_at', { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error('Error fetching pharmacy dispenses:', error);
+        return [];
+    }
+    return (data || []).map(mapPharmacyDispense);
+};
+
+export const dispensePharmacyItem = async (clinicId: string, dispense: {
+    inventoryId: string;
+    medicineName: string;
+    quantity: number;
+    currentStock: number;
+    patientName?: string;
+    dispensedBy?: string;
+}): Promise<PharmacyDispense> => {
+    const { data, error } = await supabase
+        .from('pharmacy_dispenses')
+        .insert({
+            clinic_id: clinicId,
+            inventory_id: dispense.inventoryId,
+            medicine_name: dispense.medicineName,
+            quantity: dispense.quantity,
+            patient_name: dispense.patientName || null,
+            dispensed_by: dispense.dispensedBy || null,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error recording pharmacy dispense:', error);
+        throw error;
+    }
+
+    await updatePharmacyInventoryItem(dispense.inventoryId, {
+        stockQuantity: Math.max(0, dispense.currentStock - dispense.quantity),
+    });
+
+    return mapPharmacyDispense(data);
+};
+
+const mapLabOrder = (row: any): LabOrder => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    patientId: row.patient_id || undefined,
+    patientName: row.patient_name,
+    doctorId: row.doctor_id || undefined,
+    doctorName: row.doctor_name || undefined,
+    testName: row.test_name,
+    status: row.status,
+    orderedAt: row.ordered_at,
+    resultUrl: row.result_url || undefined,
+    resultNotes: row.result_notes || undefined,
+    completedAt: row.completed_at || undefined,
+});
+
+export const getLabOrders = async (clinicId: string): Promise<LabOrder[]> => {
+    const { data, error } = await supabase
+        .from('lab_orders')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('ordered_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching lab orders:', error);
+        return [];
+    }
+    return (data || []).map(mapLabOrder);
+};
+
+export const createLabOrder = async (clinicId: string, order: {
+    patientName: string;
+    doctorName?: string;
+    testName: string;
+}): Promise<LabOrder> => {
+    const { data, error } = await supabase
+        .from('lab_orders')
+        .insert({
+            clinic_id: clinicId,
+            patient_name: order.patientName,
+            doctor_name: order.doctorName || null,
+            test_name: order.testName,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating lab order:', error);
+        throw error;
+    }
+    return mapLabOrder(data);
+};
+
+export const updateLabOrder = async (orderId: string, patch: {
+    status?: LabOrder['status'];
+    resultUrl?: string;
+    resultNotes?: string;
+}): Promise<void> => {
+    const updates: Record<string, any> = {};
+    if (patch.status !== undefined) {
+        updates.status = patch.status;
+        if (patch.status === 'completed') updates.completed_at = new Date().toISOString();
+    }
+    if (patch.resultUrl !== undefined) updates.result_url = patch.resultUrl;
+    if (patch.resultNotes !== undefined) updates.result_notes = patch.resultNotes;
+
+    const { error } = await supabase.from('lab_orders').update(updates).eq('id', orderId);
+    if (error) {
+        console.error('Error updating lab order:', error);
+        throw error;
+    }
+};
+
+const mapInsuranceClaim = (row: any): InsuranceClaim => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    patientId: row.patient_id || undefined,
+    patientName: row.patient_name,
+    invoiceId: row.invoice_id || undefined,
+    insurerName: row.insurer_name,
+    policyNumber: row.policy_number || undefined,
+    claimAmount: Number(row.claim_amount),
+    status: row.status,
+    submittedAt: row.submitted_at || undefined,
+    settledAt: row.settled_at || undefined,
+    notes: row.notes || undefined,
+    createdAt: row.created_at,
+});
+
+export const getInsuranceClaims = async (clinicId: string): Promise<InsuranceClaim[]> => {
+    const { data, error } = await supabase
+        .from('insurance_claims')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching insurance claims:', error);
+        return [];
+    }
+    return (data || []).map(mapInsuranceClaim);
+};
+
+export const createInsuranceClaim = async (clinicId: string, claim: {
+    patientName: string;
+    insurerName: string;
+    policyNumber?: string;
+    claimAmount: number;
+    notes?: string;
+}): Promise<InsuranceClaim> => {
+    const { data, error } = await supabase
+        .from('insurance_claims')
+        .insert({
+            clinic_id: clinicId,
+            patient_name: claim.patientName,
+            insurer_name: claim.insurerName,
+            policy_number: claim.policyNumber || null,
+            claim_amount: claim.claimAmount,
+            notes: claim.notes || null,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating insurance claim:', error);
+        throw error;
+    }
+    return mapInsuranceClaim(data);
+};
+
+export const updateInsuranceClaimStatus = async (claimId: string, status: InsuranceClaim['status']): Promise<void> => {
+    const updates: Record<string, any> = { status };
+    if (status === 'submitted') updates.submitted_at = new Date().toISOString();
+    if (status === 'settled') updates.settled_at = new Date().toISOString();
+
+    const { error } = await supabase.from('insurance_claims').update(updates).eq('id', claimId);
+    if (error) {
+        console.error('Error updating insurance claim:', error);
+        throw error;
+    }
+};
+
+const mapEquipmentAsset = (row: any): EquipmentAsset => ({
+    id: row.id,
+    clinicId: row.clinic_id,
+    name: row.name,
+    category: row.category || undefined,
+    serialNumber: row.serial_number || undefined,
+    location: row.location || undefined,
+    status: row.status,
+    purchaseDate: row.purchase_date || undefined,
+    lastServiceDate: row.last_service_date || undefined,
+    nextServiceDate: row.next_service_date || undefined,
+    notes: row.notes || undefined,
+    createdAt: row.created_at,
+});
+
+export const getEquipmentAssets = async (clinicId: string): Promise<EquipmentAsset[]> => {
+    const { data, error } = await supabase
+        .from('equipment_assets')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .order('name', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching equipment assets:', error);
+        return [];
+    }
+    return (data || []).map(mapEquipmentAsset);
+};
+
+export const createEquipmentAsset = async (clinicId: string, asset: {
+    name: string;
+    category?: string;
+    serialNumber?: string;
+    location?: string;
+    purchaseDate?: string;
+    nextServiceDate?: string;
+    notes?: string;
+}): Promise<EquipmentAsset> => {
+    const { data, error } = await supabase
+        .from('equipment_assets')
+        .insert({
+            clinic_id: clinicId,
+            name: asset.name,
+            category: asset.category || null,
+            serial_number: asset.serialNumber || null,
+            location: asset.location || null,
+            purchase_date: asset.purchaseDate || null,
+            next_service_date: asset.nextServiceDate || null,
+            notes: asset.notes || null,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating equipment asset:', error);
+        throw error;
+    }
+    return mapEquipmentAsset(data);
+};
+
+export const updateEquipmentAsset = async (assetId: string, patch: {
+    status?: EquipmentAsset['status'];
+    location?: string;
+    lastServiceDate?: string;
+    nextServiceDate?: string;
+    notes?: string;
+}): Promise<void> => {
+    const updates: Record<string, any> = {};
+    if (patch.status !== undefined) updates.status = patch.status;
+    if (patch.location !== undefined) updates.location = patch.location;
+    if (patch.lastServiceDate !== undefined) updates.last_service_date = patch.lastServiceDate;
+    if (patch.nextServiceDate !== undefined) updates.next_service_date = patch.nextServiceDate;
+    if (patch.notes !== undefined) updates.notes = patch.notes;
+
+    const { error } = await supabase.from('equipment_assets').update(updates).eq('id', assetId);
+    if (error) {
+        console.error('Error updating equipment asset:', error);
+        throw error;
+    }
+};
+
+export const deleteEquipmentAsset = async (assetId: string): Promise<void> => {
+    const { error } = await supabase.from('equipment_assets').delete().eq('id', assetId);
+    if (error) {
+        console.error('Error deleting equipment asset:', error);
+        throw error;
+    }
+};
+
+const mapClinicCommerceSettings = (row: any): ClinicCommerceSettings => ({
+    clinicId: row.clinic_id,
+    commerceEnabled: row.commerce_enabled,
+    pharmacyEnabled: row.pharmacy_enabled,
+    labEnabled: row.lab_enabled,
+    pharmacyMarkupPercent: Number(row.pharmacy_markup_percent),
+    labMarkupPercent: Number(row.lab_markup_percent),
+    deliveryFee: Number(row.delivery_fee),
+    updatedAt: row.updated_at,
+});
+
+export const getClinicCommerceSettings = async (clinicId: string): Promise<ClinicCommerceSettings | null> => {
+    const { data, error } = await supabase
+        .from('clinic_commerce_settings')
+        .select('*')
+        .eq('clinic_id', clinicId)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching clinic commerce settings:', error);
+        return null;
+    }
+    return data ? mapClinicCommerceSettings(data) : null;
+};
+
+export const upsertClinicCommerceSettings = async (clinicId: string, settings: {
+    commerceEnabled: boolean;
+    pharmacyEnabled: boolean;
+    labEnabled: boolean;
+    pharmacyMarkupPercent: number;
+    labMarkupPercent: number;
+    deliveryFee: number;
+}): Promise<ClinicCommerceSettings> => {
+    const { data, error } = await supabase
+        .from('clinic_commerce_settings')
+        .upsert({
+            clinic_id: clinicId,
+            commerce_enabled: settings.commerceEnabled,
+            pharmacy_enabled: settings.pharmacyEnabled,
+            lab_enabled: settings.labEnabled,
+            pharmacy_markup_percent: settings.pharmacyMarkupPercent,
+            lab_markup_percent: settings.labMarkupPercent,
+            delivery_fee: settings.deliveryFee,
+            updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error saving clinic commerce settings:', error);
+        throw error;
+    }
+    return mapClinicCommerceSettings(data);
 };
 

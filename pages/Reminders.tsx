@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Bell, Plus, Trash2 } from '../components/icons/Icons';
-import { Reminder } from '../types';
+import { Bell, Plus, Trash2, MessageCircle } from '../components/icons/Icons';
+import { Reminder, PatientMessage } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getReminders, addReminder, deleteReminder } from '../services/dataSupabase';
+import { getReminders, addReminder, deleteReminder, getMessagesForPatient, markMessageRead } from '../services/dataSupabase';
 import { useTranslation } from 'react-i18next';
 
 const Reminders: React.FC = () => {
@@ -15,6 +15,8 @@ const Reminders: React.FC = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [doctorMessages, setDoctorMessages] = useState<PatientMessage[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
 
   const refreshReminders = useCallback(async () => {
     if (user) {
@@ -25,9 +27,33 @@ const Reminders: React.FC = () => {
     }
   }, [user]);
 
+  const refreshDoctorMessages = useCallback(async () => {
+    if (user) {
+      setMessagesLoading(true);
+      try {
+        const data = await getMessagesForPatient(user.uid);
+        setDoctorMessages(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setMessagesLoading(false);
+      }
+    }
+  }, [user]);
+
   useEffect(() => {
     refreshReminders();
-  }, [refreshReminders]);
+    refreshDoctorMessages();
+  }, [refreshReminders, refreshDoctorMessages]);
+
+  const handleMarkRead = async (id: string) => {
+    try {
+      await markMessageRead(id);
+      setDoctorMessages(prev => prev.map(m => m.id === id ? { ...m, isRead: true } : m));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if (user) {
@@ -63,6 +89,51 @@ const Reminders: React.FC = () => {
           <Plus className="mr-2 h-4 w-4" /> {t('reminders.new_reminder', 'New Reminder')}
         </Button>
       </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Messages from your care team</CardTitle>
+          {!messagesLoading && <CardDescription>{doctorMessages.filter(m => !m.isRead).length} unread</CardDescription>}
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {messagesLoading ? (
+              <p className="text-muted-foreground text-center py-10">Loading messages...</p>
+            ) : doctorMessages.length > 0 ? (
+              doctorMessages.map(msg => (
+                <div
+                  key={msg.id}
+                  className={`flex items-start justify-between p-3 rounded-lg ${msg.isRead ? 'bg-secondary/50' : 'bg-primary/5 border border-primary/20'}`}
+                  onClick={() => !msg.isRead && handleMarkRead(msg.id)}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="mt-1">
+                      {msg.type === 'reminder'
+                        ? <Bell className="h-5 w-5 text-amber-500" />
+                        : <MessageCircle className="h-5 w-5 text-primary" />}
+                    </div>
+                    <div>
+                      <p className="font-semibold flex items-center gap-2">
+                        {msg.title}
+                        {!msg.isRead && <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">New</span>}
+                      </p>
+                      {msg.doctorName && <p className="text-xs text-muted-foreground">From Dr. {msg.doctorName}</p>}
+                      {msg.scheduledFor && (
+                        <p className="text-sm font-bold text-primary mt-1">{new Date(msg.scheduledFor).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                      )}
+                      {msg.body && <p className="text-sm text-muted-foreground mt-1">{msg.body}</p>}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">No messages from your doctors yet.</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

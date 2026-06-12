@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from '../components/ui/ThemeToggle';
+import NotificationBell from '../components/shared/NotificationBell';
 import Logo from '../components/icons/Logo';
 import { 
   FileText, LogOut, CheckCircle2, FileDown, 
-  Settings, Brain, Plus, X, Search, CalendarDays, BrainCircuit, MessageSquare, ArrowLeft, Loader2, Share2, Pill, HeartPulse, Bell, ScanLine, TestTube2 as FlaskConical, Play, CheckCheck, Copy, Sparkles, BarChart3 as LayoutDashboard, Users, Activity, ShieldAlert, AlertTriangle, Info, Send
+  Settings, Brain, Plus, X, Search, CalendarDays, BrainCircuit, MessageSquare, ArrowLeft, Loader2, Share2, Pill, HeartPulse, Bell, ScanLine, TestTube2 as FlaskConical, Play, CheckCheck, Copy, Sparkles, BarChart3 as LayoutDashboard, Users, Activity, ShieldAlert, AlertTriangle, Info, Send, Globe, Video
 } from '../components/icons/Icons';
 import {
   Users as UsersIcon, BarChart3 as LayoutDashboardIcon, CalendarDays as CalendarDaysIcon,
@@ -35,6 +36,11 @@ import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import DynamicAITrendChart from '../components/doctor/DynamicAITrendChart';
+import MedicalCalculators from '../components/doctor/MedicalCalculators';
+import BillingTab from '../components/doctor/BillingTab';
+import PracticeAnalyticsTab from '../components/doctor/PracticeAnalyticsTab';
+import ReferralsTab from '../components/doctor/ReferralsTab';
+import BookingSettingsTab from '../components/doctor/BookingSettingsTab';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface ChatMessage { role: 'doctor' | 'ai'; text: string; }
@@ -53,7 +59,7 @@ interface CDSSAlert {
 }
 interface CDSSResult { alerts: CDSSAlert[]; summary: string; }
 
-type TabType = 'overview' | 'patients' | 'labs' | 'appointments' | 'cdss';
+type TabType = 'overview' | 'patients' | 'labs' | 'appointments' | 'cdss' | 'billing' | 'analytics' | 'referrals' | 'booking';
 
 // ─── Lightweight Markdown renderer ───────────────────────────────────────────
 const MD: React.FC<{ text: string; className?: string }> = ({ text, className = '' }) => (
@@ -139,6 +145,9 @@ const DoctorDashboard: React.FC = () => {
   const [cdssResult, setCdssResult] = useState<CDSSResult | null>(null);
   const [cdssLoading, setCdssLoading] = useState(false);
   const [cdssPatient, setCdssPatient] = useState<(Profile & { id: string }) | null>(null);
+
+  // Medical Calculators
+  const [isCalculatorsOpen, setIsCalculatorsOpen] = useState(false);
 
   // Feature 7 - Visual Trends
   const [isTrendOpen, setIsTrendOpen] = useState(false);
@@ -408,6 +417,10 @@ const DoctorDashboard: React.FC = () => {
     { tab: 'labs',          icon: <ScanLine size={18} />,        label: 'OCR Scanner', badge: 'AI' },
     { tab: 'appointments',  icon: <CalendarDays size={18} />,    label: 'Schedule' },
     { tab: 'cdss',          icon: <BrainCircuit size={18} />,    label: 'CDSS', badge: 'AI' },
+    { tab: 'billing',       icon: <FileText size={18} />,        label: 'Billing' },
+    { tab: 'analytics',     icon: <Activity size={18} />,        label: 'Analytics' },
+    { tab: 'referrals',     icon: <Send size={18} />,            label: 'Referrals' },
+    { tab: 'booking',       icon: <Globe size={18} />,           label: 'Public Booking' },
   ];
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -441,7 +454,10 @@ const DoctorDashboard: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <ThemeToggle />
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              {user?.uid && <NotificationBell userId={user.uid} />}
+            </div>
             <button onClick={handleSignOut} className="text-xs text-muted-foreground hover:text-destructive transition-colors font-medium">Sign Out</button>
           </div>
         </div>
@@ -458,6 +474,7 @@ const DoctorDashboard: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            {user?.uid && <NotificationBell userId={user.uid} />}
             <button onClick={handleSignOut} className="text-xs text-muted-foreground hover:text-destructive font-medium">Sign Out</button>
           </div>
         </header>
@@ -555,6 +572,10 @@ const DoctorDashboard: React.FC = () => {
                     className="flex items-center gap-1.5 px-3 py-2 bg-pink-600 hover:bg-pink-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm">
                     <LayoutDashboard size={13} /> Visual Trends
                   </button>
+                  <button onClick={() => setIsCalculatorsOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm">
+                    <Activity size={13} /> Calculators
+                  </button>
                   <div className="flex items-center gap-1 p-1 bg-white dark:bg-card rounded-xl border border-border/60 shadow-sm">
                     <select value={emrFormat} onChange={e => setEmrFormat(e.target.value as 'FHIR' | 'CSV')}
                       className="text-xs font-medium bg-transparent px-1.5 outline-none cursor-pointer">
@@ -569,7 +590,9 @@ const DoctorDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <PatientProfile patient={selectedPatient} patientId={selectedPatient.id} />
+              <PatientProfile patient={selectedPatient} patientId={selectedPatient.id} doctorId={user?.uid || ''} doctorProfile={doctorProfile} />
+
+              <MedicalCalculators isOpen={isCalculatorsOpen} onClose={() => setIsCalculatorsOpen(false)} />
               
               {/* AI Trend Modal */}
               <Modal isOpen={isTrendOpen} onClose={() => setIsTrendOpen(false)} title="Interactive Visual Trends">
@@ -620,6 +643,10 @@ const DoctorDashboard: React.FC = () => {
                     {activeTab === 'labs' && "Upload handwritten prescriptions or lab reports."}
                     {activeTab === 'appointments' && "Your today's schedule."}
                     {activeTab === 'cdss' && "AI-driven clinical decision support for your patients."}
+                    {activeTab === 'billing' && "Manage invoices and track your practice revenue."}
+                    {activeTab === 'analytics' && "Insights into your practice performance."}
+                    {activeTab === 'referrals' && "Track referrals you've sent and received."}
+                    {activeTab === 'booking' && "Configure your public booking page and manage requests."}
                   </p>
                 </div>
                 {activeTab === 'patients' && (
@@ -1016,6 +1043,31 @@ const DoctorDashboard: React.FC = () => {
                   )}
                 </div>
               )}
+
+              {/* ── BILLING TAB ── */}
+              {activeTab === 'billing' && user && (
+                <BillingTab
+                  doctorId={user.uid}
+                  doctorName={doctorProfile?.name || 'Doctor'}
+                  doctorSpecialty={doctorProfile?.specialty}
+                  patients={patients}
+                />
+              )}
+
+              {/* ── ANALYTICS TAB ── */}
+              {activeTab === 'analytics' && user && (
+                <PracticeAnalyticsTab doctorId={user.uid} />
+              )}
+
+              {/* ── REFERRALS TAB ── */}
+              {activeTab === 'referrals' && user && (
+                <ReferralsTab doctorId={user.uid} />
+              )}
+
+              {/* ── PUBLIC BOOKING TAB ── */}
+              {activeTab === 'booking' && user && (
+                <BookingSettingsTab doctorId={user.uid} />
+              )}
             </div>
           )}
         </div>
@@ -1170,7 +1222,10 @@ const AppointmentCard: React.FC<{
   <div className="p-4 rounded-xl border border-border/50 bg-card shadow-sm flex flex-col gap-3">
     <div className="flex justify-between items-start">
       <div>
-        <p className="font-semibold">{app.specialty} Visit</p>
+        <p className="font-semibold flex items-center gap-1.5">
+          {app.specialty} Visit
+          {app.type === 'Video' && <Video size={14} className="text-indigo-500" />}
+        </p>
         <p className="text-sm text-muted-foreground">{new Date(app.dateTime).toLocaleTimeString([], { timeStyle: 'short' })}</p>
       </div>
       <span className={`text-xs font-bold px-2 py-1 rounded-md flex-shrink-0 ${app.status === 'Waiting' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : app.status === 'In-Progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : app.status === 'Completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
@@ -1182,6 +1237,13 @@ const AppointmentCard: React.FC<{
       className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-semibold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/40 rounded-lg border border-violet-200/50 dark:border-violet-800/30 transition-colors">
       <Brain size={12} /> AI Pre-Appointment Briefing
     </button>
+    {app.type === 'Video' && (
+      <Link to={`/consult/${app.id}`}>
+        <Button size="sm" variant="secondary" className="w-full gap-1.5">
+          <Video size={14} /> Join Video Visit
+        </Button>
+      </Link>
+    )}
     <div className="flex gap-2 pt-1 border-t border-border/50">
       {app.status === 'Waiting' && <Button size="sm" onClick={() => onUpdateStatus(app, 'In-Progress')} className="flex-1">Start Visit</Button>}
       {app.status === 'In-Progress' && <Button size="sm" onClick={() => onUpdateStatus(app, 'Completed')} variant="secondary" className="flex-1">Complete</Button>}
