@@ -5,7 +5,7 @@ import Skeleton from '../components/ui/Skeleton';
 import { useAuth } from '../hooks/useAuth';
 import Button from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
-import { FileText, Pill, BrainCircuit, Bell, Lightbulb, QrCode, HeartPulse, Users, Activity, ShieldCheck, KeyRound, Lock, Menu, X, CalendarDays } from '../components/icons/Icons';
+import { FileText, Pill, BrainCircuit, Bell, Lightbulb, QrCode, HeartPulse, Users, Activity, ShieldCheck, KeyRound, Lock, Menu, X, CalendarDays, Calendar, Video, Share2 } from '../components/icons/Icons';
 import Logo from '../components/icons/Logo';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,6 +45,21 @@ const features = [
     icon: Lightbulb,
     title: 'AI-Powered Insights',
     description: 'Receive personalized lifestyle tips and insights to help you make smarter decisions for your health.',
+  },
+  {
+    icon: Calendar,
+    title: 'Appointment Booking',
+    description: 'Find doctors, book appointments online, and get reminders so you never miss a visit.',
+  },
+  {
+    icon: Video,
+    title: 'Teleconsultation',
+    description: 'Connect with your doctor over secure video calls from the comfort of your home.',
+  },
+  {
+    icon: Share2,
+    title: 'Doctor-Connected Care',
+    description: 'Share your records directly with your care team for faster, better-informed consultations.',
   },
 ];
 
@@ -804,6 +819,17 @@ const Landing: React.FC = () => {
                 </motion.div>
               ))}
             </div>
+            <motion.div
+              className="mt-12 text-center"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Button asChild variant="gradient" size="lg">
+                <Link to="/features">{t('landing.features_section.cta', 'Explore All Features →')}</Link>
+              </Button>
+            </motion.div>
           </div>
         </section>
 
@@ -834,6 +860,20 @@ const Landing: React.FC = () => {
                 </motion.div>
               ))}
             </div>
+            <motion.div
+              className="mt-12 text-center"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ duration: 0.5 }}
+            >
+              <p className="text-muted-foreground">
+                {t('landing.personas.more', "That's just the start — we've also got dedicated paths for parents, students, and healthcare providers.")}
+              </p>
+              <Button asChild variant="outline" className="mt-4">
+                <Link to="/who-its-for">{t('landing.personas.cta', 'See Where You Fit →')}</Link>
+              </Button>
+            </motion.div>
           </div>
         </section>
 
@@ -907,6 +947,17 @@ const Landing: React.FC = () => {
                 </motion.div>
               ))}
             </div>
+            <motion.div
+              className="mt-12 text-center"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Button asChild variant="outline" size="lg">
+                <Link to="/security">{t('landing.security.cta', 'Learn More About Security →')}</Link>
+              </Button>
+            </motion.div>
           </div>
         </section>
 
