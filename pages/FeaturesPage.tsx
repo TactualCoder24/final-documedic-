@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, Pill, BrainCircuit, Bell, Lightbulb, QrCode, HeartPulse, Activity, ClipboardList, Moon, Utensils, Users, CalendarDays, ShieldCheck, MessageCircle, Brain, ScanLine, MessageSquare, FileDown, Star, Video, Mic, Share2, ClipboardCheck, KeyRound, Globe, TrendingUp, Calendar, Smile, BedDouble, TestTube2, Wrench, Boxes } from '../components/icons/Icons';
+import { FileText, Pill, BrainCircuit, Bell, Lightbulb, QrCode, HeartPulse, Activity, ClipboardList, Moon, Utensils, Users, CalendarDays, ShieldCheck, MessageCircle, Brain, ScanLine, MessageSquare, FileDown, Star, Video, Mic, Share2, ClipboardCheck, KeyRound, Globe, TrendingUp, Calendar, Smile, BedDouble, TestTube2, Wrench, Boxes, Building2, AlertTriangle } from '../components/icons/Icons';
 import Logo from '../components/icons/Logo';
 import Button from '../components/ui/Button';
 import ThemeToggle from '../components/ui/ThemeToggle';
@@ -21,7 +21,7 @@ const patientFeatures = [
     tag: 'Medications',
     color: 'from-emerald-500/20 to-emerald-600/10',
     iconColor: 'text-emerald-600 dark:text-emerald-400',
-    description: 'Log your medications, set dosage schedules, track daily adherence, and get reminders so you never miss a dose again.',
+    description: 'Log your medications, set dosage schedules, and mark each dose as taken or missed. See your 30-day adherence percentage at a glance, and get an automatic refill reminder before your supply runs out.',
   },
   {
     icon: BrainCircuit,
@@ -179,6 +179,14 @@ const doctorFeatures = [
     description: 'Clinical Decision Support System analyzing longitudinal health records to provide real-time guidance, flag drug interactions, and suggest lab investigations.',
   },
   {
+    icon: BrainCircuit,
+    title: 'DocAssist',
+    tag: 'Ambient AI',
+    color: 'from-indigo-500/20 to-blue-600/10',
+    iconColor: 'text-indigo-600 dark:text-indigo-400',
+    description: 'An always-on AI panel on every patient chart that surfaces key history highlights, answers natural-language questions about the record, and flags drug interactions or allergy conflicts live as you write a prescription.',
+  },
+  {
     icon: FileDown,
     title: 'EMR Export',
     tag: 'Interoperability',
@@ -200,7 +208,7 @@ const doctorFeatures = [
     tag: 'e-Prescriptions',
     color: 'from-emerald-500/20 to-green-600/10',
     iconColor: 'text-emerald-600 dark:text-emerald-400',
-    description: 'Write digital prescriptions with dosage, frequency, and duration, generate printable PDFs, and access a full history for every patient.',
+    description: 'Write digital prescriptions with dosage, frequency, and duration, generate printable PDFs, and access a full history for every patient. One-click quick-templates for 16 specialties — plus your own saved, renameable, reorderable templates for diagnoses, complaints, and test panels.',
   },
   {
     icon: TrendingUp,
@@ -241,6 +249,22 @@ const doctorFeatures = [
     color: 'from-rose-500/20 to-pink-600/10',
     iconColor: 'text-rose-600 dark:text-rose-400',
     description: 'Quick-access clinical calculators (BMI, dosage, eGFR, and more) built right into your workflow.',
+  },
+  {
+    icon: Building2,
+    title: 'Multi-Clinic Switching',
+    tag: 'Workflow',
+    color: 'from-sky-500/20 to-blue-600/10',
+    iconColor: 'text-sky-600 dark:text-sky-400',
+    description: 'Work across multiple clinics from one account. Switch your active clinic from the sidebar and see a live Clinic Queue for that location, with one-click "Call" and "Complete" actions.',
+  },
+  {
+    icon: AlertTriangle,
+    title: 'No-Show Prediction',
+    tag: 'Scheduling',
+    color: 'from-orange-500/20 to-red-600/10',
+    iconColor: 'text-orange-600 dark:text-orange-400',
+    description: "Today's appointment list flags patients with a history of no-shows, showing their past no-show rate so you can double-confirm or plan for overbooking that slot.",
   },
 ];
 

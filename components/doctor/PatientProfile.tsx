@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { HeartPulse, Pill, FileText, Bell, AlertTriangle, Activity, Plus, Send } from '../../components/icons/Icons';
-import { getVitals, getRecords, getMedications, getSymptoms, getPrescriptionsForPatient, getReferralsForPatient } from '../../services/dataSupabase';
-import { Vital, MedicalRecord, Medication, Profile, Symptom, Prescription, Referral } from '../../types';
+import { getVitals, getRecords, getMedications, getSymptoms, getPrescriptionsForPatient, getReferralsForPatient, getAllergies } from '../../services/dataSupabase';
+import { Vital, MedicalRecord, Medication, Profile, Symptom, Prescription, Referral, Allergy } from '../../types';
 import { calculateHealthScore } from '../../services/healthScore';
 import Button from '../ui/Button';
 import PrescriptionWriter from './PrescriptionWriter';
@@ -11,6 +11,7 @@ import DentalChart from './DentalChart';
 import ReferralModal from './ReferralModal';
 import ReferralHistory from './ReferralHistory';
 import PatientMessages from './PatientMessages';
+import DocAssistPanel from './DocAssistPanel';
 
 /* ── tiny sparkline component (CSS-only) ─────────────────────────── */
 const Sparkline: React.FC<{ values: number[]; color?: string }> = ({ values, color = 'hsl(var(--primary))' }) => {
@@ -73,6 +74,7 @@ const PatientProfile = ({ patient, patientId, doctorId, doctorProfile }: Patient
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [allergies, setAllergies] = useState<Allergy[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRxWriterOpen, setIsRxWriterOpen] = useState(false);
   const [isReferralOpen, setIsReferralOpen] = useState(false);
@@ -100,13 +102,14 @@ const PatientProfile = ({ patient, patientId, doctorId, doctorProfile }: Patient
     const fetchPatientData = async () => {
       setLoading(true);
       try {
-        const [fetchedVitals, fetchedRecords, fetchedMeds, fetchedSymptoms, fetchedRx, fetchedReferrals] = await Promise.all([
+        const [fetchedVitals, fetchedRecords, fetchedMeds, fetchedSymptoms, fetchedRx, fetchedReferrals, fetchedAllergies] = await Promise.all([
           getVitals(patientId),
           getRecords(patientId),
           getMedications(patientId),
           getSymptoms(patientId),
           getPrescriptionsForPatient(patientId),
-          doctorId ? getReferralsForPatient(doctorId, patientId) : Promise.resolve([])
+          doctorId ? getReferralsForPatient(doctorId, patientId) : Promise.resolve([]),
+          getAllergies(patientId).catch(() => [])
         ]);
         setVitals(fetchedVitals);
         setRecords(fetchedRecords);
@@ -114,6 +117,7 @@ const PatientProfile = ({ patient, patientId, doctorId, doctorProfile }: Patient
         setSymptoms(fetchedSymptoms);
         setPrescriptions(fetchedRx);
         setReferrals(fetchedReferrals);
+        setAllergies(fetchedAllergies);
       } catch (error) {
         console.error("Error fetching patient specific data", error);
       } finally {
@@ -143,6 +147,16 @@ const PatientProfile = ({ patient, patientId, doctorId, doctorProfile }: Patient
   const healthScore = healthData.total;
   const patientName = patient.name || 'Patient ' + patientId.substring(0,6);
 
+  const patientContextJSON = JSON.stringify({
+    profile: patient,
+    allergies,
+    medications,
+    vitals: vitals.slice(-20),
+    symptoms: symptoms.slice(-20),
+    records: records.slice(-10).map(r => ({ name: r.name, type: r.type, date: r.date, summary: r.analysis?.summary })),
+    prescriptions: prescriptions.slice(-5).map(rx => ({ date: rx.createdAt, diagnosis: rx.diagnosis, medications: rx.medications, advice: rx.advice })),
+  }, null, 2);
+
   return (
     <div className="space-y-8 pb-12 max-w-5xl mx-auto">
       {/* Header Profile Section */}
@@ -169,6 +183,11 @@ const PatientProfile = ({ patient, patientId, doctorId, doctorProfile }: Patient
              </div>
          </div>
       </div>
+
+      {/* DocAssist: ambient AI insights + chart Q&A */}
+      {doctorId && (
+        <DocAssistPanel patientName={patientName} patientContextJSON={patientContextJSON} />
+      )}
 
       {/* Vitals Stat Grid */}
       <div>
@@ -263,6 +282,7 @@ const PatientProfile = ({ patient, patientId, doctorId, doctorProfile }: Patient
           doctorId={doctorId}
           doctorProfile={doctorProfile || null}
           patient={{ ...patient, id: patientId }}
+          patientContextJSON={patientContextJSON}
           onSaved={refreshPrescriptions}
         />
       )}

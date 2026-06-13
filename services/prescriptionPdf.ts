@@ -1,7 +1,7 @@
 import { Prescription } from '../types';
 
 interface PrescriptionPdfOptions {
-  prescription: Pick<Prescription, 'diagnosis' | 'diagnosisCodes' | 'medications' | 'notes' | 'advice' | 'followUpDate' | 'createdAt'>;
+  prescription: Pick<Prescription, 'diagnosis' | 'diagnosisCodes' | 'medications' | 'testsAdvised' | 'notes' | 'advice' | 'followUpDate' | 'createdAt'>;
   doctorName: string;
   doctorSpecialty?: string;
   patientName: string;
@@ -94,6 +94,18 @@ export const generatePrescriptionPdf = async (options: PrescriptionPdfOptions): 
   });
 
   y += 4;
+
+  // Tests / Investigations Advised
+  if (prescription.testsAdvised && prescription.testsAdvised.length > 0) {
+    if (y > 260) { doc.addPage(); y = 20; }
+    doc.setFillColor(240, 245, 255);
+    doc.rect(10, y - 5, 186, 9, 'F');
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 64, 175);
+    doc.text('Tests / Investigations Advised', 14, y); y += lh;
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30); doc.setFontSize(10);
+    const testsLines = doc.splitTextToSize(prescription.testsAdvised.join(', '), 180);
+    doc.text(testsLines, 14, y); y += testsLines.length * (lh - 2) + 2;
+  }
 
   // Advice
   if (prescription.advice) {

@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Pill, Plus, Trash2, Download, Bell, Activity } from '../components/icons/Icons';
-import { Medication } from '../types';
+import { Medication, MedicationAdherenceStats } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getMedications, addMedication, updateMedication, deleteMedication } from '../services/dataSupabase';
+import { getMedications, addMedication, updateMedication, deleteMedication, logMedicationDose, getMedicationAdherenceStats, checkRefillReminders } from '../services/dataSupabase';
 import { checkMedicationInteractions } from '../services/aiService';
 import { useTranslation } from 'react-i18next';
 
@@ -22,7 +22,9 @@ const MedicationTracker: React.FC = () => {
   const [stagedMed, setStagedMed] = useState<Omit<Medication, 'id' | 'takenToday' | 'isActive'> | null>(null);
 
   const [times, setTimes] = useState<string[]>(['08:00']);
+  const [totalQuantity, setTotalQuantity] = useState('');
   const [notificationPermission, setNotificationPermission] = useState('default');
+  const [adherenceStats, setAdherenceStats] = useState<Record<string, MedicationAdherenceStats>>({});
   const notificationTimeouts = useRef<number[]>([]);
 
   useEffect(() => {
@@ -82,6 +84,14 @@ const MedicationTracker: React.FC = () => {
       const data = await getMedications(user.uid);
       setMedications(data);
       setIsLoading(false);
+
+      const activeMeds = data.filter(m => m.isActive);
+      const stats = await Promise.all(activeMeds.map(m => getMedicationAdherenceStats(user.uid, m.id).catch(() => null)));
+      const statsMap: Record<string, MedicationAdherenceStats> = {};
+      activeMeds.forEach((m, i) => { if (stats[i]) statsMap[m.id] = stats[i]!; });
+      setAdherenceStats(statsMap);
+
+      checkRefillReminders(user.uid).catch(() => {});
     }
   }, [user]);
 
@@ -93,7 +103,9 @@ const MedicationTracker: React.FC = () => {
     if (user) {
       const medToUpdate = medications.find(m => m.id === id);
       if (medToUpdate) {
-        await updateMedication(user.uid, { ...medToUpdate, takenToday: !medToUpdate.takenToday });
+        const nextTaken = !medToUpdate.takenToday;
+        await updateMedication(user.uid, { ...medToUpdate, takenToday: nextTaken });
+        await logMedicationDose(user.uid, medToUpdate.id, nextTaken).catch(() => {});
         await refreshMedications();
       }
     }
@@ -117,11 +129,13 @@ const MedicationTracker: React.FC = () => {
     e.preventDefault();
     if (!user) return;
     const formData = new FormData(e.currentTarget);
+    const qty = formData.get('med-quantity') as string;
     const newMed = {
       name: formData.get('med-name') as string,
       dosage: formData.get('med-dosage') as string,
       frequency: formData.get('med-frequency') as string,
       times: times.filter(t => t),
+      totalQuantity: qty ? parseInt(qty, 10) : undefined,
     };
 
     if (newMed.name && newMed.dosage && newMed.frequency) {
@@ -162,6 +176,7 @@ const MedicationTracker: React.FC = () => {
 
   const openAddModal = () => {
     setTimes(['08:00']);
+    setTotalQuantity('');
     setIsAddModalOpen(true);
   };
 
@@ -233,6 +248,28 @@ const MedicationTracker: React.FC = () => {
                         <p className="font-semibold text-lg">{med.name} <span className="text-sm font-normal text-muted-foreground ml-2">{med.dosage}</span></p>
                         <p className="text-sm text-muted-foreground">{med.frequency}</p>
                         {med.times && med.times.length > 0 && (<div className="flex items-center gap-2 mt-1"><Bell className="h-3 w-3 text-muted-foreground" /><p className="text-xs text-muted-foreground">{med.times.join(', ')}</p></div>)}
+                        {(() => {
+                          const stats = adherenceStats[med.id];
+                          if (!stats || stats.last30Logged === 0) return null;
+                          const pct = Math.round((stats.last30Taken / stats.last30Logged) * 100);
+                          return (
+                            <p className="text-xs text-muted-foreground mt-1">{t('meds.adherence_30d', '{{pct}}% adherence (last 30 days)', { pct })}</p>
+                          );
+                        })()}
+                        {(() => {
+                          if (!med.totalQuantity) return null;
+                          const taken = adherenceStats[med.id]?.takenCount ?? 0;
+                          const remaining = med.totalQuantity - taken;
+                          const dosesPerDay = med.times && med.times.length > 0 ? med.times.length : 1;
+                          if (remaining > dosesPerDay * 3) return null;
+                          return (
+                            <p className="text-xs font-semibold text-warning mt-1">
+                              {remaining > 0
+                                ? t('meds.refill_due', 'Refill due soon — ~{{remaining}} dose(s) left', { remaining })
+                                : t('meds.refill_overdue', 'Refill needed — supply may be out')}
+                            </p>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -266,6 +303,11 @@ const MedicationTracker: React.FC = () => {
           <div><label htmlFor="med-name" className="block text-sm font-medium text-foreground mb-1">{t('meds.modals.name', 'Medication Name')}</label><Input id="med-name" name="med-name" placeholder={t('meds.modals.name_placeholder', 'e.g., Ibuprofen')} required /></div>
           <div><label htmlFor="med-dosage" className="block text-sm font-medium text-foreground mb-1">{t('meds.modals.dosage', 'Dosage')}</label><Input id="med-dosage" name="med-dosage" placeholder={t('meds.modals.dosage_placeholder', 'e.g., 200mg')} required /></div>
           <div><label htmlFor="med-frequency" className="block text-sm font-medium text-foreground mb-1">{t('meds.modals.freq', 'Frequency')}</label><Input id="med-frequency" name="med-frequency" placeholder={t('meds.modals.freq_placeholder', 'e.g., Twice a day')} required /></div>
+          <div>
+            <label htmlFor="med-quantity" className="block text-sm font-medium text-foreground mb-1">{t('meds.modals.quantity', 'Total Quantity (optional)')}</label>
+            <Input id="med-quantity" name="med-quantity" type="number" min="1" value={totalQuantity} onChange={e => setTotalQuantity(e.target.value)} placeholder={t('meds.modals.quantity_placeholder', 'e.g., 30 doses in this pack')} />
+            <p className="text-xs text-muted-foreground mt-1">{t('meds.modals.quantity_help', "We'll remind you to refill when your supply is running low.")}</p>
+          </div>
           <div className="p-3 bg-secondary/50 rounded-md">
             <label className="block text-sm font-medium text-foreground mb-2">{t('meds.modals.times', 'Notification Times')}</label>
             {notificationPermission !== 'granted' ? (<p className="text-xs text-muted-foreground">{t('meds.modals.enable_notifs', 'Enable notifications to receive alerts.')}</p>) : (

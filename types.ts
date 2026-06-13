@@ -52,6 +52,16 @@ export interface Medication {
   times?: string[]; // e.g., ["08:00", "20:00"]
   takenToday: boolean;
   isActive: boolean; // To track if the user is currently taking it
+  totalQuantity?: number; // Total doses/pills in the current supply, for refill reminders
+  refillReminderSentAt?: string;
+}
+
+// Adherence stats for a medication, computed from medication_logs.
+export interface MedicationAdherenceStats {
+  takenCount: number; // all-time doses logged as taken
+  loggedCount: number; // all-time doses logged (taken or missed)
+  last30Taken: number;
+  last30Logged: number;
 }
 
 // Defines the structure for a reminder.
@@ -73,8 +83,11 @@ export interface Appointment {
   eCheckInComplete: boolean;
   onWaitlist: boolean;
   summaryId?: string; // Link to an AfterVisitSummary
-  status?: 'Scheduled' | 'Waiting' | 'In-Progress' | 'Completed';
+  status?: 'Scheduled' | 'Waiting' | 'In-Progress' | 'Completed' | 'No-Show' | 'Cancelled';
   patientId?: string; // To fetch patient details on doctor dashboard
+  // Heuristic no-show risk for this patient, computed from their past appointment history.
+  noShowRisk?: 'low' | 'medium' | 'high';
+  noShowRate?: number;
 }
 
 // Defines an intake form filled by the patient before the appointment
@@ -329,10 +342,34 @@ export interface Prescription {
   diagnosis?: string;
   diagnosisCodes?: DiagnosisCode[];
   medications: PrescriptionMedication[];
+  testsAdvised?: string[];
   notes?: string;
   advice?: string;
   followUpDate?: string; // YYYY-MM-DD
   createdAt: string; // ISO string
+}
+
+// The kind of one-click clinical quick-template:
+// - rx_group: full diagnosis + medications + advice
+// - complaint: chief complaint + diagnosis/ICD codes only
+// - test_panel: a named set of investigations/tests to advise
+export type ClinicalTemplateType = 'rx_group' | 'complaint' | 'test_panel';
+
+// Defines a doctor-saved clinical quick-template ("Rx-group", complaint
+// shortcut, or test panel) for one-click loading into the Prescription Writer.
+export interface ClinicalTemplate {
+  id: string;
+  doctorId: string;
+  type: ClinicalTemplateType;
+  name: string;
+  diagnosis?: string;
+  diagnosisCodes?: DiagnosisCode[];
+  medications: PrescriptionMedication[];
+  tests?: string[];
+  advice?: string;
+  notes?: string;
+  sortOrder?: number;
+  createdAt: string;
 }
 
 // Defines a single line item on an invoice.

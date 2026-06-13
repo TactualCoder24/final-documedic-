@@ -635,6 +635,88 @@ export interface ChartConfig {
   data: any[];
 }
 
+/**
+ * DocAssist: Chart Highlights
+ * Ambient, at-a-glance summary of what the doctor should know before/during this consult.
+ */
+export const getChartHighlights = async (patientContextJSON: string): Promise<string[]> => {
+  if (!ai) return [];
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Patient Record (JSON):\n${patientContextJSON}`,
+      config: {
+        systemInstruction: `You are an ambient clinical assistant. Scan the patient's record and produce the 3-5 most clinically relevant, actionable highlights a doctor should know before/during this consult (e.g. uncontrolled vitals, active conditions/allergies, medications due for renewal, missing follow-ups, notable trends).
+Rules:
+- Each highlight is a single short sentence (max ~18 words).
+- Be specific, citing values/dates from the record where relevant.
+- Only include genuinely useful items; if the record is sparse, return fewer items.
+- Return ONLY a JSON array of strings, e.g. ["...", "..."]. No markdown.`,
+        responseMimeType: 'application/json',
+        temperature: 0.2,
+      }
+    });
+    let textRes = response.text || '[]';
+    textRes = textRes.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(textRes);
+    return Array.isArray(parsed) ? parsed.filter(x => typeof x === 'string') : [];
+  } catch (error) {
+    console.error('Error generating chart highlights:', error);
+    return [];
+  }
+};
+
+export interface PrescriptionSafetyAlert {
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  description: string;
+}
+
+/**
+ * DocAssist: Prescription Safety Check
+ * Checks a draft prescription's medications against the patient's existing
+ * medications, allergies, and conditions for interactions/contraindications.
+ */
+export const checkPrescriptionSafety = async (
+  patientContextJSON: string,
+  draftMedications: { name: string; dosage?: string }[]
+): Promise<{ alerts: PrescriptionSafetyAlert[] }> => {
+  if (!ai || draftMedications.length === 0) return { alerts: [] };
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Patient Record (JSON):\n${patientContextJSON}\n\nDraft prescription medications to check:\n${JSON.stringify(draftMedications)}`,
+      config: {
+        systemInstruction: `You are a pharmacology safety-check AI embedded in a prescription writer. Compare the "Draft prescription medications" against the patient's existing medications, recorded allergies, and conditions in the patient record.
+
+Produce a JSON object: { "alerts": [ ... ] } where each alert has:
+- "severity": "critical" | "warning" | "info"
+- "title": short title (max 8 words), naming the specific drug(s)/allergy/condition involved
+- "description": 1-2 sentence clinical rationale
+
+Rules:
+- Flag drug-drug interactions between draft meds and existing medications.
+- Flag if a draft medication conflicts with a recorded allergy.
+- Flag if a draft medication is contraindicated given a recorded condition.
+- "critical" = significant safety risk, "warning" = needs review, "info" = minor note.
+- Do NOT fabricate issues. If nothing of concern is found, return an empty alerts array.
+- Return ONLY valid JSON, no markdown.`,
+        responseMimeType: 'application/json',
+        temperature: 0.1,
+      }
+    });
+    let textRes = response.text || '{"alerts":[]}';
+    textRes = textRes.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(textRes);
+    return { alerts: Array.isArray(parsed.alerts) ? parsed.alerts : [] };
+  } catch (error) {
+    console.error('Error checking prescription safety:', error);
+    return { alerts: [] };
+  }
+};
+
 export const generateVisualTrend = async (query: string, patientContextJSON: string): Promise<ChartConfig | null> => {
   try {
     const response = await ai.models.generateContent({

@@ -87,6 +87,9 @@ const PrescriptionHistory: React.FC<PrescriptionHistoryProps> = ({ prescriptions
               </span>
             ))}
           </div>
+          {rx.testsAdvised && rx.testsAdvised.length > 0 && (
+            <p className="text-xs text-muted-foreground">Tests advised: {rx.testsAdvised.join(', ')}</p>
+          )}
           {rx.followUpDate && (
             <p className="text-xs text-muted-foreground">Follow-up: {new Date(rx.followUpDate).toLocaleDateString()}</p>
           )}

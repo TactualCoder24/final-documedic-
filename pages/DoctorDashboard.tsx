@@ -4,9 +4,9 @@ import { useAuth } from '../hooks/useAuth';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import NotificationBell from '../components/shared/NotificationBell';
 import Logo from '../components/icons/Logo';
-import { 
-  FileText, LogOut, CheckCircle2, FileDown, 
-  Settings, Brain, Plus, X, Search, CalendarDays, BrainCircuit, MessageSquare, ArrowLeft, Loader2, Share2, Pill, HeartPulse, Bell, ScanLine, TestTube2 as FlaskConical, Play, CheckCheck, Copy, Sparkles, BarChart3 as LayoutDashboard, Users, Activity, ShieldAlert, AlertTriangle, Info, Send, Globe, Video
+import {
+  FileText, LogOut, CheckCircle2, FileDown,
+  Settings, Brain, Plus, X, Search, CalendarDays, BrainCircuit, MessageSquare, ArrowLeft, Loader2, Share2, Pill, HeartPulse, Bell, ScanLine, TestTube2 as FlaskConical, Play, CheckCheck, Copy, Sparkles, BarChart3 as LayoutDashboard, Users, Activity, ShieldAlert, AlertTriangle, Info, Send, Globe, Video, Building2, XCircle
 } from '../components/icons/Icons';
 import {
   Users as UsersIcon, BarChart3 as LayoutDashboardIcon, CalendarDays as CalendarDaysIcon,
@@ -24,14 +24,15 @@ import {
   getDoctorAppointmentsToday, getDoctorTasks, addDoctorTask,
   updateTaskStatus, updateAppointment, getIntakeFormByAppointment,
   getMedications, getVitals, getSymptoms, getRecords,
-  connectViaPin, searchPatients, sendConnectionRequest
+  connectViaPin, searchPatients, sendConnectionRequest,
+  getDoctorClinics, getClinicQueue, updateQueueStatus
 } from '../services/dataSupabase';
 import {
   ocrMedicalDocument, chatWithPatientData,
   generatePreAppointmentBriefing, generateEMRExport, getCDSSAnalysis,
   generateVisualTrend, ChartConfig
 } from '../services/aiService';
-import { Profile, Appointment, DoctorTask, IntakeForm } from '../types';
+import { Profile, Appointment, DoctorTask, IntakeForm, ClinicQueueEntry } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -115,6 +116,11 @@ const DoctorDashboard: React.FC = () => {
   const [selectedIntake, setSelectedIntake] = useState<IntakeForm | null>(null);
   const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
 
+  // Multi-clinic support
+  const [doctorClinics, setDoctorClinics] = useState<{ id: string; name: string }[]>([]);
+  const [activeClinicId, setActiveClinicId] = useState<string | null>(null);
+  const [clinicQueue, setClinicQueue] = useState<ClinicQueueEntry[]>([]);
+
   // Feature 3 – OCR
   const [ocrFile, setOcrFile] = useState<File | null>(null);
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
@@ -157,8 +163,15 @@ const DoctorDashboard: React.FC = () => {
 
   // ─── Load data ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (user) { loadDoctorProfile(); loadPatients(); loadQueueAndTasks(); }
+    if (user) { loadDoctorProfile(); loadPatients(); loadQueueAndTasks(); loadDoctorClinics(); }
   }, [user]);
+
+  useEffect(() => {
+    if (!activeClinicId) { setClinicQueue([]); return; }
+    getClinicQueue(activeClinicId)
+      .then(entries => setClinicQueue(entries.filter(e => e.doctorId === user?.uid)))
+      .catch(() => setClinicQueue([]));
+  }, [activeClinicId, user]);
 
   useEffect(() => {
     let scanner: any = null;
@@ -202,6 +215,30 @@ const DoctorDashboard: React.FC = () => {
     const profile = await getProfile(user.uid).catch(() => ({} as Profile));
     setDoctorProfile(profile);
     if (!profile.specialty) setIsSpecialtyModalOpen(true);
+  };
+
+  const loadDoctorClinics = async () => {
+    if (!user) return;
+    const clinics = await getDoctorClinics(user.uid).catch(() => []);
+    setDoctorClinics(clinics);
+    if (clinics.length === 0) return;
+    const stored = localStorage.getItem(`documedic_active_clinic_${user.uid}`);
+    const initial = stored && clinics.some(c => c.id === stored) ? stored : clinics[0].id;
+    setActiveClinicId(initial);
+  };
+
+  const handleSwitchClinic = (clinicId: string) => {
+    if (!user) return;
+    setActiveClinicId(clinicId);
+    localStorage.setItem(`documedic_active_clinic_${user.uid}`, clinicId);
+  };
+
+  const handleUpdateQueueStatus = async (entryId: string, status: ClinicQueueEntry['status']) => {
+    await updateQueueStatus(entryId, status).catch(() => {});
+    if (activeClinicId) {
+      const entries = await getClinicQueue(activeClinicId).catch(() => []);
+      setClinicQueue(entries.filter(e => e.doctorId === user?.uid));
+    }
   };
 
   const loadPatients = async () => {
@@ -296,7 +333,7 @@ const DoctorDashboard: React.FC = () => {
     loadQueueAndTasks();
   };
 
-  const handleUpdateAppStatus = async (app: Appointment, status: 'Scheduled' | 'Waiting' | 'In-Progress' | 'Completed') => {
+  const handleUpdateAppStatus = async (app: Appointment, status: 'Scheduled' | 'Waiting' | 'In-Progress' | 'Completed' | 'No-Show' | 'Cancelled') => {
     if (!user) return;
     await updateAppointment(app.patientId || user.uid, { ...app, status });
     loadQueueAndTasks();
@@ -453,6 +490,22 @@ const DoctorDashboard: React.FC = () => {
               <p className="text-xs text-muted-foreground truncate">{doctorProfile?.specialty || 'General Practice'}</p>
             </div>
           </div>
+          {doctorClinics.length > 0 && (
+            <div className="mb-4">
+              <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                <Building2 size={12} /> Active Clinic
+              </label>
+              <select
+                value={activeClinicId || ''}
+                onChange={e => handleSwitchClinic(e.target.value)}
+                className="w-full h-8 px-2 text-xs rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+              >
+                {doctorClinics.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
               <ThemeToggle />
@@ -472,7 +525,18 @@ const DoctorDashboard: React.FC = () => {
             </div>
             <span className="font-bold text-sm">DocuMedic Pro</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {doctorClinics.length > 1 && (
+              <select
+                value={activeClinicId || ''}
+                onChange={e => handleSwitchClinic(e.target.value)}
+                className="h-7 max-w-[6.5rem] px-1.5 text-[11px] rounded-md border border-border bg-background focus:outline-none"
+              >
+                {doctorClinics.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            )}
             <ThemeToggle />
             {user?.uid && <NotificationBell userId={user.uid} />}
             <button onClick={handleSignOut} className="text-xs text-muted-foreground hover:text-destructive font-medium">Sign Out</button>
@@ -752,6 +816,42 @@ const DoctorDashboard: React.FC = () => {
                       </div>
                     )}
                   </div>
+
+                  {activeClinicId && (
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h2 className="text-lg font-bold font-heading flex items-center gap-1.5">
+                          <Building2 size={18} className="text-muted-foreground" />
+                          Clinic Queue — {doctorClinics.find(c => c.id === activeClinicId)?.name}
+                        </h2>
+                        <span className="text-xs font-medium text-muted-foreground bg-secondary px-2.5 py-1 rounded-full">{clinicQueue.length} waiting</span>
+                      </div>
+                      {clinicQueue.length === 0 ? (
+                        <div className="p-6 text-center text-muted-foreground border border-dashed rounded-xl bg-card text-sm">No patients in your queue at this clinic.</div>
+                      ) : (
+                        <div className="bg-card border border-border/50 rounded-xl shadow-sm divide-y divide-border/50">
+                          {clinicQueue.map(entry => (
+                            <div key={entry.id} className="flex items-center justify-between gap-3 p-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold truncate">
+                                  {entry.tokenNumber ? `#${entry.tokenNumber} — ` : ''}{entry.patientName}
+                                </p>
+                                <p className="text-xs text-muted-foreground capitalize">{entry.status.replace('_', ' ')}</p>
+                              </div>
+                              <div className="flex gap-2 flex-shrink-0">
+                                {entry.status === 'waiting' && (
+                                  <Button size="sm" onClick={() => handleUpdateQueueStatus(entry.id, 'in_progress')} className="gap-1"><Play size={12} /> Call</Button>
+                                )}
+                                {entry.status === 'in_progress' && (
+                                  <Button size="sm" variant="secondary" onClick={() => handleUpdateQueueStatus(entry.id, 'completed')} className="gap-1"><CheckCheck size={12} /> Complete</Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div>
                     <h2 className="text-lg font-bold font-heading mb-3">Task Management</h2>
@@ -1228,10 +1328,15 @@ const AppointmentCard: React.FC<{
         </p>
         <p className="text-sm text-muted-foreground">{new Date(app.dateTime).toLocaleTimeString([], { timeStyle: 'short' })}</p>
       </div>
-      <span className={`text-xs font-bold px-2 py-1 rounded-md flex-shrink-0 ${app.status === 'Waiting' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : app.status === 'In-Progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : app.status === 'Completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
+      <span className={`text-xs font-bold px-2 py-1 rounded-md flex-shrink-0 ${app.status === 'Waiting' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : app.status === 'In-Progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : app.status === 'Completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : app.status === 'No-Show' || app.status === 'Cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}>
         {app.status || 'Scheduled'}
       </span>
     </div>
+    {app.noShowRisk === 'high' && (
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/30 rounded-lg px-2 py-1">
+        <AlertTriangle size={12} /> High no-show risk{app.noShowRate !== undefined ? ` (${Math.round(app.noShowRate * 100)}% past no-shows)` : ''}
+      </div>
+    )}
     {app.notes && <p className="text-sm text-muted-foreground line-clamp-2 italic">"{app.notes}"</p>}
     <button onClick={() => onAIBriefing(app)}
       className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-semibold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/40 rounded-lg border border-violet-200/50 dark:border-violet-800/30 transition-colors">
@@ -1248,6 +1353,11 @@ const AppointmentCard: React.FC<{
       {app.status === 'Waiting' && <Button size="sm" onClick={() => onUpdateStatus(app, 'In-Progress')} className="flex-1">Start Visit</Button>}
       {app.status === 'In-Progress' && <Button size="sm" onClick={() => onUpdateStatus(app, 'Completed')} variant="secondary" className="flex-1">Complete</Button>}
       {app.status === 'Scheduled' && <Button size="sm" onClick={() => onUpdateStatus(app, 'Waiting')} variant="outline" className="flex-1">Mark Arrived</Button>}
+      {(app.status === 'Scheduled' || app.status === 'Waiting') && (
+        <Button size="sm" variant="ghost" onClick={() => onUpdateStatus(app, 'No-Show')} className="gap-1 text-red-600 dark:text-red-400 hover:text-red-700">
+          <XCircle size={12} /> No-Show
+        </Button>
+      )}
       <Button size="sm" variant="ghost" onClick={() => onViewFile(app)}>View File</Button>
     </div>
   </div>

@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import {
     MedicalRecord,
     Medication,
+    MedicationAdherenceStats,
     Reminder,
     Vital,
     Profile,
@@ -25,6 +26,8 @@ import {
     SleepLog,
     Prescription,
     PrescriptionMedication,
+    ClinicalTemplate,
+    ClinicalTemplateType,
     DiagnosisCode,
     DentalChart,
     Invoice,
@@ -316,20 +319,52 @@ export const getDoctorAppointmentsToday = async (doctorId: string, doctorName: s
         return [];
     }
 
-    return (data || []).map(a => ({
-        id: a.id,
-        doctorName: a.doctor_name,
-        specialty: a.specialty,
-        dateTime: a.date_time,
-        location: a.location,
-        notes: a.notes,
-        type: a.type,
-        eCheckInComplete: a.e_check_in_complete,
-        onWaitlist: a.on_waitlist,
-        summaryId: a.summary_id,
-        status: a.status || 'Scheduled',
-        patientId: a.user_id,
-    }));
+    // Heuristic no-show risk: look at each patient's past appointments and compute
+    // the proportion that ended up 'No-Show' vs. 'Completed'/'No-Show'.
+    const todaysPatientIds = Array.from(new Set((data || []).map(a => a.user_id).filter(Boolean)));
+    const noShowRateByPatient = new Map<string, number>();
+    if (todaysPatientIds.length > 0) {
+        const { data: pastAppointments } = await supabase
+            .from('appointments')
+            .select('user_id, status, date_time')
+            .in('user_id', todaysPatientIds)
+            .lt('date_time', today.toISOString())
+            .in('status', ['Completed', 'No-Show']);
+
+        (pastAppointments || []).forEach(p => {
+            if (!p.user_id) return;
+            const counts = noShowRateByPatient.get(p.user_id) || 0;
+            noShowRateByPatient.set(`${p.user_id}__total`, ((noShowRateByPatient.get(`${p.user_id}__total`) || 0) + 1));
+            if (p.status === 'No-Show') {
+                noShowRateByPatient.set(p.user_id, counts + 1);
+            }
+        });
+    }
+
+    return (data || []).map(a => {
+        const noShows = noShowRateByPatient.get(a.user_id) || 0;
+        const total = noShowRateByPatient.get(`${a.user_id}__total`) || 0;
+        const rate = total >= 2 ? noShows / total : undefined;
+        const risk: 'low' | 'medium' | 'high' | undefined =
+            rate === undefined ? undefined : rate > 0.3 ? 'high' : rate > 0.15 ? 'medium' : 'low';
+
+        return {
+            id: a.id,
+            doctorName: a.doctor_name,
+            specialty: a.specialty,
+            dateTime: a.date_time,
+            location: a.location,
+            notes: a.notes,
+            type: a.type,
+            eCheckInComplete: a.e_check_in_complete,
+            onWaitlist: a.on_waitlist,
+            summaryId: a.summary_id,
+            status: a.status || 'Scheduled',
+            patientId: a.user_id,
+            noShowRate: rate,
+            noShowRisk: risk,
+        };
+    });
 };
 
 export const addPatientToDoctor = async (doctorId: string, patientId: string): Promise<void> => {
@@ -554,6 +589,8 @@ export const getMedications = async (userId: string): Promise<Medication[]> => {
         times: m.times || [],
         takenToday: m.taken_today,
         isActive: m.is_active,
+        totalQuantity: m.total_quantity ?? undefined,
+        refillReminderSentAt: m.refill_reminder_sent_at ?? undefined,
     }));
 };
 
@@ -569,6 +606,7 @@ export const addMedication = async (
         times: med.times || [],
         taken_today: false,
         is_active: true,
+        total_quantity: med.totalQuantity ?? null,
     });
 
     if (error) {
@@ -587,6 +625,7 @@ export const updateMedication = async (userId: string, updatedMed: Medication): 
             times: updatedMed.times || [],
             taken_today: updatedMed.takenToday,
             is_active: updatedMed.isActive,
+            total_quantity: updatedMed.totalQuantity ?? null,
         })
         .eq('id', updatedMed.id)
         .eq('user_id', userId);
@@ -607,6 +646,83 @@ export const deleteMedication = async (userId: string, medId: string): Promise<v
     if (error) {
         console.error('Error deleting medication:', error);
         throw error;
+    }
+};
+
+// Records today's (or a given date's) taken/missed status for a medication dose.
+export const logMedicationDose = async (userId: string, medicationId: string, taken: boolean, date?: string): Promise<void> => {
+    const logDate = date || new Date().toISOString().slice(0, 10);
+    const { error } = await supabase
+        .from('medication_logs')
+        .upsert({
+            user_id: userId,
+            medication_id: medicationId,
+            log_date: logDate,
+            taken,
+        }, { onConflict: 'medication_id,log_date' });
+
+    if (error) {
+        console.error('Error logging medication dose:', error);
+        throw error;
+    }
+};
+
+export const getMedicationAdherenceStats = async (userId: string, medicationId: string): Promise<MedicationAdherenceStats> => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const cutoff = thirtyDaysAgo.toISOString().slice(0, 10);
+
+    const { data, error } = await supabase
+        .from('medication_logs')
+        .select('log_date, taken')
+        .eq('user_id', userId)
+        .eq('medication_id', medicationId);
+
+    if (error) {
+        console.error('Error fetching medication adherence stats:', error);
+        return { takenCount: 0, loggedCount: 0, last30Taken: 0, last30Logged: 0 };
+    }
+
+    const rows = data || [];
+    const last30 = rows.filter(r => r.log_date >= cutoff);
+    return {
+        takenCount: rows.filter(r => r.taken).length,
+        loggedCount: rows.length,
+        last30Taken: last30.filter(r => r.taken).length,
+        last30Logged: last30.length,
+    };
+};
+
+// Checks each active medication with a known supply size and, if the remaining
+// doses are running low, sends a one-time "refill reminder" notification.
+export const checkRefillReminders = async (userId: string): Promise<void> => {
+    const medications = await getMedications(userId).catch(() => []);
+
+    for (const med of medications) {
+        if (!med.isActive || !med.totalQuantity || med.refillReminderSentAt) continue;
+
+        const stats = await getMedicationAdherenceStats(userId, med.id);
+        const dosesPerDay = med.times && med.times.length > 0 ? med.times.length : 1;
+        const remainingDoses = med.totalQuantity - stats.takenCount;
+        const thresholdDoses = dosesPerDay * 3; // ~3 days of supply left
+
+        if (remainingDoses <= thresholdDoses) {
+            await createNotification({
+                userId,
+                type: 'system',
+                title: `Refill reminder: ${med.name}`,
+                body: remainingDoses > 0
+                    ? `Your ${med.name} supply is running low (~${remainingDoses} dose${remainingDoses === 1 ? '' : 's'} left). Consider requesting a refill.`
+                    : `Your ${med.name} supply may have run out. Consider requesting a refill.`,
+                link: '/medications',
+            });
+
+            await supabase
+                .from('medications')
+                .update({ refill_reminder_sent_at: new Date().toISOString() })
+                .eq('id', med.id)
+                .eq('user_id', userId);
+        }
     }
 };
 
@@ -1743,14 +1859,9 @@ export const connectViaPin = async (doctorId: string, pin: string): Promise<Prof
 
 export const searchPatients = async (query: string): Promise<Profile[]> => {
     if (!query) return [];
-    
-    // Search by email, phone, or name using OR logic
+
     const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`email.ilike.%${query}%,phone.ilike.%${query}%,name.ilike.%${query}%`)
-        .eq('role', 'patient')
-        .limit(10);
+        .rpc('search_profiles', { search_query: query, filter_role: 'patient' });
 
     if (error) {
         console.error('Error searching patients:', error);
@@ -1841,6 +1952,7 @@ const mapPrescription = (data: any): Prescription => ({
     diagnosis: data.diagnosis || undefined,
     diagnosisCodes: data.diagnosis_codes || [],
     medications: data.medications || [],
+    testsAdvised: data.tests_advised || [],
     notes: data.notes || undefined,
     advice: data.advice || undefined,
     followUpDate: data.follow_up_date || undefined,
@@ -1869,6 +1981,7 @@ export const createPrescription = async (
         diagnosis?: string;
         diagnosisCodes?: DiagnosisCode[];
         medications: PrescriptionMedication[];
+        testsAdvised?: string[];
         notes?: string;
         advice?: string;
         followUpDate?: string;
@@ -1883,6 +1996,7 @@ export const createPrescription = async (
             diagnosis: prescription.diagnosis || null,
             diagnosis_codes: prescription.diagnosisCodes || [],
             medications: prescription.medications,
+            tests_advised: prescription.testsAdvised || [],
             notes: prescription.notes || null,
             advice: prescription.advice || null,
             follow_up_date: prescription.followUpDate || null,
@@ -1914,6 +2028,111 @@ export const deletePrescription = async (prescriptionId: string): Promise<void> 
 
     if (error) {
         console.error('Error deleting prescription:', error);
+        throw error;
+    }
+};
+
+// ============================================================================
+// CLINICAL TEMPLATES (Rx-groups, complaint shortcuts, test panels)
+// ============================================================================
+
+const mapClinicalTemplate = (data: any): ClinicalTemplate => ({
+    id: data.id,
+    doctorId: data.doctor_id,
+    type: data.type || 'rx_group',
+    name: data.name,
+    diagnosis: data.diagnosis || undefined,
+    diagnosisCodes: data.diagnosis_codes || [],
+    medications: data.medications || [],
+    tests: data.tests || [],
+    advice: data.advice || undefined,
+    notes: data.notes || undefined,
+    sortOrder: data.sort_order ?? 0,
+    createdAt: data.created_at,
+});
+
+export const getClinicalTemplates = async (doctorId: string, type?: ClinicalTemplateType): Promise<ClinicalTemplate[]> => {
+    let query = supabase
+        .from('clinical_templates')
+        .select('*')
+        .eq('doctor_id', doctorId);
+
+    if (type) query = query.eq('type', type);
+
+    const { data, error } = await query
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching clinical templates:', error);
+        throw error;
+    }
+    return (data || []).map(mapClinicalTemplate);
+};
+
+export const createClinicalTemplate = async (
+    doctorId: string,
+    template: {
+        type: ClinicalTemplateType;
+        name: string;
+        diagnosis?: string;
+        diagnosisCodes?: DiagnosisCode[];
+        medications?: PrescriptionMedication[];
+        tests?: string[];
+        advice?: string;
+        notes?: string;
+    }
+): Promise<ClinicalTemplate> => {
+    const { data, error } = await supabase
+        .from('clinical_templates')
+        .insert({
+            doctor_id: doctorId,
+            type: template.type,
+            name: template.name,
+            diagnosis: template.diagnosis || null,
+            diagnosis_codes: template.diagnosisCodes || [],
+            medications: template.medications || [],
+            tests: template.tests || [],
+            advice: template.advice || null,
+            notes: template.notes || null,
+        })
+        .select('*')
+        .single();
+
+    if (error) {
+        console.error('Error creating clinical template:', error);
+        throw error;
+    }
+    return mapClinicalTemplate(data);
+};
+
+export const deleteClinicalTemplate = async (templateId: string): Promise<void> => {
+    const { error } = await supabase
+        .from('clinical_templates')
+        .delete()
+        .eq('id', templateId);
+
+    if (error) {
+        console.error('Error deleting clinical template:', error);
+        throw error;
+    }
+};
+
+export const updateClinicalTemplate = async (
+    templateId: string,
+    updates: { name?: string; sortOrder?: number }
+): Promise<void> => {
+    const payload: Record<string, any> = {};
+    if (updates.name !== undefined) payload.name = updates.name;
+    if (updates.sortOrder !== undefined) payload.sort_order = updates.sortOrder;
+
+    const { error } = await supabase
+        .from('clinical_templates')
+        .update(payload)
+        .eq('id', templateId);
+
+    if (error) {
+        console.error('Error updating clinical template:', error);
         throw error;
     }
 };
@@ -2212,11 +2431,7 @@ export const searchDoctors = async (query: string): Promise<Profile[]> => {
     if (!query) return [];
 
     const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`email.ilike.%${query}%,phone.ilike.%${query}%,name.ilike.%${query}%,specialty.ilike.%${query}%`)
-        .eq('role', 'doctor')
-        .limit(10);
+        .rpc('search_profiles', { search_query: query, filter_role: 'doctor' });
 
     if (error) {
         console.error('Error searching doctors:', error);
@@ -2518,18 +2733,13 @@ const mapBookingRequest = (row: any): BookingRequest => ({
 
 export const getDoctorPublicProfile = async (doctorId: string): Promise<Profile | null> => {
     const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', doctorId)
-        .eq('role', 'doctor')
-        .eq('public_booking_enabled', true)
-        .maybeSingle();
+        .rpc('get_doctor_public_profile', { p_doctor_id: doctorId });
 
     if (error) {
         console.error('Error fetching doctor public profile:', error);
         throw error;
     }
-    return data;
+    return data && data.length > 0 ? data[0] : null;
 };
 
 export const updatePublicBookingSettings = async (doctorId: string, settings: { publicBookingEnabled: boolean; bookingBio?: string }): Promise<void> => {
@@ -2776,6 +2986,23 @@ export const deleteDepartment = async (departmentId: string): Promise<void> => {
         console.error('Error deleting department:', error);
         throw error;
     }
+};
+
+export const getDoctorClinics = async (doctorId: string): Promise<{ id: string; name: string }[]> => {
+    const { data, error } = await supabase
+        .from('clinic_staff')
+        .select('clinic_id, clinics(name)')
+        .eq('user_id', doctorId)
+        .eq('role', 'doctor')
+        .eq('status', 'active');
+
+    if (error) {
+        console.error('Error fetching doctor clinics:', error);
+        return [];
+    }
+    return (data || [])
+        .filter((row: any) => row.clinic_id)
+        .map((row: any) => ({ id: row.clinic_id as string, name: row.clinics?.name || 'Clinic' }));
 };
 
 export const getClinicStaff = async (clinicId: string): Promise<ClinicStaff[]> => {
@@ -3588,31 +3815,16 @@ export const getClinicPublicProfile = async (clinicId: string): Promise<ClinicPu
     const clinic = await getClinic(clinicId);
     if (!clinic) return null;
 
-    const [departments, staffResult] = await Promise.all([
+    const [departments, doctorsResult] = await Promise.all([
         getDepartments(clinicId),
-        supabase
-            .from('clinic_staff')
-            .select('user_id')
-            .eq('clinic_id', clinicId)
-            .eq('role', 'doctor')
-            .eq('status', 'active')
-            .not('user_id', 'is', null),
+        supabase.rpc('get_clinic_public_doctors', { p_clinic_id: clinicId }),
     ]);
 
-    if (staffResult.error) {
-        console.error('Error fetching clinic staff for public profile:', staffResult.error);
+    if (doctorsResult.error) {
+        console.error('Error fetching clinic doctor profiles:', doctorsResult.error);
     }
 
-    const doctorIds = (staffResult.data || []).map((r: any) => r.user_id).filter(Boolean);
-    let doctors: Profile[] = [];
-    if (doctorIds.length > 0) {
-        const { data, error } = await supabase.from('profiles').select('*').in('id', doctorIds);
-        if (error) {
-            console.error('Error fetching clinic doctor profiles:', error);
-        } else {
-            doctors = data || [];
-        }
-    }
+    const doctors: Profile[] = doctorsResult.data || [];
 
     return { clinic, departments, doctors };
 };

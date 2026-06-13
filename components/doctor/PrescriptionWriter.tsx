@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { Plus, Trash2, FileDown, Mic, MicOff, Sparkles } from '../icons/Icons';
+import { Plus, Trash2, FileDown, Mic, MicOff, Sparkles, ShieldAlert, AlertTriangle, Info, Loader2 } from '../icons/Icons';
 import { PrescriptionMedication, DiagnosisCode, Profile } from '../../types';
 import { createPrescription } from '../../services/dataSupabase';
 import { searchDrugs, searchIcd10, COMMON_FREQUENCIES, COMMON_DURATIONS } from '../../services/medicalReference';
 import { generatePrescriptionPdf } from '../../services/prescriptionPdf';
-import { parsePrescriptionFromDictation } from '../../services/aiService';
+import { parsePrescriptionFromDictation, checkPrescriptionSafety, PrescriptionSafetyAlert } from '../../services/aiService';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { useToast } from '../../hooks/useToast';
+import QuickTemplatesPanel, { QuickTemplateData } from '../shared/QuickTemplatesPanel';
 
 const emptyMed = (): PrescriptionMedication => ({ name: '', dosage: '', frequency: '', duration: '', instructions: '' });
 
@@ -20,10 +21,11 @@ interface PrescriptionWriterProps {
   doctorProfile: Profile | null;
   patient: Profile & { id: string };
   appointmentId?: string;
+  patientContextJSON?: string;
   onSaved?: () => void;
 }
 
-const PrescriptionWriter: React.FC<PrescriptionWriterProps> = ({ isOpen, onClose, doctorId, doctorProfile, patient, appointmentId, onSaved }) => {
+const PrescriptionWriter: React.FC<PrescriptionWriterProps> = ({ isOpen, onClose, doctorId, doctorProfile, patient, appointmentId, patientContextJSON, onSaved }) => {
   const { success: toastSuccess, error: toastError } = useToast();
   const [diagnosis, setDiagnosis] = useState('');
   const [diagnosisCodes, setDiagnosisCodes] = useState<DiagnosisCode[]>([]);
@@ -32,18 +34,58 @@ const PrescriptionWriter: React.FC<PrescriptionWriterProps> = ({ isOpen, onClose
   const [advice, setAdvice] = useState('');
   const [notes, setNotes] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
+  const [testsAdvised, setTestsAdvised] = useState<string[]>([]);
+  const [testInput, setTestInput] = useState('');
   const [activeDrugSuggestIdx, setActiveDrugSuggestIdx] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [applyingDictation, setApplyingDictation] = useState(false);
+  const [safetyAlerts, setSafetyAlerts] = useState<PrescriptionSafetyAlert[]>([]);
+  const [safetyLoading, setSafetyLoading] = useState(false);
   const speech = useSpeechRecognition();
 
   const reset = () => {
     setDiagnosis(''); setDiagnosisCodes([]); setIcdQuery('');
     setMedications([emptyMed()]); setAdvice(''); setNotes(''); setFollowUpDate('');
+    setTestsAdvised([]); setTestInput('');
+    setSafetyAlerts([]);
     speech.reset();
   };
 
   const handleClose = () => { reset(); onClose(); };
+
+  const applyTemplate = (template: QuickTemplateData) => {
+    if (template.diagnosis && !diagnosis.trim()) setDiagnosis(template.diagnosis);
+    if (template.diagnosisCodes?.length) {
+      setDiagnosisCodes(prev => {
+        const merged = [...prev];
+        template.diagnosisCodes!.forEach(c => { if (!merged.find(m => m.code === c.code)) merged.push(c); });
+        return merged;
+      });
+    }
+    if (template.medications?.length) {
+      setMedications(prev => {
+        const existing = prev.filter(m => m.name.trim());
+        return [...existing, ...template.medications!.map(m => ({ ...m }))];
+      });
+    }
+    if (template.tests?.length) {
+      setTestsAdvised(prev => {
+        const merged = [...prev];
+        template.tests!.forEach(t => { if (!merged.includes(t)) merged.push(t); });
+        return merged;
+      });
+    }
+    if (template.advice) setAdvice(prev => prev.trim() ? `${prev}\n${template.advice}` : template.advice!);
+    toastSuccess('Template applied');
+  };
+
+  const addTest = (test: string) => {
+    const t = test.trim();
+    if (!t) return;
+    if (!testsAdvised.includes(t)) setTestsAdvised(prev => [...prev, t]);
+    setTestInput('');
+  };
+  const removeTest = (test: string) => setTestsAdvised(prev => prev.filter(t => t !== test));
 
   const handleApplyDictation = async () => {
     if (!speech.transcript.trim()) return;
@@ -96,6 +138,22 @@ const PrescriptionWriter: React.FC<PrescriptionWriterProps> = ({ isOpen, onClose
 
   const validMeds = medications.filter(m => m.name.trim());
 
+  // DocAssist: live drug-interaction/allergy safety check against the draft prescription
+  useEffect(() => {
+    if (!isOpen || !patientContextJSON || validMeds.length === 0) {
+      setSafetyAlerts([]);
+      return;
+    }
+    const handle = setTimeout(() => {
+      setSafetyLoading(true);
+      checkPrescriptionSafety(patientContextJSON, validMeds.map(m => ({ name: m.name, dosage: m.dosage })))
+        .then(res => setSafetyAlerts(res.alerts))
+        .finally(() => setSafetyLoading(false));
+    }, 1200);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, patientContextJSON, JSON.stringify(validMeds.map(m => `${m.name}|${m.dosage}`))]);
+
   const handleSave = async (downloadPdf: boolean) => {
     if (validMeds.length === 0) {
       toastError('Add at least one medication');
@@ -108,6 +166,7 @@ const PrescriptionWriter: React.FC<PrescriptionWriterProps> = ({ isOpen, onClose
         diagnosis: diagnosis.trim() || undefined,
         diagnosisCodes,
         medications: validMeds,
+        testsAdvised,
         advice: advice.trim() || undefined,
         notes: notes.trim() || undefined,
         followUpDate: followUpDate || undefined,
@@ -137,6 +196,34 @@ const PrescriptionWriter: React.FC<PrescriptionWriterProps> = ({ isOpen, onClose
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={`New Prescription — ${patient.name || 'Patient'}`} variant="glass">
       <div className="space-y-5 max-w-2xl">
+        {/* Quick Templates: Rx-groups and chief-complaint shortcuts */}
+        <QuickTemplatesPanel
+          doctorId={doctorId}
+          specialty={doctorProfile?.specialty}
+          type="rx_group"
+          label="Quick Rx-groups"
+          isOpen={isOpen}
+          onApply={applyTemplate}
+          getSaveData={() => (validMeds.length === 0 && !diagnosis.trim()) ? null : {
+            diagnosis: diagnosis.trim() || undefined,
+            diagnosisCodes,
+            medications: validMeds,
+            advice: advice.trim() || undefined,
+          }}
+        />
+        <QuickTemplatesPanel
+          doctorId={doctorId}
+          specialty={doctorProfile?.specialty}
+          type="complaint"
+          label="Quick Complaints"
+          isOpen={isOpen}
+          onApply={applyTemplate}
+          getSaveData={() => (!diagnosis.trim() && diagnosisCodes.length === 0) ? null : {
+            diagnosis: diagnosis.trim() || undefined,
+            diagnosisCodes,
+          }}
+        />
+
         {/* Voice dictation */}
         {speech.isSupported && (
           <div className="p-3 rounded-xl border border-dashed border-border/60 bg-card/40 space-y-2">
@@ -279,6 +366,34 @@ const PrescriptionWriter: React.FC<PrescriptionWriterProps> = ({ isOpen, onClose
           </Button>
         </div>
 
+        {/* DocAssist: safety check against existing meds/allergies/conditions */}
+        {(safetyLoading || safetyAlerts.length > 0) && (
+          <div className="space-y-2">
+            {safetyLoading && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> Checking for interactions & allergy conflicts...
+              </div>
+            )}
+            {safetyAlerts.map((alert, i) => {
+              const style = alert.severity === 'critical'
+                ? 'bg-red-50 dark:bg-red-900/20 border-red-200/60 dark:border-red-800/40 text-red-700 dark:text-red-400'
+                : alert.severity === 'warning'
+                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200/60 dark:border-amber-800/40 text-amber-700 dark:text-amber-400'
+                : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200/60 dark:border-blue-800/40 text-blue-700 dark:text-blue-400';
+              const Icon = alert.severity === 'critical' ? ShieldAlert : alert.severity === 'warning' ? AlertTriangle : Info;
+              return (
+                <div key={i} className={`flex gap-2 p-3 rounded-xl border text-sm ${style}`}>
+                  <Icon className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">{alert.title}</p>
+                    <p className="text-xs mt-0.5 opacity-90">{alert.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Advice */}
         <div>
           <label className="text-sm font-semibold text-foreground">Advice</label>
@@ -302,6 +417,44 @@ const PrescriptionWriter: React.FC<PrescriptionWriterProps> = ({ isOpen, onClose
             className="mt-1 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
+
+        {/* Tests / Investigations Advised */}
+        <div>
+          <label className="text-sm font-semibold text-foreground">Tests / Investigations Advised</label>
+          <div className="flex items-center gap-2 mt-1">
+            <Input
+              value={testInput}
+              onChange={e => setTestInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTest(testInput); } }}
+              placeholder="e.g. CBC, HbA1c — press Enter to add"
+              className="flex-1"
+            />
+            <Button type="button" variant="outline" size="sm" onClick={() => addTest(testInput)} className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> Add
+            </Button>
+          </div>
+          {testsAdvised.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {testsAdvised.map(t => (
+                <span key={t} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                  {t}
+                  <button type="button" onClick={() => removeTest(t)} className="hover:text-destructive"><Trash2 className="h-3 w-3" /></button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Quick Templates: Test panels */}
+        <QuickTemplatesPanel
+          doctorId={doctorId}
+          specialty={doctorProfile?.specialty}
+          type="test_panel"
+          label="Quick Test Panels"
+          isOpen={isOpen}
+          onApply={applyTemplate}
+          getSaveData={() => testsAdvised.length === 0 ? null : { tests: testsAdvised }}
+        />
 
         {/* Follow-up */}
         <div>
