@@ -303,16 +303,13 @@ const Landing: React.FC = () => {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" asChild>
-              <Link to="/doctor-dashboard">{t('nav.item.DoctorDashboard', 'Doctor Dashboard')}</Link>
+              <Link to="/features">{t('nav.item.Features', 'Features')}</Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link to="/dashboard">{t('nav.item.PatientDashboard', 'Patient Dashboard')}</Link>
+              <Link to="/who-its-for">{t('nav.item.WhoItsFor', "Who It's For")}</Link>
             </Button>
             <Button variant="ghost" asChild>
               <Link to="/community">{t('nav.item.Community', 'Community')}</Link>
-            </Button>
-            <Button variant="ghost" asChild>
-              <Link to="/mentibot">{t('nav.item.Mentibot', 'Mentibot')}</Link>
             </Button>
             <ThemeToggle />
             <Button asChild>
@@ -340,16 +337,13 @@ const Landing: React.FC = () => {
           >
             <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
               <Button variant="ghost" asChild>
-                <Link to="/doctor-dashboard" onClick={() => setIsMenuOpen(false)}>{t('nav.item.DoctorDashboard', 'Doctor Dashboard')}</Link>
+                <Link to="/features" onClick={() => setIsMenuOpen(false)}>{t('nav.item.Features', 'Features')}</Link>
               </Button>
               <Button variant="ghost" asChild>
-                <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>{t('nav.item.PatientDashboard', 'Patient Dashboard')}</Link>
+                <Link to="/who-its-for" onClick={() => setIsMenuOpen(false)}>{t('nav.item.WhoItsFor', "Who It's For")}</Link>
               </Button>
               <Button variant="ghost" asChild>
                 <Link to="/community" onClick={() => setIsMenuOpen(false)}>{t('nav.item.Community', 'Community')}</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                <Link to="/mentibot" onClick={() => setIsMenuOpen(false)}>{t('nav.item.Mentibot', 'Mentibot')}</Link>
               </Button>
               <Button asChild size="lg" className="w-full">
                 <Link to="/login" onClick={() => setIsMenuOpen(false)}>{t('landing.get_started', 'Get Started')}</Link>
