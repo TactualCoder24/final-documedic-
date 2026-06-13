@@ -3005,6 +3005,24 @@ export const getDoctorClinics = async (doctorId: string): Promise<{ id: string; 
         .map((row: any) => ({ id: row.clinic_id as string, name: row.clinics?.name || 'Clinic' }));
 };
 
+// Finds the clinic a non-owner user (front-desk/nurse/admin/doctor staff) is
+// an active member of, so they can be routed to the right clinic dashboard.
+export const getActiveClinicMembership = async (userId: string): Promise<{ clinicId: string; role: ClinicStaff['role'] } | null> => {
+    const { data, error } = await supabase
+        .from('clinic_staff')
+        .select('clinic_id, role')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching clinic membership:', error);
+        return null;
+    }
+    return data ? { clinicId: data.clinic_id, role: data.role } : null;
+};
+
 export const getClinicStaff = async (clinicId: string): Promise<ClinicStaff[]> => {
     const { data, error } = await supabase
         .from('clinic_staff')

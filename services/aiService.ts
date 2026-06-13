@@ -636,7 +636,7 @@ export interface ChartConfig {
 }
 
 /**
- * DocAssist: Chart Highlights
+ * MediSaathi: Chart Highlights
  * Ambient, at-a-glance summary of what the doctor should know before/during this consult.
  */
 export const getChartHighlights = async (patientContextJSON: string): Promise<string[]> => {
@@ -674,7 +674,7 @@ export interface PrescriptionSafetyAlert {
 }
 
 /**
- * DocAssist: Prescription Safety Check
+ * MediSaathi: Prescription Safety Check
  * Checks a draft prescription's medications against the patient's existing
  * medications, allergies, and conditions for interactions/contraindications.
  */

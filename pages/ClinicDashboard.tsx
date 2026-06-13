@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
+import { useClinicAccess } from '../hooks/useClinicAccess';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import NotificationBell from '../components/shared/NotificationBell';
 import Logo from '../components/icons/Logo';
@@ -69,25 +70,34 @@ function NavItem({
 // ─── Main Component ───────────────────────────────────────────────────────────
 const ClinicDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
+  const access = useClinicAccess();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<ClinicTabType>('profile');
+  // Front-desk/nurse staff only manage the OPD queue; everyone else (owner/admin) gets the full nav.
+  const isFrontDeskOrNurse = !access.isOwner && (access.staffRole === 'front_desk' || access.staffRole === 'nurse');
+  const [activeTab, setActiveTab] = useState<ClinicTabType>(isFrontDeskOrNurse ? 'queue' : 'profile');
   const [clinic, setClinic] = useState<Clinic | null>(null);
+  const clinicId = access.clinicId || user?.uid;
 
   // Load clinic name for sidebar display
   useEffect(() => {
-    if (user) {
-      getClinic(user.uid)
+    if (clinicId) {
+      getClinic(clinicId)
         .then(c => setClinic(c))
         .catch(console.error);
     }
-  }, [user]);
+  }, [clinicId]);
+
+  // Front-desk/nurse staff land on the queue tab even after the access check resolves
+  useEffect(() => {
+    if (isFrontDeskOrNurse) setActiveTab('queue');
+  }, [isFrontDeskOrNurse]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
 
-  const navItems: { tab: ClinicTabType; icon: React.ReactNode; label: string; badge?: string }[] = [
+  const allNavItems: { tab: ClinicTabType; icon: React.ReactNode; label: string; badge?: string }[] = [
     { tab: 'profile',     icon: <Building2 size={18} />,     label: 'Clinic Profile'  },
     { tab: 'departments', icon: <ClipboardList size={18} />, label: 'Departments'     },
     { tab: 'staff',       icon: <Users size={18} />,         label: 'Staff'           },
@@ -106,6 +116,10 @@ const ClinicDashboard: React.FC = () => {
     { tab: 'equipment',   icon: <Wrench size={18} />,        label: 'Equipment'       },
     { tab: 'commerce',    icon: <Boxes size={18} />,         label: 'Commerce'        },
   ];
+
+  const navItems = isFrontDeskOrNurse
+    ? allNavItems.filter(item => item.tab === 'queue')
+    : allNavItems;
 
   const tabTitle: Record<ClinicTabType, string> = {
     profile:     'Clinic Profile',
@@ -161,7 +175,7 @@ const ClinicDashboard: React.FC = () => {
           </div>
           <span className="text-lg font-bold font-heading tracking-tight">DocuMedic</span>
           <span className="ml-1 text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
-            Clinic
+            {access.isOwner ? 'Clinic' : (access.staffRole || 'Staff').replace('_', ' ')}
           </span>
         </div>
 
@@ -245,25 +259,25 @@ const ClinicDashboard: React.FC = () => {
             </div>
 
             {/* Tab content */}
-            {user && (
+            {clinicId && (
               <>
-                {activeTab === 'profile'     && <ClinicProfileTab    clinicId={user.uid} defaultName={user.displayName || ''} />}
-                {activeTab === 'departments' && <ClinicDepartmentsTab clinicId={user.uid} />}
-                {activeTab === 'staff'       && <ClinicStaffTab       clinicId={user.uid} />}
-                {activeTab === 'queue'       && <ClinicQueueTab        clinicId={user.uid} />}
-                {activeTab === 'analytics'   && <ClinicAnalyticsTab    clinicId={user.uid} />}
-                {activeTab === 'billing'     && <ClinicBillingTab      clinicId={user.uid} />}
-                {activeTab === 'scheduler'   && <SchedulerConfigTab    clinicId={user.uid} />}
-                {activeTab === 'permissions' && <PermissionsTab        clinicId={user.uid} />}
-                {activeTab === 'ratecard'    && <RateCardTab           clinicId={user.uid} />}
-                {activeTab === 'intake'      && <IntakeBuilderTab      clinicId={user.uid} />}
-                {activeTab === 'audit'       && <AuditLogTab           clinicId={user.uid} />}
-                {activeTab === 'beds'        && <BedManagementTab      clinicId={user.uid} />}
-                {activeTab === 'pharmacy'    && <PharmacyTab           clinicId={user.uid} />}
-                {activeTab === 'lab'         && <LabOrdersTab          clinicId={user.uid} />}
-                {activeTab === 'insurance'   && <InsuranceClaimsTab    clinicId={user.uid} />}
-                {activeTab === 'equipment'   && <EquipmentTab          clinicId={user.uid} />}
-                {activeTab === 'commerce'    && <CommerceSettingsTab   clinicId={user.uid} />}
+                {activeTab === 'profile'     && <ClinicProfileTab    clinicId={clinicId} defaultName={user?.displayName || ''} />}
+                {activeTab === 'departments' && <ClinicDepartmentsTab clinicId={clinicId} />}
+                {activeTab === 'staff'       && <ClinicStaffTab       clinicId={clinicId} />}
+                {activeTab === 'queue'       && <ClinicQueueTab        clinicId={clinicId} />}
+                {activeTab === 'analytics'   && <ClinicAnalyticsTab    clinicId={clinicId} />}
+                {activeTab === 'billing'     && <ClinicBillingTab      clinicId={clinicId} />}
+                {activeTab === 'scheduler'   && <SchedulerConfigTab    clinicId={clinicId} />}
+                {activeTab === 'permissions' && <PermissionsTab        clinicId={clinicId} />}
+                {activeTab === 'ratecard'    && <RateCardTab           clinicId={clinicId} />}
+                {activeTab === 'intake'      && <IntakeBuilderTab      clinicId={clinicId} />}
+                {activeTab === 'audit'       && <AuditLogTab           clinicId={clinicId} />}
+                {activeTab === 'beds'        && <BedManagementTab      clinicId={clinicId} />}
+                {activeTab === 'pharmacy'    && <PharmacyTab           clinicId={clinicId} />}
+                {activeTab === 'lab'         && <LabOrdersTab          clinicId={clinicId} />}
+                {activeTab === 'insurance'   && <InsuranceClaimsTab    clinicId={clinicId} />}
+                {activeTab === 'equipment'   && <EquipmentTab          clinicId={clinicId} />}
+                {activeTab === 'commerce'    && <CommerceSettingsTab   clinicId={clinicId} />}
               </>
             )}
           </motion.div>

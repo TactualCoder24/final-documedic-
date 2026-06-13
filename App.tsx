@@ -1,6 +1,7 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { useClinicAccess } from './hooks/useClinicAccess';
 import { ROLE_HOME } from './constants/roles';
 import { ThemeProvider } from './hooks/useTheme';
 import { OnboardingProvider } from './hooks/useOnboarding';
@@ -118,6 +119,35 @@ const RoleRoute: React.FC<{ role: 'patient' | 'doctor' | 'clinic'; children: Rea
   return <>{children}</>;
 };
 
+// ── Clinic dashboard route guard ────────────────────────────────────────────
+// Allows the clinic owner account, plus front-desk/nurse/admin staff who are
+// active members of someone else's clinic (e.g. for the OPD queue).
+const ClinicDashboardRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading, userRole } = useAuth();
+  const location = useLocation();
+  const access = useClinicAccess();
+
+  if (loading || access.loading) {
+    return (
+      <div className="min-h-screen soft-aurora">
+        <Skeleton variant="dashboard" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    sessionStorage.setItem('redirectPath', location.pathname + location.search);
+    return <Navigate to="/login" replace />;
+  }
+
+  const hasAccess = access.isOwner || (!!access.clinicId && access.staffRole !== 'doctor');
+  if (!hasAccess) {
+    return <Navigate to={(userRole && ROLE_HOME[userRole]) || '/dashboard'} replace />;
+  }
+
+  return <>{children}</>;
+};
+
 // ── App routes ─────────────────────────────────────────────────────────────
 const AppRoutes = () => {
   const location = useLocation();
@@ -161,13 +191,13 @@ const AppRoutes = () => {
           }
         />
 
-        {/* ── Clinic Dashboard (role-guarded: clinic only) ──────── */}
+        {/* ── Clinic Dashboard (owner, or active front-desk/nurse/admin staff) ── */}
         <Route
           path="/clinic-dashboard"
           element={
-            <RoleRoute role="clinic">
+            <ClinicDashboardRoute>
               <ClinicDashboard />
-            </RoleRoute>
+            </ClinicDashboardRoute>
           }
         />
 

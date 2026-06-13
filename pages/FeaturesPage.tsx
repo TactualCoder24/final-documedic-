@@ -180,7 +180,7 @@ const doctorFeatures = [
   },
   {
     icon: BrainCircuit,
-    title: 'DocAssist',
+    title: 'MediSaathi',
     tag: 'Ambient AI',
     color: 'from-indigo-500/20 to-blue-600/10',
     iconColor: 'text-indigo-600 dark:text-indigo-400',

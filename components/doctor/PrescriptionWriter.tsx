@@ -138,7 +138,7 @@ const PrescriptionWriter: React.FC<PrescriptionWriterProps> = ({ isOpen, onClose
 
   const validMeds = medications.filter(m => m.name.trim());
 
-  // DocAssist: live drug-interaction/allergy safety check against the draft prescription
+  // MediSaathi: live drug-interaction/allergy safety check against the draft prescription
   useEffect(() => {
     if (!isOpen || !patientContextJSON || validMeds.length === 0) {
       setSafetyAlerts([]);
@@ -366,7 +366,7 @@ const PrescriptionWriter: React.FC<PrescriptionWriterProps> = ({ isOpen, onClose
           </Button>
         </div>
 
-        {/* DocAssist: safety check against existing meds/allergies/conditions */}
+        {/* MediSaathi: safety check against existing meds/allergies/conditions */}
         {(safetyLoading || safetyAlerts.length > 0) && (
           <div className="space-y-2">
             {safetyLoading && (

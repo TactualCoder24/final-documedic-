@@ -11,7 +11,7 @@ import DentalChart from './DentalChart';
 import ReferralModal from './ReferralModal';
 import ReferralHistory from './ReferralHistory';
 import PatientMessages from './PatientMessages';
-import DocAssistPanel from './DocAssistPanel';
+import MediSaathiPanel from './MediSaathiPanel';
 
 /* ── tiny sparkline component (CSS-only) ─────────────────────────── */
 const Sparkline: React.FC<{ values: number[]; color?: string }> = ({ values, color = 'hsl(var(--primary))' }) => {
@@ -184,9 +184,9 @@ const PatientProfile = ({ patient, patientId, doctorId, doctorProfile }: Patient
          </div>
       </div>
 
-      {/* DocAssist: ambient AI insights + chart Q&A */}
+      {/* MediSaathi: ambient AI insights + chart Q&A */}
       {doctorId && (
-        <DocAssistPanel patientName={patientName} patientContextJSON={patientContextJSON} />
+        <MediSaathiPanel patientName={patientName} patientContextJSON={patientContextJSON} />
       )}
 
       {/* Vitals Stat Grid */}

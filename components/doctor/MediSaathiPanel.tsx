@@ -7,7 +7,7 @@ interface ChatMessage {
   text: string;
 }
 
-interface DocAssistPanelProps {
+interface MediSaathiPanelProps {
   patientName: string;
   patientContextJSON: string;
 }
@@ -30,7 +30,7 @@ const Answer: React.FC<{ text: string }> = ({ text }) => (
   </div>
 );
 
-const DocAssistPanel: React.FC<DocAssistPanelProps> = ({ patientName, patientContextJSON }) => {
+const MediSaathiPanel: React.FC<MediSaathiPanelProps> = ({ patientName, patientContextJSON }) => {
   const [expanded, setExpanded] = useState(false);
   const [highlights, setHighlights] = useState<string[] | null>(null);
   const [highlightsLoading, setHighlightsLoading] = useState(false);
@@ -77,7 +77,7 @@ const DocAssistPanel: React.FC<DocAssistPanelProps> = ({ patientName, patientCon
           </div>
           <div>
             <p className="text-sm font-bold font-heading text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
-              DocAssist <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-indigo-600 text-white">AI</span>
+              MediSaathi <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-indigo-600 text-white">AI</span>
             </p>
             <p className="text-xs text-muted-foreground">Ambient insights & chart Q&A for {patientName}</p>
           </div>
@@ -172,4 +172,4 @@ const DocAssistPanel: React.FC<DocAssistPanelProps> = ({ patientName, patientCon
   );
 };
 
-export default DocAssistPanel;
+export default MediSaathiPanel;
