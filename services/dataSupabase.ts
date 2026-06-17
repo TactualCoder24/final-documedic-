@@ -1806,8 +1806,9 @@ export const deleteUserData = async (userId: string): Promise<void> => {
 // --- 1. 6-Digit PIN Method ---
 
 export const generateConnectionPin = async (patientId: string): Promise<string> => {
-    // Generate a random 6-digit PIN
-    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    const pin = (100000 + (arr[0] % 900000)).toString();
     // Expires in 15 minutes
     const expiresAt = new Date(Date.now() + 15 * 60000).toISOString();
 
@@ -4458,7 +4459,9 @@ export const generateFamilyPin = async (
     relationship: string,
     permissionLevel: 'view_only' | 'manage' = 'view_only'
 ): Promise<string> => {
-    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    const pin = (100000 + (arr[0] % 900000)).toString();
     const expiresAt = new Date(Date.now() + 30 * 60000).toISOString(); // 30 min
 
     // Delete any existing pins for this patient first

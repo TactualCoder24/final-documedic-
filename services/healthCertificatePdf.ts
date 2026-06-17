@@ -1,3 +1,4 @@
+import QRCode from 'qrcode';
 import { Profile, Allergy, Immunization } from '../types';
 
 interface HealthCertificateOptions {
@@ -140,19 +141,8 @@ export const generateHealthCertificatePdf = async (opts: HealthCertificateOption
 
     section('EMERGENCY QR CODE', [79, 70, 229]);
     try {
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(opts.emergencyUrl)}`;
-        const res = await fetch(qrUrl);
-        const blob = await res.blob();
-        const reader = new FileReader();
-        await new Promise<void>((resolve) => {
-            reader.onload = () => {
-                try {
-                    doc.addImage(reader.result as string, 'PNG', W / 2 - 20, y, 40, 40);
-                } catch {}
-                resolve();
-            };
-            reader.readAsDataURL(blob);
-        });
+        const qrDataUrl = await QRCode.toDataURL(opts.emergencyUrl, { width: 120, margin: 1 });
+        doc.addImage(qrDataUrl, 'PNG', W / 2 - 20, y, 40, 40);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
