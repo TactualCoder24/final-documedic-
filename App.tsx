@@ -28,6 +28,7 @@ import FAQPage from './pages/FAQPage';
 import FeaturesPage from './pages/FeaturesPage';
 import WhoItsForPage from './pages/WhoItsForPage';
 import SecurityPage from './pages/SecurityPage';
+import SupportPage from './pages/SupportPage';
 import Settings from './pages/Settings';
 import AppointmentManager from './pages/AppointmentManager';
 import SymptomLog from './pages/SymptomLog';
@@ -167,6 +168,7 @@ const AppRoutes = () => {
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/who-its-for" element={<WhoItsForPage />} />
         <Route path="/security" element={<SecurityPage />} />
+        <Route path="/support" element={<SupportPage />} />
         <Route path="/shared/:shareId" element={<SharedRecord />} />
         <Route path="/book/:doctorId" element={<PublicBooking />} />
         <Route path="/clinic/:clinicId" element={<PublicClinic />} />

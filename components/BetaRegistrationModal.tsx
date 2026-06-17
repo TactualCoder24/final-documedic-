@@ -74,7 +74,7 @@ const BetaRegistrationModal: React.FC<BetaRegistrationModalProps> = ({ isOpen, o
                                 <p className="text-muted-foreground">
                                     Be the first to experience the future of health management.
                                     <br />
-                                    <span className="text-xs font-semibold text-primary">Mobile App coming soon!</span>
+                                    <span className="text-xs font-semibold text-primary">Mobile App coming July 2026!</span>
                                 </p>
                             </div>
 
@@ -135,7 +135,7 @@ const BetaRegistrationModal: React.FC<BetaRegistrationModalProps> = ({ isOpen, o
                             </form>
 
                             <p className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-6">
-                                Launching JUNE 2026 • Mobile App
+                                Launching JULY 2026 • Mobile App
                             </p>
                         </motion.div>
                     ) : (
