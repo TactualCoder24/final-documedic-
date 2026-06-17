@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Target, ClipboardCheck, Clock, Plus } from '../components/icons/Icons';
+import { Target, ClipboardCheck, Clock, Plus, FileText } from '../components/icons/Icons';
 import { PreventiveCareItem } from '../types';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { useAuth } from '../hooks/useAuth';
-import { getPreventiveCare, updatePreventiveCareStatus, addPreventiveCareItem } from '../services/dataSupabase';
+import { getPreventiveCare, updatePreventiveCareStatus, addPreventiveCareItem, getProfile, getAllergies, getImmunizations } from '../services/dataSupabase';
 import { useToast } from '../hooks/useToast';
 import { useTranslation } from 'react-i18next';
+import { generateHealthCertificatePdf } from '../services/healthCertificatePdf';
 
 const PreventiveCare: React.FC = () => {
   const { t } = useTranslation();
@@ -17,6 +18,26 @@ const PreventiveCare: React.FC = () => {
   const [careItems, setCareItems] = useState<PreventiveCareItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [certLoading, setCertLoading] = useState(false);
+
+  const handleExportCertificate = async () => {
+    if (!user) return;
+    setCertLoading(true);
+    try {
+      const [profile, allergies, immunizations] = await Promise.all([
+        getProfile(user.uid),
+        getAllergies(user.uid),
+        getImmunizations(user.uid),
+      ]);
+      const emergencyUrl = `${window.location.origin}${window.location.pathname}#/emergency/${user.uid}`;
+      await generateHealthCertificatePdf({ profile, allergies, immunizations, emergencyUrl });
+      toast.success('Health certificate downloaded!');
+    } catch {
+      toast.error('Failed to generate certificate. Please try again.');
+    } finally {
+      setCertLoading(false);
+    }
+  };
 
   const refreshData = useCallback(async () => {
     if (user) {
@@ -74,9 +95,15 @@ const PreventiveCare: React.FC = () => {
           <h1 className="text-3xl font-bold font-heading">{t('preventive.title', 'Preventive Care')}</h1>
           <p className="text-muted-foreground">{t('preventive.subtitle', 'Keep track of routine care to stay healthy.')}</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> {t('preventive.add_item', 'Add Item')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportCertificate} disabled={certLoading}>
+            <FileText className="mr-2 h-4 w-4" />
+            {certLoading ? 'Generating…' : 'Health Certificate PDF'}
+          </Button>
+          <Button onClick={() => setIsModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> {t('preventive.add_item', 'Add Item')}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

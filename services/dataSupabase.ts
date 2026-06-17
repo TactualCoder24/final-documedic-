@@ -983,9 +983,9 @@ export const getWaterIntake = async (userId: string, date: string): Promise<numb
         .select('glasses')
         .eq('user_id', userId)
         .eq('date', date)
-        .single();
+        .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
         console.error('Error fetching water intake:', error);
         throw error;
     }
@@ -4432,5 +4432,147 @@ export const upsertClinicCommerceSettings = async (clinicId: string, settings: {
         throw error;
     }
     return mapClinicCommerceSettings(data);
+};
+
+// ============================================================================
+// FAMILY HEALTH VAULT
+// ============================================================================
+
+export interface FamilyConnection {
+    id: string;
+    patient_id: string;
+    caregiver_id: string;
+    relationship: string;
+    permission_level: 'view_only' | 'manage';
+    status: string;
+    created_at: string;
+    // joined from profiles
+    patientName?: string;
+    patientAge?: string;
+    patientBloodType?: string;
+    caregiverName?: string;
+}
+
+export const generateFamilyPin = async (
+    patientId: string,
+    relationship: string,
+    permissionLevel: 'view_only' | 'manage' = 'view_only'
+): Promise<string> => {
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 30 * 60000).toISOString(); // 30 min
+
+    // Delete any existing pins for this patient first
+    await supabase.from('family_pins').delete().eq('patient_id', patientId);
+
+    const { error } = await supabase.from('family_pins').insert({
+        pin,
+        patient_id: patientId,
+        expires_at: expiresAt,
+        relationship,
+        permission_level: permissionLevel,
+    });
+    if (error) throw error;
+    return pin;
+};
+
+export const connectViaFamilyPin = async (
+    caregiverId: string,
+    pin: string
+): Promise<FamilyConnection> => {
+    const { data: pinData, error: pinError } = await supabase
+        .from('family_pins')
+        .select('patient_id, expires_at, relationship, permission_level')
+        .eq('pin', pin)
+        .maybeSingle();
+
+    if (pinError || !pinData) throw new Error('Invalid or expired PIN.');
+    if (new Date(pinData.expires_at) < new Date()) throw new Error('This PIN has expired.');
+    if (pinData.patient_id === caregiverId) throw new Error('You cannot connect to your own account.');
+
+    const { data, error } = await supabase
+        .from('family_connections')
+        .upsert({
+            patient_id: pinData.patient_id,
+            caregiver_id: caregiverId,
+            relationship: pinData.relationship,
+            permission_level: pinData.permission_level,
+            status: 'active',
+        }, { onConflict: 'patient_id,caregiver_id' })
+        .select()
+        .single();
+
+    if (error) throw error;
+
+    // Consume pin
+    await supabase.from('family_pins').delete().eq('pin', pin);
+
+    return data as FamilyConnection;
+};
+
+export const getFamilyConnections = async (userId: string): Promise<{
+    asCaregiver: FamilyConnection[];
+    asPatient: FamilyConnection[];
+}> => {
+    const { data, error } = await supabase
+        .from('family_connections')
+        .select('*')
+        .or(`patient_id.eq.${userId},caregiver_id.eq.${userId}`)
+        .eq('status', 'active');
+
+    if (error) {
+        console.error('Error fetching family connections:', error);
+        return { asCaregiver: [], asPatient: [] };
+    }
+
+    const rows = (data || []) as FamilyConnection[];
+    const patientIds = rows.map(r => r.patient_id);
+
+    // Batch fetch profiles for all connected patients
+    let profileMap: Record<string, { name?: string; age?: string; bloodType?: string }> = {};
+    if (patientIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, name, age, blood_type')
+            .in('id', patientIds);
+        (profiles || []).forEach((p: any) => {
+            profileMap[p.id] = { name: p.name, age: p.age, bloodType: p.blood_type };
+        });
+    }
+
+    const enriched = rows.map(r => ({
+        ...r,
+        patientName: profileMap[r.patient_id]?.name,
+        patientAge: profileMap[r.patient_id]?.age,
+        patientBloodType: profileMap[r.patient_id]?.bloodType,
+    }));
+
+    return {
+        asCaregiver: enriched.filter(r => r.caregiver_id === userId),
+        asPatient: enriched.filter(r => r.patient_id === userId),
+    };
+};
+
+export const removeFamilyConnection = async (connectionId: string): Promise<void> => {
+    const { error } = await supabase.from('family_connections').delete().eq('id', connectionId);
+    if (error) throw error;
+};
+
+export interface FamilyMemberHealth {
+    profile: Profile;
+    medications: Medication[];
+    appointments: Appointment[];
+    allergies: Allergy[];
+    immunizations: Immunization[];
+}
+
+export const getFamilyMemberHealth = async (patientId: string): Promise<FamilyMemberHealth> => {
+    const [profile, medications, appointments, allergies, immunizations] = await Promise.all([
+        getProfile(patientId),
+        supabase.from('medications').select('*').eq('user_id', patientId).order('created_at', { ascending: false }).then(r => (r.data || []).map((m: any) => ({ id: m.id, name: m.name, dosage: m.dosage, frequency: m.frequency, startDate: m.start_date, endDate: m.end_date, notes: m.notes, totalQuantity: m.total_quantity }))),
+        supabase.from('appointments').select('*').eq('user_id', patientId).order('date_time', { ascending: true }).then(r => (r.data || []).map((a: any) => ({ id: a.id, doctorName: a.doctor_name, specialty: a.specialty, dateTime: a.date_time, status: a.status, type: a.type, notes: a.notes }))),
+        getAllergies(patientId),
+        getImmunizations(patientId),
+    ]);
+    return { profile, medications: medications as Medication[], appointments: appointments as Appointment[], allergies, immunizations };
 };
 
